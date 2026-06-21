@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,7 +63,8 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = LumiSpacing.lg),
+                .padding(horizontal = LumiSpacing.lg)
+                .padding(bottom = LumiSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
         ) {
             ModeGrid(
@@ -84,6 +86,7 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.error
                 )
             }
+            Spacer(Modifier.weight(1f))
             Button(
                 onClick = viewModel::toggle,
                 modifier = Modifier.fillMaxWidth().height(56.dp)

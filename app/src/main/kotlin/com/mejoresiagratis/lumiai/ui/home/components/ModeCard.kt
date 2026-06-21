@@ -3,7 +3,7 @@ package com.mejoresiagratis.lumiai.ui.home.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
@@ -32,7 +32,7 @@ fun ModeCard(
         if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Card(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 96.dp),
+        modifier = modifier.height(112.dp),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content)
     ) {
         Column(
