@@ -27,6 +27,7 @@ class FlashEngine @Inject constructor(
                 FlashMode.SCREEN -> { torch.turnOff(); awaitCancellation() }
                 FlashMode.STROBE -> settings.collectLatest { strobe(it.coerced()) }
                 FlashMode.SOS_MORSE -> settings.collectLatest { morse(it.coerced()) }
+                FlashMode.TEXT_MORSE -> settings.collectLatest { textMorse(it.coerced()) }
             }
         } finally {
             torch.turnOff()
@@ -40,6 +41,19 @@ class FlashEngine @Inject constructor(
         while (true) {
             torch.turnOn(s.intensityLevel); delay(onMs)
             torch.turnOff(); delay(offMs)
+        }
+    }
+
+    private suspend fun textMorse(s: FlashSettings) {
+        val durations = Morse.toDurations(s.morseText, s.morseUnitMs)
+        if (durations.isEmpty()) { torch.turnOff(); return }
+        while (true) {
+            for (i in durations.indices) {
+                if (i % 2 == 0) torch.turnOn(s.intensityLevel) else torch.turnOff()
+                delay(durations[i])
+            }
+            torch.turnOff()
+            delay(s.morseUnitMs * 7)
         }
     }
 

@@ -7,12 +7,14 @@ object FlashSettingsMapper {
     const val KEY_STROBE_HZ = "strobe_hz"
     const val KEY_MORSE_UNIT = "morse_unit"
     const val KEY_SCREEN_ARGB = "screen_argb"
+    const val KEY_MORSE_TEXT = "morse_text"
 
     fun toMap(s: FlashSettings): Map<String, Any> = mapOf(
         KEY_INTENSITY to s.intensityLevel,
         KEY_STROBE_HZ to s.strobeHz,
         KEY_MORSE_UNIT to s.morseUnitMs,
-        KEY_SCREEN_ARGB to s.screenArgb
+        KEY_SCREEN_ARGB to s.screenArgb,
+        KEY_MORSE_TEXT to s.morseText
     )
 
     fun fromMap(m: Map<String, Any?>): FlashSettings {
@@ -21,7 +23,8 @@ object FlashSettingsMapper {
             intensityLevel = (m[KEY_INTENSITY] as? Int) ?: d.intensityLevel,
             strobeHz = (m[KEY_STROBE_HZ] as? Float) ?: d.strobeHz,
             morseUnitMs = (m[KEY_MORSE_UNIT] as? Long) ?: d.morseUnitMs,
-            screenArgb = (m[KEY_SCREEN_ARGB] as? Int) ?: d.screenArgb
+            screenArgb = (m[KEY_SCREEN_ARGB] as? Int) ?: d.screenArgb,
+            morseText = (m[KEY_MORSE_TEXT] as? String) ?: d.morseText
         ).coerced()
     }
 }
