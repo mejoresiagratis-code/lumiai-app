@@ -2,12 +2,12 @@ package com.mejoresiagratis.lumiai.ui.home.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.flash.ModeControl
 import com.mejoresiagratis.lumiai.domain.flash.controls
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
@@ -23,11 +23,11 @@ fun ModeSettingsPanel(
     onChange: ((FlashSettings) -> FlashSettings) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    Column(modifier.fillMaxWidth()) {
         mode.controls().filter { it.isAvailable(caps) }.forEach { control ->
             when (control) {
                 ModeControl.INTENSITY -> {
-                    Text("Intensidad: ${settings.intensityLevel}%")
+                    Text(stringResource(R.string.settings_intensity, settings.intensityLevel))
                     Slider(
                         value = settings.intensityLevel.toFloat(),
                         onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
@@ -35,7 +35,7 @@ fun ModeSettingsPanel(
                     )
                 }
                 ModeControl.STROBE_HZ -> {
-                    Text("Frecuencia: ${"%.1f".format(settings.strobeHz)} Hz")
+                    Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
                     Slider(
                         value = settings.strobeHz,
                         onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
@@ -43,7 +43,7 @@ fun ModeSettingsPanel(
                     )
                 }
                 ModeControl.MORSE_SPEED -> {
-                    Text("Velocidad (unidad): ${settings.morseUnitMs} ms")
+                    Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
                     Slider(
                         value = settings.morseUnitMs.toFloat(),
                         onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
