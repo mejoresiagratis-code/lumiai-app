@@ -11,10 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.navigation.LumiAiNavHost
 import com.mejoresiagratis.lumiai.ui.theme.LumiAiTheme
+import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -35,8 +40,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun LumiAiApp() {
-    LumiAiTheme {
+private fun LumiAiApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
+    val themeMode: ThemeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
+    LumiAiTheme(themeMode = themeMode) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
