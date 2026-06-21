@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LumiAI</string>
+    <string name="home_placeholder">Esqueleto listo. La linterna llega en la Fase 1.</string>
+</resources>
