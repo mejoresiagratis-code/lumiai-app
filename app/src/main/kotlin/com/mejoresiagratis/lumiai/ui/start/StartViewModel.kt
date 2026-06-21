@@ -19,7 +19,7 @@ class StartViewModel @Inject constructor(
 
     init {
         // Todos arrancan con sesión anónima (uid estable) hasta crear cuenta.
-        viewModelScope.launch { auth.ensureAnonymous() }
+        viewModelScope.launch { runCatching { auth.ensureAnonymous() } }
     }
 
     val onboardingCompleted: StateFlow<Boolean?> =

@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.data.auth
 
 import android.content.Context
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -39,7 +40,9 @@ class FirebaseAuthRepository @Inject constructor(
         }
 
     override suspend fun ensureAnonymous() {
-        if (auth.currentUser == null) auth.signInAnonymously().await()
+        if (auth.currentUser != null) return
+        runCatching { auth.signInAnonymously().await() }
+            .onFailure { Log.w("LumiAuth", "Anonymous sign-in failed: ${it.message}") }
     }
 
     override suspend fun signInWithEmail(email: String, password: String): Result<Unit> =
