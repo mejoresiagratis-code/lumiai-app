@@ -12,7 +12,12 @@
           "package_name": "com.mejoresiagratis.lumiai"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1077957117267-7mvp3a19tcqiss0nftjlrqilnek62ivq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB3xNM9ao5jC7p-l_1BpPpD3jyq-32gJZs"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1077957117267-7mvp3a19tcqiss0nftjlrqilnek62ivq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
