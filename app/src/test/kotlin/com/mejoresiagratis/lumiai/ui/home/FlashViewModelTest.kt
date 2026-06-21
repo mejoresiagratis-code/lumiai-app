@@ -52,7 +52,9 @@ class FlashViewModelTest {
     fun `updateSettings clamps out-of-range intensity`() = runTest {
         val vm = vm()
         vm.uiState.test {
-            awaitItem()
+            assertEquals(100, awaitItem().settings.intensityLevel)
+            vm.updateSettings { it.copy(intensityLevel = 30) }
+            assertEquals(30, awaitItem().settings.intensityLevel)
             vm.updateSettings { it.copy(intensityLevel = 9999) }
             assertEquals(100, awaitItem().settings.intensityLevel)
         }
