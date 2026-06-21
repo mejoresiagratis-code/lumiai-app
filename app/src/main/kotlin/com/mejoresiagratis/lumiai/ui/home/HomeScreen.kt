@@ -1,5 +1,6 @@
 package com.mejoresiagratis.lumiai.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +40,9 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    if (state.isOn && state.mode == FlashMode.SCREEN) {
+    val screenActive = state.isOn && state.mode == FlashMode.SCREEN
+    BackHandler(enabled = screenActive) { viewModel.toggle() }
+    if (screenActive) {
         ScreenLight(argb = state.settings.screenArgb, onTap = viewModel::toggle)
         return
     }
