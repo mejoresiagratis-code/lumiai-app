@@ -14,6 +14,7 @@ fun FlashMode.controls(): Set<ModeControl> = when (this) {
     FlashMode.CONTINUOUS -> setOf(ModeControl.INTENSITY)
     FlashMode.STROBE -> setOf(ModeControl.INTENSITY, ModeControl.STROBE_HZ)
     FlashMode.SOS_MORSE -> setOf(ModeControl.INTENSITY, ModeControl.MORSE_SPEED)
+    FlashMode.TEXT_MORSE -> setOf(ModeControl.INTENSITY, ModeControl.MORSE_SPEED)
     FlashMode.SCREEN -> emptySet()
 }
 
