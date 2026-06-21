@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Foreground service so the torch survives backgrounding (added with the service in Fase 1). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- POST_NOTIFICATIONS needed on Android 13+ for the torch service notification. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Torch availability is optional: app still runs in Screen mode on devices without a flash. -->
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
     <application
@@ -26,5 +24,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".data.torch.TorchService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Mantiene la linterna encendida con la app en segundo plano" />
+        </service>
     </application>
 </manifest>
