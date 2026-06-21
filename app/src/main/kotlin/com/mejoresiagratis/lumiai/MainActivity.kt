@@ -47,7 +47,10 @@ private fun LumiAiApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            LumiAiNavHost()
+            LumiAiNavHost(
+                themeMode = themeMode,
+                onSelectTheme = themeViewModel::setMode
+            )
         }
     }
 }

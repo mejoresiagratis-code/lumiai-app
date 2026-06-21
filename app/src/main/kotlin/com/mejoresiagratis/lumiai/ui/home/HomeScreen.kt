@@ -1,6 +1,5 @@
 package com.mejoresiagratis.lumiai.ui.home
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,19 +29,16 @@ import com.mejoresiagratis.lumiai.ui.home.components.ModeGrid
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
-import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: FlashViewModel = hiltViewModel(),
-    themeViewModel: ThemeViewModel = hiltViewModel()
+    onOpenSettings: () -> Unit,
+    viewModel: FlashViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val screenActive = state.isOn && state.mode == FlashMode.SCREEN
-    BackHandler(enabled = screenActive) { viewModel.toggle() }
-    if (screenActive) {
+    if (state.isOn && state.mode == FlashMode.SCREEN) {
         ScreenLight(argb = state.settings.screenArgb, onTap = viewModel::toggle)
         return
     }
@@ -52,10 +48,10 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
-                    IconButton(onClick = themeViewModel::cycle) {
+                    IconButton(onClick = onOpenSettings) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_theme),
-                            contentDescription = stringResource(R.string.theme_toggle_cd)
+                            painter = painterResource(R.drawable.ic_settings),
+                            contentDescription = stringResource(R.string.settings_cd)
                         )
                     }
                 }
