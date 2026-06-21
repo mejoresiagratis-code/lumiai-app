@@ -7,6 +7,7 @@ import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
+import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class FlashViewModel @Inject constructor(
     private val repo: FlashStateRepository,
     private val engine: EngineController,
+    entitlementRepo: EntitlementRepository,
     torch: TorchController
 ) : ViewModel() {
 
@@ -29,8 +31,8 @@ class FlashViewModel @Inject constructor(
     )
 
     val uiState: StateFlow<FlashUiState> =
-        combine(repo.isOn, repo.mode, repo.settings) { on, mode, settings ->
-            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities)
+        combine(repo.isOn, repo.mode, repo.settings, entitlementRepo.entitlements) { on, mode, settings, ent ->
+            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities, entitlements = ent)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

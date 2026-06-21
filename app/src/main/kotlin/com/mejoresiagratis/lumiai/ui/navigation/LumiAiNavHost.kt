@@ -35,7 +35,10 @@ fun LumiAiNavHost(
             )
         }
         composable(Routes.HOME) {
-            HomeScreen(onOpenSettings = { navController.navigate(Routes.SETTINGS) })
+            HomeScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenAuth = { navController.navigate(Routes.AUTH) }
+            )
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(

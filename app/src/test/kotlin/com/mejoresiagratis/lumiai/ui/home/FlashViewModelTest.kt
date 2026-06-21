@@ -2,14 +2,17 @@ package com.mejoresiagratis.lumiai.ui.home
 
 import app.cash.turbine.test
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
+import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.util.FakeFlashStateRepository
 import com.mejoresiagratis.lumiai.util.FakeTorchController
 import com.mejoresiagratis.lumiai.util.MainDispatcherRule
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -24,8 +27,11 @@ class FlashViewModelTest {
     private val repo = FakeFlashStateRepository()
     private val torch: TorchController = FakeTorchController(hasFlash = true, maxIntensityLevel = 100)
     private val engine: EngineController = mockk(relaxed = true)
+    private val entitlementRepo: EntitlementRepository = object : EntitlementRepository {
+        override val entitlements = flowOf(Entitlements())
+    }
 
-    private fun vm() = FlashViewModel(repo, engine, torch)
+    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, torch)
 
     @Test
     fun `toggle on starts engine and reflects state`() = runTest {

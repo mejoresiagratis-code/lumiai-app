@@ -16,5 +16,6 @@ val MODE_CATALOG: List<ModeUi> = listOf(
     ModeUi(FlashMode.CONTINUOUS, R.string.mode_continuous, R.drawable.ic_mode_continuous),
     ModeUi(FlashMode.SCREEN, R.string.mode_screen, R.drawable.ic_mode_screen),
     ModeUi(FlashMode.SOS_MORSE, R.string.mode_sos, R.drawable.ic_mode_sos),
-    ModeUi(FlashMode.STROBE, R.string.mode_strobe, R.drawable.ic_mode_strobe)
+    ModeUi(FlashMode.STROBE, R.string.mode_strobe, R.drawable.ic_mode_strobe),
+    ModeUi(FlashMode.TEXT_MORSE, R.string.mode_text_morse, R.drawable.ic_mode_morse_text, isPro = true)
 )

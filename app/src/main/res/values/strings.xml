@@ -44,4 +44,8 @@
     <string name="auth_google">Continuar con Google</string>
     <string name="auth_or">o</string>
     <string name="auth_error_generic">No se pudo completar. Revisa los datos e inténtalo de nuevo.</string>
+    <!-- Morse de texto (Fase 3.5) -->
+    <string name="mode_text_morse">Morse de texto</string>
+    <string name="settings_morse_text">Mensaje</string>
+    <string name="mode_locked_cd">Modo bloqueado: requiere cuenta</string>
 </resources>

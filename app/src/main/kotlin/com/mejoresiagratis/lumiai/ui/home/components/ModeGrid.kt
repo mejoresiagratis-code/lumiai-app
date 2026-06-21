@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
+import com.mejoresiagratis.lumiai.domain.entitlement.tier
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
@@ -16,7 +18,9 @@ import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 fun ModeGrid(
     selected: FlashMode,
     onSelect: (FlashMode) -> Unit,
+    onLocked: (FlashMode) -> Unit,
     caps: DeviceCapabilities,
+    entitlements: Entitlements,
     modifier: Modifier = Modifier
 ) {
     val available = MODE_CATALOG.filter { it.mode.isAvailable(caps) }
@@ -27,10 +31,12 @@ fun ModeGrid(
                 horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
             ) {
                 rowItems.forEach { item ->
+                    val locked = !entitlements.unlocks(item.mode.tier)
                     ModeCard(
                         item = item,
                         selected = item.mode == selected,
-                        onClick = { onSelect(item.mode) },
+                        locked = locked,
+                        onClick = { if (locked) onLocked(item.mode) else onSelect(item.mode) },
                         modifier = Modifier.weight(1f)
                     )
                 }

@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.home.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +25,15 @@ fun ModeSettingsPanel(
     modifier: Modifier = Modifier
 ) {
     Column(modifier.fillMaxWidth()) {
+        if (mode == FlashMode.TEXT_MORSE) {
+            OutlinedTextField(
+                value = settings.morseText,
+                onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
+                label = { Text(stringResource(R.string.settings_morse_text)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         mode.controls().filter { it.isAvailable(caps) }.forEach { control ->
             when (control) {
                 ModeControl.INTENSITY -> {

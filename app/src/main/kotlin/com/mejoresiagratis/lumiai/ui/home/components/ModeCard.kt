@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.ui.home.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 
 @Composable
@@ -24,7 +26,8 @@ fun ModeCard(
     item: ModeUi,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    locked: Boolean = false
 ) {
     val container =
         if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
@@ -35,21 +38,35 @@ fun ModeCard(
         modifier = modifier.height(112.dp),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(LumiSpacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = painterResource(item.iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(28.dp)
-            )
-            Text(
-                text = stringResource(item.labelRes),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = LumiSpacing.sm)
-            )
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(LumiSpacing.md),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(item.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    text = stringResource(item.labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = LumiSpacing.sm)
+                )
+            }
+            if (locked) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_lock),
+                    contentDescription = stringResource(R.string.mode_locked_cd),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(LumiSpacing.sm)
+                        .size(18.dp)
+                )
+            }
         }
     }
 }

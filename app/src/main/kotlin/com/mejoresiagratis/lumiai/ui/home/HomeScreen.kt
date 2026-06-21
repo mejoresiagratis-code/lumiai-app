@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.domain.entitlement.tier
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.ui.home.components.ModeGrid
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
@@ -35,9 +37,15 @@ import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit,
+    onOpenAuth: () -> Unit,
     viewModel: FlashViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Seguridad: si el modo seleccionado quedó bloqueado (p.ej. tras cerrar sesión), volver a Continuo.
+    LaunchedEffect(state.entitlements, state.mode) {
+        if (!state.entitlements.unlocks(state.mode.tier)) viewModel.selectMode(FlashMode.CONTINUOUS)
+    }
 
     val screenActive = state.isOn && state.mode == FlashMode.SCREEN
     BackHandler(enabled = screenActive) { viewModel.toggle() }
@@ -72,7 +80,9 @@ fun HomeScreen(
             ModeGrid(
                 selected = state.mode,
                 onSelect = viewModel::selectMode,
+                onLocked = { onOpenAuth() },
                 caps = state.capabilities,
+                entitlements = state.entitlements,
                 modifier = Modifier.padding(top = LumiSpacing.md)
             )
             ModeSettingsPanel(
