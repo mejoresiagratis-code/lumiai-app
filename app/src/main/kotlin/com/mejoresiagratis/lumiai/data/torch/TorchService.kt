@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,12 +34,14 @@ class TorchService : Service() {
         super.onCreate()
         startForeground(NOTIF_ID, buildNotification())
         scope.launch {
-            combine(repo.isOn, repo.mode, repo.settings) { on, mode, s -> Triple(on, mode, s) }
-                .collectLatest { (on, mode, settings) ->
+            // Solo on/off y cambio de modo relanzan la rutina; los ajustes los escucha el engine.
+            combine(repo.isOn, repo.mode) { on, mode -> on to mode }
+                .distinctUntilChanged()
+                .collectLatest { (on, mode) ->
                     if (!on) {
                         stopSelf()
                     } else {
-                        engine.play(mode, settings)
+                        engine.play(mode, repo.settings)
                     }
                 }
         }

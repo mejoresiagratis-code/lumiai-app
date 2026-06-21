@@ -5,22 +5,28 @@ import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Ejecuta un modo. Es suspend y cancelable: al cancelarse, apaga el LED. */
+/**
+ * Ejecuta un modo reaccionando en vivo a los ajustes.
+ * - on/off y cambio de modo se gestionan fuera (cancelando/relanzando play).
+ * - Los cambios de AJUSTE llegan por el Flow y se aplican SIN reiniciar el modo:
+ *   en Continuo solo se actualiza el nivel (suave en API 33+, sin apagar/encender).
+ */
 @Singleton
 class FlashEngine @Inject constructor(
     private val torch: TorchController
 ) {
-    suspend fun play(mode: FlashMode, settings: FlashSettings) {
-        val s = settings.coerced()
+    suspend fun play(mode: FlashMode, settings: Flow<FlashSettings>) {
         try {
             when (mode) {
-                FlashMode.CONTINUOUS -> { torch.turnOn(s.intensityLevel); awaitCancellation() }
+                FlashMode.CONTINUOUS -> settings.collect { torch.turnOn(it.coerced().intensityLevel) }
                 FlashMode.SCREEN -> { torch.turnOff(); awaitCancellation() }
-                FlashMode.STROBE -> strobe(s)
-                FlashMode.SOS_MORSE -> morse(s)
+                FlashMode.STROBE -> settings.collectLatest { strobe(it.coerced()) }
+                FlashMode.SOS_MORSE -> settings.collectLatest { morse(it.coerced()) }
             }
         } finally {
             torch.turnOff()
