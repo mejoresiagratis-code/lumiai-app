@@ -13,4 +13,7 @@ app/build/
 *.aab
 *.keystore
 *.jks
+# Excepción: keystore de DEBUG del proyecto (no es secreto; pass pública "android")
+# para que el SHA-1 sea estable en todas las máquinas y el CI (Google Sign-In).
+!app/lumiai-debug.keystore
 google-services.json
