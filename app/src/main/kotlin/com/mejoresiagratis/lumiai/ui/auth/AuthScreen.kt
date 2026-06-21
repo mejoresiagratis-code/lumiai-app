@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import android.util.Log
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -39,7 +40,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
@@ -138,9 +139,7 @@ fun AuthScreen(
                     onClick = {
                         scope.launch {
                             runCatching {
-                                val option = GetGoogleIdOption.Builder()
-                                    .setServerClientId(webClientId)
-                                    .setFilterByAuthorizedAccounts(false)
+                                val option = GetSignInWithGoogleOption.Builder(webClientId)
                                     .build()
                                 val request = GetCredentialRequest.Builder()
                                     .addCredentialOption(option)
@@ -158,7 +157,8 @@ fun AuthScreen(
                             }.onSuccess { token ->
                                 if (token != null) viewModel.signInWithGoogle(token)
                                 else viewModel.reportFailure()
-                            }.onFailure {
+                            }.onFailure { e ->
+                                Log.w("LumiAuth", "Google sign-in failed", e)
                                 viewModel.reportFailure()
                             }
                         }
