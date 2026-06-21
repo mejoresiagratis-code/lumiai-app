@@ -1,12 +1,10 @@
 package com.mejoresiagratis.lumiai
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,6 +16,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.navigation.LumiAiNavHost
+import com.mejoresiagratis.lumiai.ui.navigation.Routes
+import com.mejoresiagratis.lumiai.ui.start.StartViewModel
 import com.mejoresiagratis.lumiai.ui.theme.LumiAiTheme
 import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,32 +25,42 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val notifPermLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val startViewModel: StartViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splash.setKeepOnScreenCondition { startViewModel.onboardingCompleted.value == null }
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         setContent { LumiAiApp() }
     }
 }
 
 @Composable
-private fun LumiAiApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
+private fun LumiAiApp(
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+    startViewModel: StartViewModel = hiltViewModel()
+) {
     val themeMode: ThemeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
+    val completed: Boolean? by startViewModel.onboardingCompleted.collectAsStateWithLifecycle()
+
     LumiAiTheme(themeMode = themeMode) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            LumiAiNavHost(
-                themeMode = themeMode,
-                onSelectTheme = themeViewModel::setMode
-            )
+            val start = when (completed) {
+                null -> null
+                true -> Routes.HOME
+                false -> Routes.ONBOARDING
+            }
+            if (start != null) {
+                LumiAiNavHost(
+                    startDestination = start,
+                    themeMode = themeMode,
+                    onSelectTheme = themeViewModel::setMode
+                )
+            }
         }
     }
 }
