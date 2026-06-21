@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1077957117267",
+    "project_id": "lumiai-37ab0",
+    "storage_bucket": "lumiai-37ab0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077957117267:android:8d24d633168414de77cda6",
+        "android_client_info": {
+          "package_name": "com.mejoresiagratis.lumiai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3xNM9ao5jC7p-l_1BpPpD3jyq-32gJZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
