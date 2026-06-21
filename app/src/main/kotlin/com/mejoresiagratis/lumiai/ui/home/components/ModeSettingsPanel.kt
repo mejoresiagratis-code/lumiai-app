@@ -8,6 +8,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mejoresiagratis.lumiai.domain.flash.ModeControl
+import com.mejoresiagratis.lumiai.domain.flash.controls
+import com.mejoresiagratis.lumiai.domain.flash.isAvailable
+import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 
@@ -15,37 +19,38 @@ import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 fun ModeSettingsPanel(
     mode: FlashMode,
     settings: FlashSettings,
-    maxIntensity: Int,
+    caps: DeviceCapabilities,
     onChange: ((FlashSettings) -> FlashSettings) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        if (maxIntensity > 1 && mode != FlashMode.SCREEN) {
-            Text("Intensidad: ${settings.intensityLevel}%")
-            Slider(
-                value = settings.intensityLevel.toFloat(),
-                onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
-                valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
-            )
-        }
-        when (mode) {
-            FlashMode.STROBE -> {
-                Text("Frecuencia: ${"%.1f".format(settings.strobeHz)} Hz")
-                Slider(
-                    value = settings.strobeHz,
-                    onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
-                    valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
-                )
+        mode.controls().filter { it.isAvailable(caps) }.forEach { control ->
+            when (control) {
+                ModeControl.INTENSITY -> {
+                    Text("Intensidad: ${settings.intensityLevel}%")
+                    Slider(
+                        value = settings.intensityLevel.toFloat(),
+                        onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
+                        valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
+                    )
+                }
+                ModeControl.STROBE_HZ -> {
+                    Text("Frecuencia: ${"%.1f".format(settings.strobeHz)} Hz")
+                    Slider(
+                        value = settings.strobeHz,
+                        onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
+                        valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
+                    )
+                }
+                ModeControl.MORSE_SPEED -> {
+                    Text("Velocidad (unidad): ${settings.morseUnitMs} ms")
+                    Slider(
+                        value = settings.morseUnitMs.toFloat(),
+                        onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
+                        valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
+                    )
+                }
             }
-            FlashMode.SOS_MORSE -> {
-                Text("Velocidad (unidad): ${settings.morseUnitMs} ms")
-                Slider(
-                    value = settings.morseUnitMs.toFloat(),
-                    onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
-                )
-            }
-            else -> Unit
         }
     }
 }

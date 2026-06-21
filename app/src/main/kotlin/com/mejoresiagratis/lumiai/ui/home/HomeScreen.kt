@@ -38,18 +38,22 @@ fun HomeScreen(viewModel: FlashViewModel = hiltViewModel()) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ModeSelector(selected = state.mode, onSelect = viewModel::selectMode)
+            ModeSelector(
+                selected = state.mode,
+                onSelect = viewModel::selectMode,
+                caps = state.capabilities
+            )
             ModeSettingsPanel(
                 mode = state.mode,
                 settings = state.settings,
-                maxIntensity = state.maxIntensity,
+                caps = state.capabilities,
                 onChange = viewModel::updateSettings
             )
             Button(onClick = viewModel::toggle, modifier = Modifier.fillMaxWidth()) {
                 Text(if (state.isOn) "Apagar" else "Encender")
             }
-            if (!state.hasFlash && state.mode != FlashMode.SCREEN) {
-                Text("Este dispositivo no tiene flash: usa el modo Pantalla.")
+            if (!state.capabilities.hasFlash) {
+                Text("Sin flash: solo el modo Pantalla esta disponible.")
             }
         }
     }

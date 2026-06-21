@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
+import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
@@ -22,19 +23,18 @@ class FlashViewModel @Inject constructor(
     torch: TorchController
 ) : ViewModel() {
 
+    private val capabilities = DeviceCapabilities(
+        hasFlash = torch.hasFlash,
+        maxTorchLevel = torch.maxIntensityLevel
+    )
+
     val uiState: StateFlow<FlashUiState> =
         combine(repo.isOn, repo.mode, repo.settings) { on, mode, settings ->
-            FlashUiState(
-                isOn = on,
-                mode = mode,
-                settings = settings,
-                hasFlash = torch.hasFlash,
-                maxIntensity = torch.maxIntensityLevel
-            )
+            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = FlashUiState(hasFlash = torch.hasFlash, maxIntensity = torch.maxIntensityLevel)
+            initialValue = FlashUiState(capabilities = capabilities)
         )
 
     fun toggle() {
