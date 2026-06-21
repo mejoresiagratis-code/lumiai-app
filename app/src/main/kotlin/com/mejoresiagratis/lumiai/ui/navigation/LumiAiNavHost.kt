@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
+import com.mejoresiagratis.lumiai.ui.auth.AuthScreen
 import com.mejoresiagratis.lumiai.ui.home.HomeScreen
 import com.mejoresiagratis.lumiai.ui.onboarding.OnboardingScreen
 import com.mejoresiagratis.lumiai.ui.settings.SettingsScreen
@@ -13,6 +14,7 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val AUTH = "auth"
 }
 
 @Composable
@@ -39,6 +41,13 @@ fun LumiAiNavHost(
             SettingsScreen(
                 themeMode = themeMode,
                 onSelectTheme = onSelectTheme,
+                onOpenAuth = { navController.navigate(Routes.AUTH) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.AUTH) {
+            AuthScreen(
+                onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )
         }

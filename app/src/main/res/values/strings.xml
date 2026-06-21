@@ -29,4 +29,19 @@
     <string name="ob2_body">Continuo, Pantalla, SOS y Estrobo. Ajusta intensidad y velocidad.</string>
     <string name="ob3_title">Sabrás cuándo está encendida</string>
     <string name="ob3_body">Mostramos una notificación mientras la linterna está activa para que puedas apagarla rápido.</string>
+    <!-- Cuenta / Acceso (Fase 3) -->
+    <string name="account_section">Cuenta</string>
+    <string name="account_guest">Invitado</string>
+    <string name="account_guest_hint">Crea una cuenta para desbloquear los modos avanzados.</string>
+    <string name="account_signed_in_as">Sesión iniciada como %1$s</string>
+    <string name="account_sign_in">Entrar / Crear cuenta</string>
+    <string name="account_sign_out">Cerrar sesión</string>
+    <string name="auth_title">Acceder</string>
+    <string name="auth_email">Correo electrónico</string>
+    <string name="auth_password">Contraseña</string>
+    <string name="auth_sign_in">Entrar</string>
+    <string name="auth_register">Crear cuenta</string>
+    <string name="auth_google">Continuar con Google</string>
+    <string name="auth_or">o</string>
+    <string name="auth_error_generic">No se pudo completar. Revisa los datos e inténtalo de nuevo.</string>
 </resources>
