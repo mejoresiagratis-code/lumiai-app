@@ -2,4 +2,16 @@
 <resources>
     <string name="app_name">LumiAI</string>
     <string name="torch_running">Linterna activa</string>
+    <string name="mode_continuous">Continuo</string>
+    <string name="mode_screen">Pantalla</string>
+    <string name="mode_sos">SOS</string>
+    <string name="mode_strobe">Estrobo</string>
+    <string name="action_on">Encender</string>
+    <string name="action_off">Apagar</string>
+    <string name="no_flash_hint">Este dispositivo no tiene flash: usa el modo Pantalla.</string>
+    <string name="settings_intensity">Intensidad: %1$d%%</string>
+    <string name="settings_frequency">Frecuencia: %1$s Hz</string>
+    <string name="settings_speed">Velocidad (unidad): %1$d ms</string>
+    <string name="theme_toggle_cd">Cambiar tema</string>
+    <string name="screen_exit_cd">Tocar para apagar</string>
 </resources>
