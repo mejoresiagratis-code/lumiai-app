@@ -44,7 +44,7 @@ fun LumiAiTheme(
         // (fondo/superficie/contorno) de la marca y solo adoptamos —animados—
         // los roles de acento generados.
         val seed = resolveAccent(accent, activeMode)
-        val gen = rememberDynamicColorScheme(seedColor = seed, isDark = dark)
+        val gen = rememberDynamicColorScheme(seedColor = seed, isDark = dark, isAmoled = false)
         val primary by animateColorAsState(gen.primary, label = "primary")
         val onPrimary by animateColorAsState(gen.onPrimary, label = "onPrimary")
         val primaryContainer by animateColorAsState(gen.primaryContainer, label = "primaryContainer")
