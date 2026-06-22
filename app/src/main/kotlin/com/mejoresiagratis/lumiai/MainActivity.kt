@@ -15,6 +15,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.navigation.LumiAiNavHost
 import com.mejoresiagratis.lumiai.ui.navigation.Routes
@@ -44,9 +45,10 @@ private fun LumiAiApp(
 ) {
     val themeMode: ThemeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
     val accent: AccentColor by themeViewModel.accentColor.collectAsStateWithLifecycle()
+    val activeMode: FlashMode by themeViewModel.currentMode.collectAsStateWithLifecycle()
     val completed: Boolean? by startViewModel.onboardingCompleted.collectAsStateWithLifecycle()
 
-    LumiAiTheme(themeMode = themeMode, accent = accent) {
+    LumiAiTheme(themeMode = themeMode, accent = accent, activeMode = activeMode) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background

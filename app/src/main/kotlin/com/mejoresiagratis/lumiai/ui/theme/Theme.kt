@@ -8,12 +8,14 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 
 @Composable
 fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     accent: AccentColor = AccentColor.AMBER,
+    activeMode: FlashMode? = null,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -30,13 +32,11 @@ fun LumiAiTheme(
         dark -> DarkColors
         else -> LightColors
     }
-    // Ámbar y Multicolor conservan el esquema afinado por defecto; los demás colores
-    // sólidos sustituyen primary/onPrimary (mínimo viable, Fase 1.1).
-    val applyAccent = !dynamicColor &&
-        accent != AccentColor.AMBER &&
-        accent != AccentColor.MULTICOLOR
+    // Ámbar conserva el esquema afinado; el resto (incl. Multicolor según el modo
+    // activo) sustituye primary/onPrimary. Esquema armónico + animación: Fase 1.3.
+    val applyAccent = !dynamicColor && accent != AccentColor.AMBER
     val colorScheme = if (applyAccent) {
-        val p = accent.solidColor()
+        val p = resolveAccent(accent, activeMode)
         base.copy(primary = p, onPrimary = onColorFor(p))
     } else {
         base
