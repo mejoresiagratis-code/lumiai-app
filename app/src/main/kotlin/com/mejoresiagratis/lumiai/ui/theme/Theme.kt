@@ -1,12 +1,15 @@
 package com.mejoresiagratis.lumiai.ui.theme
 
 import android.os.Build
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import com.materialkolor.rememberDynamicColorScheme
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
@@ -32,14 +35,42 @@ fun LumiAiTheme(
         dark -> DarkColors
         else -> LightColors
     }
-    // Ámbar conserva el esquema afinado; el resto (incl. Multicolor según el modo
-    // activo) sustituye primary/onPrimary. Esquema armónico + animación: Fase 1.3.
-    val applyAccent = !dynamicColor && accent != AccentColor.AMBER
-    val colorScheme = if (applyAccent) {
-        val p = resolveAccent(accent, activeMode)
-        base.copy(primary = p, onPrimary = onColorFor(p))
-    } else {
+
+    val colorScheme = if (dynamicColor) {
         base
+    } else {
+        // Esquema M3 armónico generado desde el color de acento (semilla).
+        // Multicolor sigue al modo activo. Conservamos los neutros afinados
+        // (fondo/superficie/contorno) de la marca y solo adoptamos —animados—
+        // los roles de acento generados.
+        val seed = resolveAccent(accent, activeMode)
+        val gen = rememberDynamicColorScheme(seedColor = seed, isDark = dark)
+        val primary by animateColorAsState(gen.primary, label = "primary")
+        val onPrimary by animateColorAsState(gen.onPrimary, label = "onPrimary")
+        val primaryContainer by animateColorAsState(gen.primaryContainer, label = "primaryContainer")
+        val onPrimaryContainer by animateColorAsState(gen.onPrimaryContainer, label = "onPrimaryContainer")
+        val secondary by animateColorAsState(gen.secondary, label = "secondary")
+        val onSecondary by animateColorAsState(gen.onSecondary, label = "onSecondary")
+        val secondaryContainer by animateColorAsState(gen.secondaryContainer, label = "secondaryContainer")
+        val onSecondaryContainer by animateColorAsState(gen.onSecondaryContainer, label = "onSecondaryContainer")
+        val tertiary by animateColorAsState(gen.tertiary, label = "tertiary")
+        val onTertiary by animateColorAsState(gen.onTertiary, label = "onTertiary")
+        val tertiaryContainer by animateColorAsState(gen.tertiaryContainer, label = "tertiaryContainer")
+        val onTertiaryContainer by animateColorAsState(gen.onTertiaryContainer, label = "onTertiaryContainer")
+        base.copy(
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
+            onPrimaryContainer = onPrimaryContainer,
+            secondary = secondary,
+            onSecondary = onSecondary,
+            secondaryContainer = secondaryContainer,
+            onSecondaryContainer = onSecondaryContainer,
+            tertiary = tertiary,
+            onTertiary = onTertiary,
+            tertiaryContainer = tertiaryContainer,
+            onTertiaryContainer = onTertiaryContainer
+        )
     }
     MaterialTheme(
         colorScheme = colorScheme,
