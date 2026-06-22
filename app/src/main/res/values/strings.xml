@@ -20,6 +20,14 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
+    <string name="accent_section">Color de acento</string>
+    <string name="accent_multicolor">Multicolor (por modo)</string>
+    <string name="accent_amber">Ámbar</string>
+    <string name="accent_white">Blanco</string>
+    <string name="accent_red">Rojo</string>
+    <string name="accent_blue">Azul</string>
+    <string name="accent_green">Verde</string>
+    <string name="accent_violet">Violeta</string>
     <string name="onboarding_skip">Saltar</string>
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar</string>

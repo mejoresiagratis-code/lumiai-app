@@ -1,6 +1,15 @@
 package com.mejoresiagratis.lumiai.ui.settings
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.ui.theme.solidColor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +50,8 @@ import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 fun SettingsScreen(
     themeMode: ThemeMode,
     onSelectTheme: (ThemeMode) -> Unit,
+    accentColor: AccentColor,
+    onSelectAccent: (AccentColor) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel()
@@ -117,6 +128,22 @@ fun SettingsScreen(
             ThemeOption(R.string.theme_system, themeMode == ThemeMode.SYSTEM) { onSelectTheme(ThemeMode.SYSTEM) }
             ThemeOption(R.string.theme_light, themeMode == ThemeMode.LIGHT) { onSelectTheme(ThemeMode.LIGHT) }
             ThemeOption(R.string.theme_dark, themeMode == ThemeMode.DARK) { onSelectTheme(ThemeMode.DARK) }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = LumiSpacing.lg))
+
+            // --- Apariencia: color de acento ---
+            Text(
+                text = stringResource(R.string.accent_section),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = LumiSpacing.sm)
+            )
+            AccentColor.entries.forEach { ac ->
+                AccentOption(
+                    accent = ac,
+                    selected = accentColor == ac,
+                    onClick = { onSelectAccent(ac) }
+                )
+            }
         }
     }
 }
@@ -139,4 +166,52 @@ private fun ThemeOption(
         RadioButton(selected = selected, onClick = null)
         Text(text = stringResource(labelRes), style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+private fun AccentOption(
+    accent: AccentColor,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(vertical = LumiSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        val swatch = Modifier
+            .size(22.dp)
+            .clip(CircleShape)
+        if (accent == AccentColor.MULTICOLOR) {
+            Box(
+                swatch.background(
+                    Brush.sweepGradient(
+                        listOf(
+                            Color(0xFFFFB300), Color(0xFF4D7BFF), Color(0xFFE12B2B),
+                            Color(0xFF9B6CFF), Color(0xFF11A693), Color(0xFFFFB300)
+                        )
+                    )
+                )
+            )
+        } else {
+            Box(swatch.background(accent.solidColor()))
+        }
+        Text(text = stringResource(accentLabel(accent)), style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@StringRes
+private fun accentLabel(accent: AccentColor): Int = when (accent) {
+    AccentColor.MULTICOLOR -> R.string.accent_multicolor
+    AccentColor.AMBER -> R.string.accent_amber
+    AccentColor.WHITE -> R.string.accent_white
+    AccentColor.RED -> R.string.accent_red
+    AccentColor.BLUE -> R.string.accent_blue
+    AccentColor.GREEN -> R.string.accent_green
+    AccentColor.VIOLET -> R.string.accent_violet
 }
