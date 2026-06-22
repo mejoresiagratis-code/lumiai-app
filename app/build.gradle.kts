@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.mejoresiagratis.lumiai"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -58,14 +58,6 @@ android {
 }
 
 dependencies {
-    // compileSdk 34: forzar androidx.core a 1.13.1. La cadena de Compose/Haze (CMP 1.7.x)
-    // arrastra core 1.15.0 por transitividad, que exige compileSdk 35. Mantener 34 hasta
-    // que se aborde el bump de SDK/Compose BOM en su fase aparte.
-    constraints {
-        implementation("androidx.core:core") { version { strictly("1.13.1") } }
-        implementation("androidx.core:core-ktx") { version { strictly("1.13.1") } }
-    }
-
     implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.core.ktx)
