@@ -53,7 +53,13 @@ fun HomeScreen(
     val screenActive = state.isOn && state.mode == FlashMode.SCREEN
     BackHandler(enabled = screenActive) { viewModel.toggle() }
     if (screenActive) {
-        ScreenLight(argb = state.settings.screenArgb, onTap = viewModel::toggle)
+        ScreenLight(
+            argb = state.settings.screenArgb,
+            brightness = state.settings.screenBrightness,
+            onColorChange = { argb -> viewModel.updateSettings { it.copy(screenArgb = argb) } },
+            onBrightnessChange = { b -> viewModel.updateSettings { it.copy(screenBrightness = b) } },
+            onTap = viewModel::toggle
+        )
         return
     }
 

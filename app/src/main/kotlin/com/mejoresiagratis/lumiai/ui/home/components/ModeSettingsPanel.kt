@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.home.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -25,6 +26,13 @@ fun ModeSettingsPanel(
     modifier: Modifier = Modifier
 ) {
     Column(modifier.fillMaxWidth()) {
+        if (mode == FlashMode.SCREEN) {
+            Text(
+                text = stringResource(R.string.screen_settings_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         if (mode == FlashMode.TEXT_MORSE) {
             OutlinedTextField(
                 value = settings.morseText,

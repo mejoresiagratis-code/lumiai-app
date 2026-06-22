@@ -48,4 +48,10 @@
     <string name="mode_text_morse">Morse de texto</string>
     <string name="settings_morse_text">Mensaje</string>
     <string name="mode_locked_cd">Modo bloqueado: requiere cuenta</string>
+    <!-- Modo Pantalla v2 -->
+    <string name="screen_panel_title">Luz de color</string>
+    <string name="screen_color">Color</string>
+    <string name="screen_brightness">Brillo: %1$d%%</string>
+    <string name="screen_tap_off">Toca fuera para apagar</string>
+    <string name="screen_settings_hint">Enciende para ajustar color y brillo a pantalla completa.</string>
 </resources>
