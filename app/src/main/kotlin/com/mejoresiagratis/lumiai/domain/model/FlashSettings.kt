@@ -5,13 +5,15 @@ data class FlashSettings(
     val strobeHz: Float = 8f,
     val morseUnitMs: Long = 200L,
     val screenArgb: Int = -0x1,
-    val morseText: String = "SOS"
+    val morseText: String = "SOS",
+    val screenBrightness: Float = 1f
 ) {
     fun coerced() = copy(
         intensityLevel = intensityLevel.coerceIn(MIN_INTENSITY, MAX_INTENSITY),
         strobeHz = strobeHz.coerceIn(MIN_STROBE_HZ, MAX_STROBE_HZ),
         morseUnitMs = morseUnitMs.coerceIn(MIN_UNIT_MS, MAX_UNIT_MS),
-        morseText = morseText.take(MAX_MORSE_LEN)
+        morseText = morseText.take(MAX_MORSE_LEN),
+        screenBrightness = screenBrightness.coerceIn(MIN_SCREEN_BRIGHTNESS, MAX_SCREEN_BRIGHTNESS)
     )
 
     companion object {
@@ -22,5 +24,7 @@ data class FlashSettings(
         const val MIN_UNIT_MS = 60L
         const val MAX_UNIT_MS = 400L
         const val MAX_MORSE_LEN = 50
+        const val MIN_SCREEN_BRIGHTNESS = 0.05f
+        const val MAX_SCREEN_BRIGHTNESS = 1f
     }
 }

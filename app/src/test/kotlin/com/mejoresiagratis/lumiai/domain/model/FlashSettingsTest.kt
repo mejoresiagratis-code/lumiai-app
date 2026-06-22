@@ -4,11 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class FlashSettingsTest {
-    @Test
-    fun `coerced clamps every field into range`() {
-        val s = FlashSettings(intensityLevel = 999, strobeHz = 99f, morseUnitMs = 5L).coerced()
-        assertEquals(FlashSettings.MAX_INTENSITY, s.intensityLevel)
-        assertEquals(FlashSettings.MAX_STROBE_HZ, s.strobeHz, 0f)
-        assertEquals(FlashSettings.MIN_UNIT_MS, s.morseUnitMs)
+    @Test fun `brillo de pantalla se acota`() {
+        assertEquals(FlashSettings.MAX_SCREEN_BRIGHTNESS, FlashSettings(screenBrightness = 5f).coerced().screenBrightness, 0f)
+        assertEquals(FlashSettings.MIN_SCREEN_BRIGHTNESS, FlashSettings(screenBrightness = -1f).coerced().screenBrightness, 0f)
+    }
+    @Test fun `mensaje morse se limita en longitud`() {
+        val long = "A".repeat(200)
+        assertEquals(FlashSettings.MAX_MORSE_LEN, FlashSettings(morseText = long).coerced().morseText.length)
     }
 }

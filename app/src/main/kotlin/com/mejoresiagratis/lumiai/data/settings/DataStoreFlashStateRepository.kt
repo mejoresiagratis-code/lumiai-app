@@ -30,6 +30,7 @@ class DataStoreFlashStateRepository @Inject constructor(
         val UNIT = longPreferencesKey(FlashSettingsMapper.KEY_MORSE_UNIT)
         val ARGB = intPreferencesKey(FlashSettingsMapper.KEY_SCREEN_ARGB)
         val TEXT = stringPreferencesKey(FlashSettingsMapper.KEY_MORSE_TEXT)
+        val BRIGHTNESS = floatPreferencesKey(FlashSettingsMapper.KEY_SCREEN_BRIGHTNESS)
     }
 
     private val _isOn = MutableStateFlow(false)
@@ -60,6 +61,7 @@ class DataStoreFlashStateRepository @Inject constructor(
             p[Keys.UNIT] = next.morseUnitMs
             p[Keys.ARGB] = next.screenArgb
             p[Keys.TEXT] = next.morseText
+            p[Keys.BRIGHTNESS] = next.screenBrightness
         }
     }
 
@@ -69,5 +71,6 @@ class DataStoreFlashStateRepository @Inject constructor(
         p[Keys.UNIT]?.let { put(FlashSettingsMapper.KEY_MORSE_UNIT, it) }
         p[Keys.ARGB]?.let { put(FlashSettingsMapper.KEY_SCREEN_ARGB, it) }
         p[Keys.TEXT]?.let { put(FlashSettingsMapper.KEY_MORSE_TEXT, it) }
+        p[Keys.BRIGHTNESS]?.let { put(FlashSettingsMapper.KEY_SCREEN_BRIGHTNESS, it) }
     }
 }
