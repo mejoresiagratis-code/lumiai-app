@@ -7,11 +7,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,6 +29,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +50,10 @@ import com.mejoresiagratis.lumiai.ui.home.components.ModeGrid
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import dev.chrisbanes.haze.HazeDefaults
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +64,6 @@ fun BeamHubScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Seguridad: si el modo quedó bloqueado (p.ej. tras cerrar sesión), volver a Continuo.
     LaunchedEffect(state.entitlements, state.mode) {
         if (!state.entitlements.unlocks(state.mode.tier)) viewModel.selectMode(FlashMode.CONTINUOUS)
     }
@@ -72,22 +81,28 @@ fun BeamHubScreen(
         return
     }
 
+    val hazeState = remember { HazeState() }
     val primary = MaterialTheme.colorScheme.primary
     val background = MaterialTheme.colorScheme.background
+    val surface = MaterialTheme.colorScheme.surface
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
-    // Fondo por modo: degradado del color de acento activo hacia el fondo de marca.
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        primary.copy(alpha = if (state.isOn) 0.30f else 0.12f),
-                        background
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Fuente del blur: fondo por modo a pantalla completa (lo que la hoja difumina).
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(hazeState)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            primary.copy(alpha = if (state.isOn) 0.32f else 0.12f),
+                            background
+                        )
                     )
                 )
-            )
-    ) {
+        )
+
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
@@ -103,16 +118,52 @@ fun BeamHubScreen(
                         }
                     }
                 )
+            },
+            bottomBar = {
+                // Hoja de cristal: difumina el fondo por modo que queda detrás.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                        .hazeEffect(
+                            state = hazeState,
+                            style = HazeDefaults.style(backgroundColor = surface, blurRadius = 24.dp)
+                        )
+                        .navigationBarsPadding()
+                        .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .size(width = 40.dp, height = 4.dp)
+                            .clip(CircleShape)
+                            .background(onSurface.copy(alpha = 0.3f))
+                    )
+                    if (!state.capabilities.hasFlash) {
+                        Text(
+                            text = stringResource(R.string.no_flash_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    ModeSettingsPanel(
+                        mode = state.mode,
+                        settings = state.settings,
+                        caps = state.capabilities,
+                        onChange = viewModel::updateSettings
+                    )
+                }
             }
         ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = LumiSpacing.lg)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
+                    .padding(horizontal = LumiSpacing.lg),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ModeGrid(
                     selected = state.mode,
@@ -122,27 +173,9 @@ fun BeamHubScreen(
                     entitlements = state.entitlements,
                     modifier = Modifier.padding(top = LumiSpacing.md)
                 )
-
-                PowerOrb(
-                    isOn = state.isOn,
-                    onToggle = viewModel::toggle,
-                    modifier = Modifier.padding(vertical = LumiSpacing.md)
-                )
-
-                ModeSettingsPanel(
-                    mode = state.mode,
-                    settings = state.settings,
-                    caps = state.capabilities,
-                    onChange = viewModel::updateSettings
-                )
-
-                if (!state.capabilities.hasFlash) {
-                    Text(
-                        text = stringResource(R.string.no_flash_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+                Spacer(modifier = Modifier.weight(1f))
+                PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
@@ -159,18 +192,13 @@ private fun PowerOrb(
     val glow by animateFloatAsState(targetValue = if (isOn) 0.45f else 0f, label = "orbGlow")
     val scale by animateFloatAsState(targetValue = if (isOn) 1f else 0.94f, label = "orbScale")
 
-    Box(
-        modifier = modifier.size(280.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Halo (sin desenfoque en básica; el blur llega con Haze en la fase robusta).
+    Box(modifier = modifier.size(280.dp), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
                 .size(280.dp)
                 .clip(CircleShape)
                 .background(primary.copy(alpha = glow))
         )
-        // Orbe pulsador.
         Box(
             modifier = Modifier
                 .size(200.dp)
@@ -178,10 +206,7 @@ private fun PowerOrb(
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        listOf(
-                            primary,
-                            primary.copy(alpha = if (isOn) 0.92f else 0.55f)
-                        )
+                        listOf(primary, primary.copy(alpha = if (isOn) 0.92f else 0.55f))
                     )
                 )
                 .clickable(role = Role.Button, onClick = onToggle),
