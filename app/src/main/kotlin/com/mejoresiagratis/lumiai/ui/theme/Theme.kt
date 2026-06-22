@@ -7,11 +7,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 
 @Composable
 fun LumiAiTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    themeMode: ThemeMode = ThemeMode.LIGHT,
+    accent: AccentColor = AccentColor.AMBER,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -20,13 +22,24 @@ fun LumiAiTheme(
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
-    val colorScheme = when {
+    val base = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val ctx = LocalContext.current
             if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
         }
         dark -> DarkColors
         else -> LightColors
+    }
+    // Ámbar y Multicolor conservan el esquema afinado por defecto; los demás colores
+    // sólidos sustituyen primary/onPrimary (mínimo viable, Fase 1.1).
+    val applyAccent = !dynamicColor &&
+        accent != AccentColor.AMBER &&
+        accent != AccentColor.MULTICOLOR
+    val colorScheme = if (applyAccent) {
+        val p = accent.solidColor()
+        base.copy(primary = p, onPrimary = onColorFor(p))
+    } else {
+        base
     }
     MaterialTheme(
         colorScheme = colorScheme,

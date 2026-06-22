@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.domain.repository.ThemePreferencesRepository
 import kotlinx.coroutines.flow.Flow
@@ -16,14 +17,26 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) : ThemePreferencesRepository {
 
-    private val key = stringPreferencesKey("theme_mode")
+    private val themeKey = stringPreferencesKey("theme_mode")
+    private val accentKey = stringPreferencesKey("accent_color")
 
+    // Default de la app: tema claro.
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
-        runCatching { ThemeMode.valueOf(p[key] ?: ThemeMode.SYSTEM.name) }
-            .getOrDefault(ThemeMode.SYSTEM)
+        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.LIGHT.name) }
+            .getOrDefault(ThemeMode.LIGHT)
     }
 
     override suspend fun setThemeMode(mode: ThemeMode) {
-        dataStore.edit { it[key] = mode.name }
+        dataStore.edit { it[themeKey] = mode.name }
+    }
+
+    // Default de la app: acento ámbar.
+    override val accentColor: Flow<AccentColor> = dataStore.data.map { p ->
+        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.AMBER.name) }
+            .getOrDefault(AccentColor.AMBER)
+    }
+
+    override suspend fun setAccentColor(accent: AccentColor) {
+        dataStore.edit { it[accentKey] = accent.name }
     }
 }

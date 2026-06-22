@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.theme
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.domain.repository.ThemePreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,9 +18,16 @@ class ThemeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> =
-        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
+        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.LIGHT)
+
+    val accentColor: StateFlow<AccentColor> =
+        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.AMBER)
 
     fun setMode(mode: ThemeMode) {
         viewModelScope.launch { repo.setThemeMode(mode) }
+    }
+
+    fun setAccent(accent: AccentColor) {
+        viewModelScope.launch { repo.setAccentColor(accent) }
     }
 }
