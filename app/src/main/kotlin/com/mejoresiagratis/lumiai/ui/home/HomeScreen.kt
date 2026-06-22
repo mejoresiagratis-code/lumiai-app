@@ -2,12 +2,14 @@ package com.mejoresiagratis.lumiai.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,6 +69,22 @@ fun HomeScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.sm)
+            ) {
+                Button(
+                    onClick = viewModel::toggle,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(stringResource(if (state.isOn) R.string.action_off else R.string.action_on))
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -74,7 +92,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = LumiSpacing.lg)
-                .padding(bottom = LumiSpacing.lg),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
         ) {
             ModeGrid(
@@ -97,13 +115,6 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
-            }
-            Spacer(Modifier.weight(1f))
-            Button(
-                onClick = viewModel::toggle,
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
-                Text(stringResource(if (state.isOn) R.string.action_off else R.string.action_on))
             }
         }
     }
