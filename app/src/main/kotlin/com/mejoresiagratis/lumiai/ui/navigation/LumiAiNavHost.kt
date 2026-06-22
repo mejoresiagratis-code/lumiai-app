@@ -6,9 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
-import com.mejoresiagratis.lumiai.ui.Features
 import com.mejoresiagratis.lumiai.ui.auth.AuthScreen
-import com.mejoresiagratis.lumiai.ui.home.HomeScreen
 import com.mejoresiagratis.lumiai.ui.home.beamhub.BeamHubScreen
 import com.mejoresiagratis.lumiai.ui.onboarding.OnboardingScreen
 import com.mejoresiagratis.lumiai.ui.settings.SettingsScreen
@@ -40,17 +38,10 @@ fun LumiAiNavHost(
             )
         }
         composable(Routes.HOME) {
-            if (Features.BEAM_HUB) {
-                BeamHubScreen(
-                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                    onOpenAuth = { navController.navigate(Routes.AUTH) }
-                )
-            } else {
-                HomeScreen(
-                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                    onOpenAuth = { navController.navigate(Routes.AUTH) }
-                )
-            }
+            BeamHubScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenAuth = { navController.navigate(Routes.AUTH) }
+            )
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(
