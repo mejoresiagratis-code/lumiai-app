@@ -72,8 +72,10 @@ fun ScreenLight(
         }
     }
     DisposableEffect(Unit) {
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         onDispose {
             window?.let {
+                it.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 val lp = it.attributes
                 lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                 it.attributes = lp
