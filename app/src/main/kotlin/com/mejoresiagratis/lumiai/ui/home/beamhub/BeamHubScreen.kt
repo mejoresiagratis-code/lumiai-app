@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -213,16 +214,16 @@ private fun PowerOrb(
     )
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
 
-    Box(modifier = modifier.size(300.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.requiredSize(240.dp), contentAlignment = Alignment.Center) {
         // Halo
         Box(
             modifier = Modifier
-                .size(300.dp)
+                .size(240.dp)
                 .clip(CircleShape)
                 .background(primary.copy(alpha = glow))
         )
         // Anillo/haz: pista tenue + arco giratorio cuando está encendido.
-        Canvas(modifier = Modifier.size(252.dp)) {
+        Canvas(modifier = Modifier.size(216.dp)) {
             val stroke = 6.dp.toPx()
             val arcTopLeft = Offset(stroke / 2f, stroke / 2f)
             val arcSize = Size(size.width - stroke, size.height - stroke)
@@ -252,7 +253,7 @@ private fun PowerOrb(
         // Orbe pulsador con glifo de energía dibujado.
         Box(
             modifier = Modifier
-                .size(196.dp)
+                .size(168.dp)
                 .scale(scale)
                 .clip(CircleShape)
                 .background(
@@ -263,7 +264,7 @@ private fun PowerOrb(
                 .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(64.dp)) {
+            Canvas(modifier = Modifier.size(52.dp)) {
                 val sw = 7.dp.toPx()
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val r = (size.minDimension / 2f) - sw
