@@ -10,17 +10,21 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,15 +55,21 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
 import com.mejoresiagratis.lumiai.domain.entitlement.tier
+import com.mejoresiagratis.lumiai.domain.flash.isAvailable
+import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.ui.home.FlashViewModel
-import com.mejoresiagratis.lumiai.ui.home.components.ModeGrid
+import com.mejoresiagratis.lumiai.ui.home.components.MODE_CATALOG
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
+import com.mejoresiagratis.lumiai.ui.home.components.ModeUi
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import dev.chrisbanes.haze.HazeDefaults
@@ -100,7 +110,6 @@ fun BeamHubScreen(
     val onSurface = MaterialTheme.colorScheme.onSurface
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Fuente del blur: fondo por modo a pantalla completa (lo que la hoja difumina).
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -132,11 +141,10 @@ fun BeamHubScreen(
                 )
             },
             bottomBar = {
-                // Hoja de cristal: difumina el fondo por modo que queda detrás.
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 380.dp)
+                        .heightIn(max = 360.dp)
                         .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .hazeEffect(
                             state = hazeState,
@@ -177,7 +185,7 @@ fun BeamHubScreen(
                     .padding(horizontal = LumiSpacing.lg),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ModeGrid(
+                ModeRail(
                     selected = state.mode,
                     onSelect = viewModel::selectMode,
                     onLocked = { onOpenAuth() },
@@ -189,6 +197,94 @@ fun BeamHubScreen(
                 PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
                 Spacer(modifier = Modifier.weight(1f))
             }
+        }
+    }
+}
+
+@Composable
+private fun ModeRail(
+    selected: FlashMode,
+    onSelect: (FlashMode) -> Unit,
+    onLocked: (FlashMode) -> Unit,
+    caps: DeviceCapabilities,
+    entitlements: Entitlements,
+    modifier: Modifier = Modifier
+) {
+    val available = MODE_CATALOG.filter { it.mode.isAvailable(caps) }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+    ) {
+        available.forEach { item ->
+            val locked = !entitlements.unlocks(item.mode.tier)
+            ModePill(
+                item = item,
+                selected = item.mode == selected,
+                locked = locked,
+                onClick = { if (locked) onLocked(item.mode) else onSelect(item.mode) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModePill(
+    item: ModeUi,
+    selected: Boolean,
+    locked: Boolean,
+    onClick: () -> Unit
+) {
+    val container = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    }
+    val content = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Box(
+        modifier = Modifier
+            .width(88.dp)
+            .height(88.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(container)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(LumiSpacing.sm)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(item.iconRes),
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(26.dp)
+            )
+            Text(
+                text = stringResource(item.labelRes),
+                style = MaterialTheme.typography.labelSmall,
+                color = content,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = LumiSpacing.xs)
+            )
+        }
+        if (locked) {
+            Icon(
+                painter = painterResource(R.drawable.ic_lock),
+                contentDescription = stringResource(R.string.mode_locked_cd),
+                tint = content,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(14.dp)
+            )
         }
     }
 }
@@ -214,16 +310,14 @@ private fun PowerOrb(
     )
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
 
-    Box(modifier = modifier.requiredSize(240.dp), contentAlignment = Alignment.Center) {
-        // Halo
+    Box(modifier = modifier.requiredSize(252.dp), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
-                .size(240.dp)
+                .size(252.dp)
                 .clip(CircleShape)
                 .background(primary.copy(alpha = glow))
         )
-        // Anillo/haz: pista tenue + arco giratorio cuando está encendido.
-        Canvas(modifier = Modifier.size(216.dp)) {
+        Canvas(modifier = Modifier.size(224.dp)) {
             val stroke = 6.dp.toPx()
             val arcTopLeft = Offset(stroke / 2f, stroke / 2f)
             val arcSize = Size(size.width - stroke, size.height - stroke)
@@ -250,10 +344,9 @@ private fun PowerOrb(
                 }
             }
         }
-        // Orbe pulsador con glifo de energía dibujado.
         Box(
             modifier = Modifier
-                .size(168.dp)
+                .size(176.dp)
                 .scale(scale)
                 .clip(CircleShape)
                 .background(
@@ -264,11 +357,10 @@ private fun PowerOrb(
                 .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(52.dp)) {
+            Canvas(modifier = Modifier.size(56.dp)) {
                 val sw = 7.dp.toPx()
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val r = (size.minDimension / 2f) - sw
-                // Anillo del símbolo de encendido (hueco arriba).
                 drawArc(
                     color = onPrimary,
                     startAngle = -60f,
@@ -278,7 +370,6 @@ private fun PowerOrb(
                     size = Size(r * 2f, r * 2f),
                     style = Stroke(width = sw, cap = StrokeCap.Round)
                 )
-                // Línea vertical superior.
                 drawLine(
                     color = onPrimary,
                     start = Offset(center.x, center.y - r - sw * 0.4f),
