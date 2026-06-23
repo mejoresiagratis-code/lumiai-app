@@ -223,6 +223,31 @@ fun BeamHubScreen(
                     )
                 }
                 PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
+                    modifier = Modifier.padding(top = LumiSpacing.md)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (state.isOn) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                }
+                            )
+                    )
+                    Text(
+                        text = stringResource(
+                            if (state.isOn) R.string.tap_to_turn_off else R.string.tap_to_turn_on
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
             }
         }

@@ -62,4 +62,6 @@
     <string name="screen_brightness">Brillo: %1$d%%</string>
     <string name="screen_tap_off">Toca fuera para apagar</string>
     <string name="screen_settings_hint">Enciende para ajustar color y brillo a pantalla completa.</string>
+    <string name="tap_to_turn_on">Toca para encender</string>
+    <string name="tap_to_turn_off">Toca para apagar</string>
 </resources>
