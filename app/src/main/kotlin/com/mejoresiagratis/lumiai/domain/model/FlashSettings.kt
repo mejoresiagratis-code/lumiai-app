@@ -8,7 +8,8 @@ data class FlashSettings(
     val morseText: String = "SOS",
     val screenBrightness: Float = 1f,
     val beaconIntervalMs: Long = 1500L,
-    val beaconFlashMs: Long = 120L
+    val beaconFlashMs: Long = 120L,
+    val beaconAutoOffMin: Int = 0
 ) {
     fun coerced() = copy(
         intensityLevel = intensityLevel.coerceIn(MIN_INTENSITY, MAX_INTENSITY),
@@ -19,7 +20,8 @@ data class FlashSettings(
         beaconIntervalMs = beaconIntervalMs.coerceIn(MIN_BEACON_INTERVAL, MAX_BEACON_INTERVAL),
         beaconFlashMs = beaconFlashMs
             .coerceIn(MIN_BEACON_FLASH, MAX_BEACON_FLASH)
-            .coerceAtMost(beaconIntervalMs.coerceIn(MIN_BEACON_INTERVAL, MAX_BEACON_INTERVAL) - 100L)
+            .coerceAtMost(beaconIntervalMs.coerceIn(MIN_BEACON_INTERVAL, MAX_BEACON_INTERVAL) - 100L),
+        beaconAutoOffMin = beaconAutoOffMin.coerceAtLeast(0)
     )
 
     companion object {

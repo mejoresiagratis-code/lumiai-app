@@ -33,6 +33,7 @@ class DataStoreFlashStateRepository @Inject constructor(
         val BRIGHTNESS = floatPreferencesKey(FlashSettingsMapper.KEY_SCREEN_BRIGHTNESS)
         val BEACON_INTERVAL = longPreferencesKey(FlashSettingsMapper.KEY_BEACON_INTERVAL)
         val BEACON_FLASH = longPreferencesKey(FlashSettingsMapper.KEY_BEACON_FLASH)
+        val BEACON_AUTOOFF = intPreferencesKey(FlashSettingsMapper.KEY_BEACON_AUTOOFF)
     }
 
     private val _isOn = MutableStateFlow(false)
@@ -66,6 +67,7 @@ class DataStoreFlashStateRepository @Inject constructor(
             p[Keys.BRIGHTNESS] = next.screenBrightness
             p[Keys.BEACON_INTERVAL] = next.beaconIntervalMs
             p[Keys.BEACON_FLASH] = next.beaconFlashMs
+            p[Keys.BEACON_AUTOOFF] = next.beaconAutoOffMin
         }
     }
 
@@ -78,5 +80,6 @@ class DataStoreFlashStateRepository @Inject constructor(
         p[Keys.BRIGHTNESS]?.let { put(FlashSettingsMapper.KEY_SCREEN_BRIGHTNESS, it) }
         p[Keys.BEACON_INTERVAL]?.let { put(FlashSettingsMapper.KEY_BEACON_INTERVAL, it) }
         p[Keys.BEACON_FLASH]?.let { put(FlashSettingsMapper.KEY_BEACON_FLASH, it) }
+        p[Keys.BEACON_AUTOOFF]?.let { put(FlashSettingsMapper.KEY_BEACON_AUTOOFF, it) }
     }
 }

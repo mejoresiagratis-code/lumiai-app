@@ -10,6 +10,8 @@ import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -39,10 +41,34 @@ class FlashViewModel @Inject constructor(
             initialValue = FlashUiState(capabilities = capabilities)
         )
 
+    private var autoOffJob: Job? = null
+
     fun toggle() {
         val turningOn = !repo.isOn.value
         repo.setOn(turningOn)
-        if (turningOn) engine.start() else engine.stop()
+        if (turningOn) {
+            engine.start()
+            scheduleBeaconAutoOff()
+        } else {
+            engine.stop()
+            autoOffJob?.cancel()
+        }
+    }
+
+    /** En Baliza, apaga la luz automáticamente tras los minutos elegidos (0 = desactivado). */
+    private fun scheduleBeaconAutoOff() {
+        autoOffJob?.cancel()
+        val state = uiState.value
+        val minutes = state.settings.beaconAutoOffMin
+        if (state.mode == FlashMode.BEACON && minutes > 0) {
+            autoOffJob = viewModelScope.launch {
+                delay(minutes * 60_000L)
+                if (repo.isOn.value) {
+                    repo.setOn(false)
+                    engine.stop()
+                }
+            }
+        }
     }
 
     fun selectMode(mode: FlashMode) {
