@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.ui.home.beamhub
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -40,7 +41,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +78,7 @@ import com.mejoresiagratis.lumiai.ui.home.components.MODE_CATALOG
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
 import com.mejoresiagratis.lumiai.ui.home.components.ModeUi
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
+import com.mejoresiagratis.lumiai.ui.home.components.modeHasAdvanced
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
@@ -187,11 +191,35 @@ fun BeamHubScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                    var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.control_header),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (modeHasAdvanced(state.mode, state.capabilities)) {
+                            Text(
+                                text = stringResource(
+                                    if (advancedExpanded) R.string.action_show_less else R.string.action_show_more
+                                ) + if (advancedExpanded) " ▴" else " ▾",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable { advancedExpanded = !advancedExpanded }
+                            )
+                        }
+                    }
                     ModeSettingsPanel(
                         mode = state.mode,
                         settings = state.settings,
                         caps = state.capabilities,
-                        onChange = viewModel::updateSettings
+                        expanded = advancedExpanded,
+                        onChange = viewModel::updateSettings,
+                        modifier = Modifier.animateContentSize()
                     )
                 }
             }

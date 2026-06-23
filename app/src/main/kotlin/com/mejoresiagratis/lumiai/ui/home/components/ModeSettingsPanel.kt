@@ -17,15 +17,29 @@ import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 
+/**
+ * ¿Tiene este modo controles avanzados (más allá de la intensidad básica)?
+ * Sirve para decidir si mostrar el toggle "Ver más" en la hoja.
+ */
+fun modeHasAdvanced(mode: FlashMode, caps: DeviceCapabilities): Boolean {
+    val controls = mode.controls().filter { it.isAvailable(caps) }
+    return mode == FlashMode.TEXT_MORSE ||
+        ModeControl.STROBE_HZ in controls ||
+        ModeControl.MORSE_SPEED in controls
+}
+
 @Composable
 fun ModeSettingsPanel(
     mode: FlashMode,
     settings: FlashSettings,
     caps: DeviceCapabilities,
+    expanded: Boolean,
     onChange: ((FlashSettings) -> FlashSettings) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val controls = mode.controls().filter { it.isAvailable(caps) }
     Column(modifier.fillMaxWidth()) {
+        // --- BÁSICO (siempre visible) ---
         if (mode == FlashMode.SCREEN) {
             Text(
                 text = stringResource(R.string.screen_settings_hint),
@@ -33,41 +47,41 @@ fun ModeSettingsPanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        if (mode == FlashMode.TEXT_MORSE) {
-            OutlinedTextField(
-                value = settings.morseText,
-                onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
-                label = { Text(stringResource(R.string.settings_morse_text)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+        if (ModeControl.INTENSITY in controls) {
+            Text(stringResource(R.string.settings_intensity, settings.intensityLevel))
+            Slider(
+                value = settings.intensityLevel.toFloat(),
+                onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
+                valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
             )
         }
-        mode.controls().filter { it.isAvailable(caps) }.forEach { control ->
-            when (control) {
-                ModeControl.INTENSITY -> {
-                    Text(stringResource(R.string.settings_intensity, settings.intensityLevel))
-                    Slider(
-                        value = settings.intensityLevel.toFloat(),
-                        onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
-                        valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
-                    )
-                }
-                ModeControl.STROBE_HZ -> {
-                    Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
-                    Slider(
-                        value = settings.strobeHz,
-                        onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
-                        valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
-                    )
-                }
-                ModeControl.MORSE_SPEED -> {
-                    Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
-                    Slider(
-                        value = settings.morseUnitMs.toFloat(),
-                        onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
-                        valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
-                    )
-                }
+
+        // --- AVANZADO (plegable) ---
+        if (expanded) {
+            if (mode == FlashMode.TEXT_MORSE) {
+                OutlinedTextField(
+                    value = settings.morseText,
+                    onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
+                    label = { Text(stringResource(R.string.settings_morse_text)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (ModeControl.STROBE_HZ in controls) {
+                Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
+                Slider(
+                    value = settings.strobeHz,
+                    onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
+                    valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
+                )
+            }
+            if (ModeControl.MORSE_SPEED in controls) {
+                Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
+                Slider(
+                    value = settings.morseUnitMs.toFloat(),
+                    onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
+                    valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
+                )
             }
         }
     }

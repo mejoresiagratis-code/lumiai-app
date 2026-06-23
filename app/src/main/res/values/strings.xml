@@ -65,4 +65,7 @@
     <string name="screen_settings_hint">Enciende para ajustar color y brillo a pantalla completa.</string>
     <string name="tap_to_turn_on">Toca para encender</string>
     <string name="tap_to_turn_off">Toca para apagar</string>
+    <string name="control_header">Control</string>
+    <string name="action_show_more">Ver más</string>
+    <string name="action_show_less">Ver menos</string>
 </resources>
