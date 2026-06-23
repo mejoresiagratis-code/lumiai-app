@@ -62,6 +62,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
@@ -209,6 +210,16 @@ fun BeamHubScreen(
                     modifier = Modifier.padding(top = LumiSpacing.md)
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                MODE_CATALOG.firstOrNull { it.mode == state.mode }?.let { ui ->
+                    Text(
+                        text = stringResource(ui.labelRes).uppercase(),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 4.sp,
+                        modifier = Modifier.padding(bottom = LumiSpacing.md)
+                    )
+                }
                 PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
                 Spacer(modifier = Modifier.weight(1f))
             }
