@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -81,6 +80,9 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -344,30 +346,24 @@ private fun PowerOrb(
                 .background(primary.copy(alpha = glow))
         )
         Canvas(modifier = Modifier.size(224.dp)) {
-            val stroke = 6.dp.toPx()
-            val arcTopLeft = Offset(stroke / 2f, stroke / 2f)
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            drawArc(
-                color = primary.copy(alpha = 0.22f),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = arcTopLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-            if (isOn) {
-                rotate(degrees = sweep) {
-                    drawArc(
-                        color = primary,
-                        startAngle = -90f,
-                        sweepAngle = 100f,
-                        useCenter = false,
-                        topLeft = arcTopLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke, cap = StrokeCap.Round)
-                    )
-                }
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val rOuter = size.minDimension / 2f - 2.dp.toPx()
+            val rInner = rOuter - 12.dp.toPx()
+            val tickWidth = 2.5.dp.toPx()
+            val count = 60
+            for (i in 0 until count) {
+                val angle = i * 360f / count
+                val a = (angle - 90f) * (PI.toFloat() / 180f)
+                val cosA = cos(a)
+                val sinA = sin(a)
+                val lit = isOn && (((angle - sweep) % 360f + 360f) % 360f) < 60f
+                drawLine(
+                    color = if (lit) primary else primary.copy(alpha = if (isOn) 0.32f else 0.18f),
+                    start = Offset(center.x + cosA * rInner, center.y + sinA * rInner),
+                    end = Offset(center.x + cosA * rOuter, center.y + sinA * rOuter),
+                    strokeWidth = tickWidth,
+                    cap = StrokeCap.Round
+                )
             }
         }
         Box(
