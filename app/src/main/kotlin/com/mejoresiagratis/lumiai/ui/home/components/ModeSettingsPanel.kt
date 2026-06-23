@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -21,6 +22,7 @@ import com.mejoresiagratis.lumiai.domain.flash.Morse
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
+import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 
 /**
  * ¿Tiene este modo controles avanzados (más allá de la intensidad básica)?
@@ -74,6 +76,38 @@ fun ModeSettingsPanel(
                 value = settings.intensityLevel.toFloat(),
                 onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
                 valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
+            )
+        }
+        if (ModeControl.BEACON_INTERVAL in controls) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+            ) {
+                OutlinedButton(
+                    onClick = { onChange { it.copy(beaconIntervalMs = 2000L, beaconFlashMs = 150L) } },
+                    modifier = Modifier.weight(1f)
+                ) { Text(stringResource(R.string.beacon_preset_locator)) }
+                OutlinedButton(
+                    onClick = { onChange { it.copy(beaconIntervalMs = 600L, beaconFlashMs = 200L) } },
+                    modifier = Modifier.weight(1f)
+                ) { Text(stringResource(R.string.beacon_preset_highvis)) }
+            }
+            Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))
+            Slider(
+                value = settings.beaconIntervalMs.toFloat(),
+                onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
+                valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat()
+            )
+            Text(stringResource(R.string.settings_beacon_flash, settings.beaconFlashMs.toInt()))
+            Slider(
+                value = settings.beaconFlashMs.toFloat(),
+                onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
+                valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat()
+            )
+            Text(
+                text = stringResource(R.string.beacon_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 

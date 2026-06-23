@@ -6,6 +6,7 @@
     <string name="mode_screen">Pantalla</string>
     <string name="mode_sos">SOS</string>
     <string name="mode_strobe">Estrobo</string>
+    <string name="mode_beacon">Baliza</string>
     <string name="action_on">Encender</string>
     <string name="action_off">Apagar</string>
     <string name="no_flash_hint">Este dispositivo no tiene flash: usa el modo Pantalla.</string>
@@ -59,6 +60,11 @@
     <string name="mode_text_morse_short">Morse</string>
     <string name="settings_morse_text">Mensaje</string>
     <string name="morse_unsupported_chars">Se omitirán (sin Morse): %1$s</string>
+    <string name="beacon_preset_locator">Localización</string>
+    <string name="beacon_preset_highvis">Alta visibilidad</string>
+    <string name="settings_beacon_interval">Intervalo: %1$d ms</string>
+    <string name="settings_beacon_flash">Destello: %1$d ms</string>
+    <string name="beacon_hint">Ayuda de señalización, no es un dispositivo de seguridad certificado.</string>
     <string name="mode_locked_cd">Modo bloqueado: requiere cuenta</string>
     <!-- Modo Pantalla v2 -->
     <string name="screen_panel_title">Luz de color</string>
