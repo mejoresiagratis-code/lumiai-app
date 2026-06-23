@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -292,20 +294,29 @@ private fun ModeRail(
     modifier: Modifier = Modifier
 ) {
     val available = MODE_CATALOG.filter { it.mode.isAvailable(caps) }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-    ) {
-        available.forEach { item ->
-            val locked = !entitlements.unlocks(item.mode.tier)
-            ModePill(
-                item = item,
-                selected = item.mode == selected,
-                locked = locked,
-                onClick = { if (locked) onLocked(item.mode) else onSelect(item.mode) }
-            )
+    Column(modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.section_mode).uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(start = LumiSpacing.xs, bottom = LumiSpacing.sm)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+        ) {
+            available.forEach { item ->
+                val locked = !entitlements.unlocks(item.mode.tier)
+                ModePill(
+                    item = item,
+                    selected = item.mode == selected,
+                    locked = locked,
+                    onClick = { if (locked) onLocked(item.mode) else onSelect(item.mode) }
+                )
+            }
         }
     }
 }
@@ -317,22 +328,30 @@ private fun ModePill(
     locked: Boolean,
     onClick: () -> Unit
 ) {
+    val shape = RoundedCornerShape(18.dp)
     val container = if (selected) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+        MaterialTheme.colorScheme.surfaceVariant
     }
     val content = if (selected) {
         MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+    }
     Box(
         modifier = Modifier
             .width(88.dp)
             .height(88.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .shadow(elevation = if (selected) 10.dp else 3.dp, shape = shape, clip = false)
+            .clip(shape)
             .background(container)
+            .border(width = if (selected) 2.dp else 1.dp, color = borderColor, shape = shape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(LumiSpacing.sm)
     ) {

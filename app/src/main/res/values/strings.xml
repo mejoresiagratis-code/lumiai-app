@@ -68,4 +68,5 @@
     <string name="control_header">Control</string>
     <string name="action_show_more">Ver más</string>
     <string name="action_show_less">Ver menos</string>
+    <string name="section_mode">Modo</string>
 </resources>
