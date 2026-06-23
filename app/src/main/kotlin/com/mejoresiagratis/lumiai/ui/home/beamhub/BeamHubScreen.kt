@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -186,13 +187,6 @@ fun BeamHubScreen(
                             .clip(CircleShape)
                             .background(onSurface.copy(alpha = 0.3f))
                     )
-                    if (!state.capabilities.hasFlash) {
-                        Text(
-                            text = stringResource(R.string.no_flash_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
                     var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -242,41 +236,65 @@ fun BeamHubScreen(
                     modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                MODE_CATALOG.firstOrNull { it.mode == state.mode }?.let { ui ->
+                if (state.mode.isAvailable(state.capabilities)) {
+                    MODE_CATALOG.firstOrNull { it.mode == state.mode }?.let { ui ->
+                        Text(
+                            text = stringResource(ui.labelRes).uppercase(),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 4.sp,
+                            modifier = Modifier.padding(bottom = LumiSpacing.md)
+                        )
+                    }
+                    PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
+                        modifier = Modifier.padding(top = LumiSpacing.md)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (state.isOn) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    }
+                                )
+                        )
+                        Text(
+                            text = stringResource(
+                                if (state.isOn) R.string.tap_to_turn_off else R.string.tap_to_turn_on
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    // Dispositivo sin flash y modo que lo necesita: ocultamos el orbe de
+                    // LED (sería inútil) y guiamos de forma honesta al Modo Pantalla.
                     Text(
-                        text = stringResource(ui.labelRes).uppercase(),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge,
+                        text = stringResource(R.string.no_flash_title),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 4.sp,
-                        modifier = Modifier.padding(bottom = LumiSpacing.md)
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
                     )
-                }
-                PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
-                    modifier = Modifier.padding(top = LumiSpacing.md)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (state.isOn) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                }
-                            )
-                    )
+                    Spacer(modifier = Modifier.height(LumiSpacing.sm))
                     Text(
-                        text = stringResource(
-                            if (state.isOn) R.string.tap_to_turn_off else R.string.tap_to_turn_on
-                        ),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.no_flash_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = LumiSpacing.lg)
                     )
+                    Spacer(modifier = Modifier.height(LumiSpacing.lg))
+                    Button(onClick = { viewModel.selectMode(FlashMode.SCREEN) }) {
+                        Text(stringResource(R.string.action_use_screen))
+                    }
                 }
                 Spacer(modifier = Modifier.weight(1f))
             }
