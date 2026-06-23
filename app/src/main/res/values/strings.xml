@@ -65,6 +65,9 @@
     <string name="settings_beacon_interval">Intervalo: %1$d ms</string>
     <string name="settings_beacon_flash">Destello: %1$d ms</string>
     <string name="beacon_hint">Ayuda de señalización, no es un dispositivo de seguridad certificado.</string>
+    <string name="settings_beacon_autooff">Auto-apagado</string>
+    <string name="autooff_off">Off</string>
+    <string name="autooff_minutes">%1$d min</string>
     <string name="mode_locked_cd">Modo bloqueado: requiere cuenta</string>
     <!-- Modo Pantalla v2 -->
     <string name="screen_panel_title">Luz de color</string>

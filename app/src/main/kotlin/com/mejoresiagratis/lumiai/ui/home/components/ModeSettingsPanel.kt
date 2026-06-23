@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -104,6 +105,31 @@ fun ModeSettingsPanel(
                 onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
                 valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat()
             )
+            Text(
+                text = stringResource(R.string.settings_beacon_autooff),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+            ) {
+                listOf(0, 15, 30, 60).forEach { m ->
+                    FilterChip(
+                        selected = settings.beaconAutoOffMin == m,
+                        onClick = { onChange { it.copy(beaconAutoOffMin = m) } },
+                        label = {
+                            Text(
+                                if (m == 0) {
+                                    stringResource(R.string.autooff_off)
+                                } else {
+                                    stringResource(R.string.autooff_minutes, m)
+                                }
+                            )
+                        }
+                    )
+                }
+            }
             Text(
                 text = stringResource(R.string.beacon_hint),
                 style = MaterialTheme.typography.bodySmall,
