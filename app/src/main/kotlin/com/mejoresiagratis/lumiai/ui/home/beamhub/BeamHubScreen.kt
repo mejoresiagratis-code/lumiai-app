@@ -320,7 +320,7 @@ private fun ModePill(
                 modifier = Modifier.size(26.dp)
             )
             Text(
-                text = stringResource(item.labelRes),
+                text = stringResource(item.shortLabelRes),
                 style = MaterialTheme.typography.labelSmall,
                 color = content,
                 textAlign = TextAlign.Center,

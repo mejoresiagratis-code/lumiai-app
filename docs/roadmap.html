@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiAI · Roadmap</title>
+<style>
+  :root{
+    --bg:#0D1015; --bg2:#10141B; --panel:#161B22; --panel2:#1A2029;
+    --amber:#FFB300; --amber-soft:#FFCA63; --amber-dim:#3A2E12;
+    --text:#E7EAF0; --muted:#98A2B3; --white:#F2F4F8;
+    --line:#252C37;
+    --done:#34C759; --now:#FFB300; --next:#4D7BFF; --future:#9B6CFF;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #1a1407 0%, var(--bg) 55%);
+    color:var(--text);line-height:1.55;padding:48px 20px 80px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  /* Header */
+  header{text-align:center;margin-bottom:14px}
+  .wordmark{font-size:46px;font-weight:800;letter-spacing:-1px}
+  .wordmark .lumi{color:var(--white)} .wordmark .ai{color:var(--amber)}
+  .tagline{color:var(--muted);font-size:15px;margin-top:4px;letter-spacing:.3px}
+  .stamp{display:inline-block;margin-top:14px;font-size:12px;color:var(--amber-soft);
+    border:1px solid var(--amber-dim);background:#15110a;padding:5px 12px;border-radius:999px}
+  /* Honesty banner */
+  .honesty{margin:26px auto 0;max-width:760px;background:linear-gradient(180deg,#16110a,#12141a);
+    border:1px solid var(--amber-dim);border-radius:var(--radius);padding:18px 22px}
+  .honesty h3{font-size:14px;color:var(--amber);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+  .honesty p{color:#D7DCE5;font-size:14.5px}
+  /* Progress */
+  .progress-card{margin:30px 0 8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px 22px}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .progress-top b{font-size:15px} .progress-top span{color:var(--amber);font-weight:700;font-size:15px}
+  .bar{height:12px;background:#0c0f14;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+  .bar>i{display:block;height:100%;width:62%;border-radius:999px;
+    background:linear-gradient(90deg,var(--amber),var(--amber-soft))}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  /* Section title */
+  h2.sec{margin:42px 0 16px;font-size:20px;letter-spacing:.2px}
+  h2.sec small{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+  /* Phase grid */
+  .phases{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .phase{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;position:relative;overflow:hidden}
+  .phase::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+  .phase h4{font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .phase p{color:var(--muted);font-size:13.3px}
+  .pill{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;color:#0b0e12;white-space:nowrap}
+  .phase ul{margin:9px 0 0 0;padding-left:0;list-style:none}
+  .phase li{font-size:12.7px;color:#C4CBD6;padding:2px 0 2px 18px;position:relative}
+  .phase li::before{content:"✓";position:absolute;left:0;color:var(--done);font-weight:700}
+  .phase li.todo::before{content:"○";color:var(--muted);font-weight:400}
+  /* Target showcase */
+  .target{display:grid;grid-template-columns:300px 1fr;gap:30px;align-items:start;
+    background:linear-gradient(180deg,#12141a,#0f1217);border:1px solid var(--line);
+    border-radius:24px;padding:28px;margin-top:6px}
+  @media(max-width:720px){.target{grid-template-columns:1fr}}
+  /* Phone mock */
+  .phone{width:280px;margin:0 auto;background:#0a0c10;border:9px solid #05070a;border-radius:38px;
+    padding:14px 14px 0;box-shadow:0 26px 60px rgba(0,0,0,.55);position:relative}
+  .ph-status{display:flex;justify-content:space-between;font-size:10px;color:#cfd4dd;padding:2px 6px 10px}
+  .ph-word{text-align:center;font-weight:800;font-size:20px;letter-spacing:-.5px}
+  .ph-word .l{color:#fff}.ph-word .a{color:var(--amber)}
+  .ph-modes{display:flex;gap:7px;justify-content:center;margin:14px 0 6px}
+  .ph-chip{width:54px;height:54px;border-radius:14px;background:#161b22;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:4px;font-size:8.5px;color:#aeb6c2;border:1px solid #222}
+  .ph-chip.sel{background:#241a05;border-color:var(--amber);color:var(--amber-soft)}
+  .ph-chip .ic{width:16px;height:16px;border-radius:4px;background:currentColor;opacity:.85}
+  .ph-label{text-align:center;color:var(--amber);font-size:11px;letter-spacing:3px;font-weight:700;margin:14px 0 2px}
+  /* dial + orb */
+  .dial{width:188px;height:188px;margin:6px auto 0;border-radius:50%;position:relative;
+    background:repeating-conic-gradient(from 0deg, rgba(255,179,0,.55) 0 1.4deg, transparent 1.4deg 9deg);
+    -webkit-mask:radial-gradient(circle, transparent 78px, #000 80px);
+            mask:radial-gradient(circle, transparent 78px, #000 80px);}
+  .orb{position:absolute;inset:24px;border-radius:50%;
+    background:radial-gradient(circle at 50% 42%, #ffd479, var(--amber) 70%);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(255,179,0,.45)}
+  .orb svg{width:46px;height:46px}
+  .orb-wrap{position:relative;width:188px;height:188px;margin:6px auto 0}
+  .ph-hint{text-align:center;color:#8c93a0;font-size:9.5px;margin-top:8px;padding-bottom:6px}
+  /* sheet */
+  .ph-sheet{background:#0f141b;border-top:1px solid #1d2530;border-radius:18px 18px 0 0;
+    margin:10px -14px 0;padding:12px 16px 16px}
+  .sheet-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:10px}
+  .sheet-head b{color:#fff;font-size:12px} .sheet-head span{color:var(--amber-soft);font-size:9.5px}
+  .ph-row{font-size:10px;color:#aeb6c2;margin:9px 0 4px;display:flex;justify-content:space-between}
+  .ph-row b{color:var(--amber)}
+  .ph-track{height:8px;border-radius:999px;background:#1c2430;position:relative}
+  .ph-track>i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:999px;
+    background:linear-gradient(90deg,var(--amber),var(--amber-soft))}
+  .ph-settings{display:flex;align-items:center;justify-content:space-between;margin-top:12px;
+    background:#141a22;border:1px solid #222b36;border-radius:12px;padding:9px 12px;font-size:10.5px;color:#cdd4de}
+  /* checklist */
+  .checklist h3{font-size:15px;margin-bottom:4px}
+  .checklist .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .citem{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .citem:last-child{border-bottom:none}
+  .cnum{flex:none;width:24px;height:24px;border-radius:7px;background:var(--amber-dim);color:var(--amber-soft);
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .citem b{font-size:13.5px;color:var(--white)} .citem p{font-size:12.7px;color:var(--muted);margin-top:1px}
+  footer{text-align:center;color:#5f6878;font-size:12px;margin-top:46px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="wordmark"><span class="lumi">Lumi</span><span class="ai">AI</span></div>
+    <div class="tagline">La linterna honesta · sin IA falsa · permisos mínimos</div>
+    <div class="stamp">Roadmap actualizado · 23 jun 2026 · HEAD f2100dc</div>
+  </header>
+
+  <div class="honesty">
+    <h3>Principio rector</h3>
+    <p>El LED es monocromo: el color y el brillo solo son reales en el <b>modo Pantalla</b>. Nada de "IA" decorativa ni de simular intensidad con trucos. Cada control se muestra solo si el hardware lo soporta (<code>DeviceCapabilities</code>). La honestidad es la marca.</p>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-top"><b>Progreso global</b><span>~62% · cimientos y look base listos</span></div>
+    <div class="bar"><i></i></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--done)"></i>Hecho</span>
+      <span><i class="dot" style="background:var(--now)"></i>En curso</span>
+      <span><i class="dot" style="background:var(--next)"></i>Siguiente</span>
+      <span><i class="dot" style="background:var(--future)"></i>Futuro</span>
+    </div>
+  </div>
+
+  <!-- ===== HECHO ===== -->
+  <h2 class="sec">Cimientos completados <small>app funcional en dispositivo, build verde</small></h2>
+  <div class="phases">
+    <div class="phase" style="--c:var(--done)">
+      <h4>Motor de linterna <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <p>Camera2 torch, 5 modos (Continuo, Pantalla, SOS, Estrobo, Morse). Cambios en vivo vía Flow sin reiniciar el modo.</p>
+    </div>
+    <div class="phase" style="--c:var(--done)">
+      <h4>Onboarding y permisos <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <p>Flujo de permisos mínimo y honesto, sin pedir nada que no se use.</p>
+    </div>
+    <div class="phase" style="--c:var(--done)">
+      <h4>Auth y entitlements <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <p>Firebase anónima defensiva + Google Sign-In (SHA-1 correcto). Morse bloqueado para invitados, se desbloquea con cuenta.</p>
+    </div>
+    <div class="phase" style="--c:var(--done)">
+      <h4>Sistema de diseño <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <p>Tema claro/oscuro, escala de espaciado, sistema de acento (7 colores + Multicolor por modo).</p>
+    </div>
+    <div class="phase" style="--c:var(--done)">
+      <h4>Morse de texto <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <p>Texto→Morse real con velocidad ajustable en vivo. Corregido el antiguo "custom" engañoso.</p>
+    </div>
+    <div class="phase" style="--c:var(--done)">
+      <h4>Migración Beam Hub <span class="pill" style="background:var(--done)">Hecho</span></h4>
+      <ul>
+        <li>Acento armónico (MaterialKolor) + Multicolor en vivo</li>
+        <li>Orbe central + hoja de cristal (Haze) + anillo animado</li>
+        <li>SDK 35 + AGP 8.7.3 (requisito Google Play)</li>
+        <li>Orbe circular garantizado + rail de modos compacto</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== OBJETIVO VISUAL ===== -->
+  <h2 class="sec">Fase identidad visual <small>→ dejar la pantalla como el mockup objetivo (imagen 5)</small></h2>
+  <div class="target">
+    <!-- Phone mock of the TARGET -->
+    <div>
+      <div class="phone">
+        <div class="ph-status"><span>20:47</span><span>4G ▪ 100% 🔋</span></div>
+        <div class="ph-word"><span class="l">Lumi</span><span class="a">AI</span></div>
+        <div class="ph-modes">
+          <div class="ph-chip sel"><div class="ic"></div>Continuo</div>
+          <div class="ph-chip"><div class="ic"></div>Pantalla</div>
+          <div class="ph-chip"><div class="ic"></div>SOS</div>
+          <div class="ph-chip"><div class="ic"></div>Estrobo</div>
+        </div>
+        <div class="ph-label">CONTINUO</div>
+        <div class="orb-wrap">
+          <div class="dial"></div>
+          <div class="orb">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2a2206" stroke-width="2.4" stroke-linecap="round">
+              <path d="M12 3 V11"/><path d="M6.5 6.5 A7.5 7.5 0 1 0 17.5 6.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ph-hint">Toca para apagar</div>
+        <div class="ph-sheet">
+          <div class="sheet-head"><b>Control</b><span>Ver más ▾</span></div>
+          <div class="ph-row"><span>Intensidad</span><b>100%</b></div>
+          <div class="ph-track"><i></i></div>
+          <div class="ph-settings"><span>⚙ Ajustes y cuenta</span><span>›</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Checklist -->
+    <div class="checklist">
+      <h3>Qué falta para clavar el mockup</h3>
+      <p class="sub">Commits pequeños, ordenados por impacto / bajo riesgo. Solo UI: el dominio no se toca.</p>
+      <div class="citem"><div class="cnum">1</div><div><b>Wordmark a dos tonos</b><p>"Lumi" blanco + "AI" ámbar en la barra superior.</p></div></div>
+      <div class="citem"><div class="cnum">2</div><div><b>Etiqueta de modo sobre el orbe</b><p>"CONTINUO" en ámbar, mayúsculas espaciadas, según el modo activo.</p></div></div>
+      <div class="citem"><div class="cnum">3</div><div><b>Anillo dial de marcas</b><p>Ticks alrededor del orbe en vez del aro sólido + arco actual.</p></div></div>
+      <div class="citem"><div class="cnum">4</div><div><b>Línea de estado</b><p>"Toca para encender / apagar" con micro-indicador de estado.</p></div></div>
+      <div class="citem"><div class="cnum">5</div><div><b>Cabecera "Control" + "Ver más ▾"</b><p>Ajustes avanzados plegables dentro de la hoja.</p></div></div>
+      <div class="citem"><div class="cnum">6</div><div><b>Tarjetas de modo + fila Morse</b><p>Tarjetas grandes con borde ámbar en el seleccionado; "Morse de texto" como fila ancha aparte.</p></div></div>
+      <div class="citem"><div class="cnum">7</div><div><b>Intensidad con % en ámbar</b><p>Estilo del valor "100%" resaltado sobre el slider.</p></div></div>
+      <div class="citem"><div class="cnum">8</div><div><b>Fila "Ajustes y cuenta" + fix acento Blanco</b><p>Acceso con engranaje y chevron; y mapear "Blanco" a un esquema neutro (hoy MaterialKolor lo vuelve azulado).</p></div></div>
+    </div>
+  </div>
+
+  <!-- ===== FUTURO ===== -->
+  <h2 class="sec">Después de la identidad visual</h2>
+  <div class="phases">
+    <div class="phase" style="--c:var(--next)">
+      <h4>Modos Lectura / Sueño <span class="pill" style="background:var(--next)">Siguiente</span></h4>
+      <p>Variante de pantalla cálida (warm-screen). Riesgo bajo, viable en cualquier dispositivo vía display.</p>
+    </div>
+    <div class="phase" style="--c:var(--future)">
+      <h4>IA real (no decorativa) <span class="pill" style="background:var(--future)">Futuro</span></h4>
+      <ul>
+        <li class="todo">Detección de sonidos TFLite/YAMNet: llanto de bebé, alarma de humo, timbre (accesibilidad)</li>
+        <li class="todo">Comandos de voz reales con SpeechRecognizer</li>
+      </ul>
+    </div>
+    <div class="phase" style="--c:var(--future)">
+      <h4>Consolidar modos "Pro" <span class="pill" style="background:var(--future)">Futuro</span></h4>
+      <p>Quitar el branding "IA" engañoso de heurísticas de sensores; fusionar modos redundantes. Coherencia con la honestidad.</p>
+    </div>
+    <div class="phase" style="--c:var(--future)">
+      <h4>Publicación en Google Play <span class="pill" style="background:var(--future)">Objetivo final</span></h4>
+      <p>targetSdk 35 ya cumplido. Falta ficha, capturas, política de privacidad y firma de release.</p>
+    </div>
+  </div>
+
+  <footer>LumiAI · documento de comunicación interno · generado desde el repositorio</footer>
+</div>
+</body>
+</html>
