@@ -14,7 +14,8 @@ val FlashMode.tier: Tier
         FlashMode.CONTINUOUS,
         FlashMode.SCREEN,
         FlashMode.SOS_MORSE,
-        FlashMode.STROBE -> Tier.BASIC
+        FlashMode.STROBE,
+        FlashMode.BEACON -> Tier.BASIC
         FlashMode.TEXT_MORSE -> Tier.ADVANCED
     }
 

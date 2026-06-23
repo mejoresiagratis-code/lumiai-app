@@ -28,9 +28,19 @@ class FlashEngine @Inject constructor(
                 FlashMode.STROBE -> settings.collectLatest { strobe(it.coerced()) }
                 FlashMode.SOS_MORSE -> settings.collectLatest { morse(it.coerced()) }
                 FlashMode.TEXT_MORSE -> settings.collectLatest { textMorse(it.coerced()) }
+                FlashMode.BEACON -> settings.collectLatest { beacon(it.coerced()) }
             }
         } finally {
             torch.turnOff()
+        }
+    }
+
+    private suspend fun beacon(s: FlashSettings) {
+        val onMs = s.beaconFlashMs.coerceAtLeast(1L)
+        val offMs = (s.beaconIntervalMs - s.beaconFlashMs).coerceAtLeast(1L)
+        while (true) {
+            torch.turnOn(s.intensityLevel); delay(onMs)
+            torch.turnOff(); delay(offMs)
         }
     }
 

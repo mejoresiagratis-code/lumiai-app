@@ -21,6 +21,7 @@ fun modeAccentColor(mode: FlashMode): Color = when (mode) {
     FlashMode.SOS_MORSE -> RedAccent
     FlashMode.STROBE -> VioletAccent
     FlashMode.TEXT_MORSE -> TealAccent
+    FlashMode.BEACON -> GreenAccent
 }
 
 /** Color sólido de un acento. Multicolor cae a ámbar a nivel global (su efecto por modo vive en el Hub). */
