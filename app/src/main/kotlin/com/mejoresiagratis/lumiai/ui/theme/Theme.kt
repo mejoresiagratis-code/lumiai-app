@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
@@ -44,7 +45,20 @@ fun LumiAiTheme(
         // (fondo/superficie/contorno) de la marca y solo adoptamos —animados—
         // los roles de acento generados.
         val seed = resolveAccent(accent, activeMode)
-        val gen = rememberDynamicColorScheme(seedColor = seed, isDark = dark, isAmoled = false)
+        // El acento Blanco debe ser un neutro real. Con TonalSpot, una semilla
+        // casi-blanca se tiñe de azul en tema oscuro; Monochrome genera una
+        // escala de grises sin tinte para ese caso concreto.
+        val paletteStyle = if (accent == AccentColor.WHITE) {
+            PaletteStyle.Monochrome
+        } else {
+            PaletteStyle.TonalSpot
+        }
+        val gen = rememberDynamicColorScheme(
+            seedColor = seed,
+            isDark = dark,
+            isAmoled = false,
+            style = paletteStyle
+        )
         val primary by animateColorAsState(gen.primary, label = "primary")
         val onPrimary by animateColorAsState(gen.onPrimary, label = "onPrimary")
         val primaryContainer by animateColorAsState(gen.primaryContainer, label = "primaryContainer")
