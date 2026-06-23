@@ -17,6 +17,7 @@ import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.flash.ModeControl
 import com.mejoresiagratis.lumiai.domain.flash.controls
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
+import com.mejoresiagratis.lumiai.domain.flash.Morse
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
@@ -79,11 +80,25 @@ fun ModeSettingsPanel(
         // --- AVANZADO (plegable) ---
         if (expanded) {
             if (mode == FlashMode.TEXT_MORSE) {
+                val unsupported = Morse.unsupportedChars(settings.morseText)
                 OutlinedTextField(
                     value = settings.morseText,
                     onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
                     label = { Text(stringResource(R.string.settings_morse_text)) },
                     singleLine = true,
+                    isError = unsupported.isNotEmpty(),
+                    supportingText = if (unsupported.isNotEmpty()) {
+                        {
+                            Text(
+                                stringResource(
+                                    R.string.morse_unsupported_chars,
+                                    unsupported.joinToString(" ")
+                                )
+                            )
+                        }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

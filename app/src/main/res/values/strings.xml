@@ -58,6 +58,7 @@
     <string name="mode_text_morse">Morse de texto</string>
     <string name="mode_text_morse_short">Morse</string>
     <string name="settings_morse_text">Mensaje</string>
+    <string name="morse_unsupported_chars">Se omitirán (sin Morse): %1$s</string>
     <string name="mode_locked_cd">Modo bloqueado: requiere cuenta</string>
     <!-- Modo Pantalla v2 -->
     <string name="screen_panel_title">Luz de color</string>

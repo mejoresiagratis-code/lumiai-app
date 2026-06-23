@@ -1,5 +1,7 @@
 package com.mejoresiagratis.lumiai.domain.flash
 
+import java.text.Normalizer
+
 /**
  * Convierte texto a una lista plana de duraciones on/off (ms) segun timing Morse internacional:
  * dot=1u, dash=3u, hueco intra-caracter=1u, hueco inter-caracter=3u, hueco entre palabras=7u.
@@ -21,7 +23,7 @@ object Morse {
         val u = unitMs
         val out = ArrayList<Long>()
         var firstChar = true
-        for (raw in text.uppercase()) {
+        for (raw in normalize(text).uppercase()) {
             if (raw == ' ') {
                 if (out.isNotEmpty()) out.add(7 * u)
                 firstChar = true
@@ -39,4 +41,18 @@ object Morse {
     }
 
     fun sos(unitMs: Long): LongArray = toDurations("SOS", unitMs)
+
+    /**
+     * Quita diacríticos (á→a, ñ→n, ü→u, ç→c…) descomponiendo en NFD y eliminando las
+     * marcas combinantes, para no perder caracteres acentuados al codificar a Morse.
+     */
+    private fun normalize(text: String): String =
+        Normalizer.normalize(text, Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+
+    /** Caracteres del texto que no tienen representación Morse (se omitirán al emitir). */
+    fun unsupportedChars(text: String): Set<Char> =
+        normalize(text).uppercase()
+            .filter { it != ' ' && !TABLE.containsKey(it) }
+            .toSet()
 }
