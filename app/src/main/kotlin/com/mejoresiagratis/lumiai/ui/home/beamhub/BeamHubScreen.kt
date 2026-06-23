@@ -239,7 +239,7 @@ fun BeamHubScreen(
                     onLocked = { onOpenAuth() },
                     caps = state.capabilities,
                     entitlements = state.entitlements,
-                    modifier = Modifier.padding(top = LumiSpacing.md)
+                    modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 MODE_CATALOG.firstOrNull { it.mode == state.mode }?.let { ui ->
