@@ -45,13 +45,15 @@ fun LumiAiTheme(
         // (fondo/superficie/contorno) de la marca y solo adoptamos —animados—
         // los roles de acento generados.
         val seed = resolveAccent(accent, activeMode)
-        // El acento Blanco debe ser un neutro real. Con TonalSpot, una semilla
-        // casi-blanca se tiñe de azul en tema oscuro; Monochrome genera una
-        // escala de grises sin tinte para ese caso concreto.
-        val paletteStyle = if (accent == AccentColor.WHITE) {
-            PaletteStyle.Monochrome
-        } else {
-            PaletteStyle.TonalSpot
+        // Estilo de paleta por acento:
+        // - Blanco -> Monochrome: neutro real (TonalSpot lo teñiría de azul en oscuro).
+        // - Ámbar  -> TonalSpot: su semilla ya es clara, el resultado es un oro fiel.
+        // - Resto (cromáticos y Multicolor) -> Content: conserva el primary ≈ semilla,
+        //   evitando que rojo/violeta/etc. se aclaren a salmón/pastel en tema oscuro.
+        val paletteStyle = when (accent) {
+            AccentColor.WHITE -> PaletteStyle.Monochrome
+            AccentColor.AMBER -> PaletteStyle.TonalSpot
+            else -> PaletteStyle.Content
         }
         val gen = rememberDynamicColorScheme(
             seedColor = seed,
