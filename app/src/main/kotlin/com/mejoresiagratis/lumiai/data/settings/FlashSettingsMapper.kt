@@ -9,6 +9,8 @@ object FlashSettingsMapper {
     const val KEY_SCREEN_ARGB = "screen_argb"
     const val KEY_MORSE_TEXT = "morse_text"
     const val KEY_SCREEN_BRIGHTNESS = "screen_brightness"
+    const val KEY_BEACON_INTERVAL = "beacon_interval"
+    const val KEY_BEACON_FLASH = "beacon_flash"
 
     fun toMap(s: FlashSettings): Map<String, Any> = mapOf(
         KEY_INTENSITY to s.intensityLevel,
@@ -16,7 +18,9 @@ object FlashSettingsMapper {
         KEY_MORSE_UNIT to s.morseUnitMs,
         KEY_SCREEN_ARGB to s.screenArgb,
         KEY_MORSE_TEXT to s.morseText,
-        KEY_SCREEN_BRIGHTNESS to s.screenBrightness
+        KEY_SCREEN_BRIGHTNESS to s.screenBrightness,
+        KEY_BEACON_INTERVAL to s.beaconIntervalMs,
+        KEY_BEACON_FLASH to s.beaconFlashMs
     )
 
     fun fromMap(m: Map<String, Any?>): FlashSettings {
@@ -27,7 +31,9 @@ object FlashSettingsMapper {
             morseUnitMs = (m[KEY_MORSE_UNIT] as? Long) ?: d.morseUnitMs,
             screenArgb = (m[KEY_SCREEN_ARGB] as? Int) ?: d.screenArgb,
             morseText = (m[KEY_MORSE_TEXT] as? String) ?: d.morseText,
-            screenBrightness = (m[KEY_SCREEN_BRIGHTNESS] as? Float) ?: d.screenBrightness
+            screenBrightness = (m[KEY_SCREEN_BRIGHTNESS] as? Float) ?: d.screenBrightness,
+            beaconIntervalMs = (m[KEY_BEACON_INTERVAL] as? Long) ?: d.beaconIntervalMs,
+            beaconFlashMs = (m[KEY_BEACON_FLASH] as? Long) ?: d.beaconFlashMs
         ).coerced()
     }
 }
