@@ -1,14 +1,18 @@
 package com.mejoresiagratis.lumiai.ui.home.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.flash.ModeControl
 import com.mejoresiagratis.lumiai.domain.flash.controls
@@ -48,7 +52,23 @@ fun ModeSettingsPanel(
             )
         }
         if (ModeControl.INTENSITY in controls) {
-            Text(stringResource(R.string.settings_intensity, settings.intensityLevel))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_intensity_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${settings.intensityLevel}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Slider(
                 value = settings.intensityLevel.toFloat(),
                 onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
