@@ -6,6 +6,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -247,7 +248,12 @@ fun BeamHubScreen(
                             modifier = Modifier.padding(bottom = LumiSpacing.md)
                         )
                     }
-                    PowerOrb(isOn = state.isOn, onToggle = viewModel::toggle)
+                    PowerOrb(
+                        isOn = state.isOn,
+                        onToggle = viewModel::toggle,
+                        pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
+                        pulseFlashMs = if (state.mode == FlashMode.BEACON) state.settings.beaconFlashMs else null
+                    )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
@@ -411,7 +417,9 @@ private fun ModePill(
 private fun PowerOrb(
     isOn: Boolean,
     onToggle: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pulsePeriodMs: Long? = null,
+    pulseFlashMs: Long? = null
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onPrimary = MaterialTheme.colorScheme.onPrimary
@@ -426,6 +434,32 @@ private fun PowerOrb(
         animationSpec = infiniteRepeatable(animation = tween(durationMillis = 2600, easing = LinearEasing)),
         label = "orbSweep"
     )
+
+    // Pulso sincronizado con el destello de Baliza: brillo durante el flash, atenuado en la pausa.
+    val pulsing = pulsePeriodMs != null && isOn
+    val period = (pulsePeriodMs ?: 0L).toInt().coerceAtLeast(200)
+    val flash = (pulseFlashMs ?: 0L).toInt().coerceIn(20, period / 2)
+    val fade = (flash + 90).coerceAtMost(period - 10)
+    val pulse by transition.animateFloat(
+        initialValue = 0.12f,
+        targetValue = 0.12f,
+        animationSpec = if (pulsing) {
+            infiniteRepeatable(
+                animation = keyframes {
+                    durationMillis = period
+                    0.55f at 0
+                    0.55f at flash
+                    0.12f at fade
+                    0.12f at period
+                }
+            )
+        } else {
+            infiniteRepeatable(animation = tween(durationMillis = 1))
+        },
+        label = "orbPulse"
+    )
+    val haloAlpha = if (pulsing) pulse else glow
+
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
 
     Box(modifier = modifier.requiredSize(252.dp), contentAlignment = Alignment.Center) {
@@ -433,7 +467,7 @@ private fun PowerOrb(
             modifier = Modifier
                 .size(252.dp)
                 .clip(CircleShape)
-                .background(primary.copy(alpha = glow))
+                .background(primary.copy(alpha = haloAlpha))
         )
         Canvas(modifier = Modifier.size(224.dp)) {
             val center = Offset(size.width / 2f, size.height / 2f)
