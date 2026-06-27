@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -48,7 +47,10 @@ fun ModeSettingsPanel(
     modifier: Modifier = Modifier
 ) {
     val controls = mode.controls().filter { it.isAvailable(caps) }
-    Column(modifier.fillMaxWidth()) {
+    Column(
+        modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+    ) {
         // --- BÁSICO (siempre visible) ---
         if (mode == FlashMode.SCREEN) {
             Text(
@@ -67,33 +69,34 @@ fun ModeSettingsPanel(
         if (mode == FlashMode.SOS_MORSE) {
             MorsePreview(
                 symbols = Morse.toSymbols("SOS"),
-                cycleMs = Morse.patternDurationMs("SOS", settings.morseUnitMs) + settings.morseUnitMs * 7,
-                modifier = Modifier.padding(top = LumiSpacing.sm)
+                cycleMs = Morse.patternDurationMs("SOS", settings.morseUnitMs) + settings.morseUnitMs * 7
             )
         }
         if (ModeControl.INTENSITY in controls) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_intensity_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${settings.intensityLevel}%",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_intensity_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${settings.intensityLevel}%",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Slider(
+                    value = settings.intensityLevel.toFloat(),
+                    onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
+                    valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
                 )
             }
-            Slider(
-                value = settings.intensityLevel.toFloat(),
-                onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
-                valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
-            )
         }
         if (ModeControl.BEACON_INTERVAL in controls) {
             Row(
@@ -109,41 +112,47 @@ fun ModeSettingsPanel(
                     modifier = Modifier.weight(1f)
                 ) { Text(stringResource(R.string.beacon_preset_highvis)) }
             }
-            Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))
-            Slider(
-                value = settings.beaconIntervalMs.toFloat(),
-                onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
-                valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat()
-            )
-            Text(stringResource(R.string.settings_beacon_flash, settings.beaconFlashMs.toInt()))
-            Slider(
-                value = settings.beaconFlashMs.toFloat(),
-                onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
-                valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat()
-            )
-            Text(
-                text = stringResource(R.string.settings_beacon_autooff),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-            ) {
-                listOf(0, 15, 30, 60).forEach { m ->
-                    FilterChip(
-                        selected = settings.beaconAutoOffMin == m,
-                        onClick = { onChange { it.copy(beaconAutoOffMin = m) } },
-                        label = {
-                            Text(
-                                if (m == 0) {
-                                    stringResource(R.string.autooff_off)
-                                } else {
-                                    stringResource(R.string.autooff_minutes, m)
-                                }
-                            )
-                        }
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))
+                Slider(
+                    value = settings.beaconIntervalMs.toFloat(),
+                    onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
+                    valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat()
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                Text(stringResource(R.string.settings_beacon_flash, settings.beaconFlashMs.toInt()))
+                Slider(
+                    value = settings.beaconFlashMs.toFloat(),
+                    onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
+                    valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat()
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                Text(
+                    text = stringResource(R.string.settings_beacon_autooff),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    listOf(0, 15, 30, 60).forEach { m ->
+                        FilterChip(
+                            selected = settings.beaconAutoOffMin == m,
+                            onClick = { onChange { it.copy(beaconAutoOffMin = m) } },
+                            label = {
+                                Text(
+                                    if (m == 0) {
+                                        stringResource(R.string.autooff_off)
+                                    } else {
+                                        stringResource(R.string.autooff_minutes, m)
+                                    }
+                                )
+                            }
+                        )
+                    }
                 }
             }
             Text(
@@ -157,48 +166,53 @@ fun ModeSettingsPanel(
         if (expanded) {
             if (mode == FlashMode.TEXT_MORSE) {
                 val unsupported = Morse.unsupportedChars(settings.morseText)
-                OutlinedTextField(
-                    value = settings.morseText,
-                    onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
-                    label = { Text(stringResource(R.string.settings_morse_text)) },
-                    singleLine = true,
-                    isError = unsupported.isNotEmpty(),
-                    supportingText = if (unsupported.isNotEmpty()) {
-                        {
-                            Text(
-                                stringResource(
-                                    R.string.morse_unsupported_chars,
-                                    unsupported.joinToString(" ")
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+                    OutlinedTextField(
+                        value = settings.morseText,
+                        onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
+                        label = { Text(stringResource(R.string.settings_morse_text)) },
+                        singleLine = true,
+                        isError = unsupported.isNotEmpty(),
+                        supportingText = if (unsupported.isNotEmpty()) {
+                            {
+                                Text(
+                                    stringResource(
+                                        R.string.morse_unsupported_chars,
+                                        unsupported.joinToString(" ")
+                                    )
                                 )
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                MorsePreview(
-                    symbols = Morse.toSymbols(settings.morseText),
-                    cycleMs = Morse.patternDurationMs(settings.morseText, settings.morseUnitMs) +
-                        settings.morseUnitMs * 7,
-                    modifier = Modifier.padding(top = LumiSpacing.sm)
-                )
+                            }
+                        } else {
+                            null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    MorsePreview(
+                        symbols = Morse.toSymbols(settings.morseText),
+                        cycleMs = Morse.patternDurationMs(settings.morseText, settings.morseUnitMs) +
+                            settings.morseUnitMs * 7
+                    )
+                }
             }
             if (ModeControl.STROBE_HZ in controls) {
-                Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
-                Slider(
-                    value = settings.strobeHz,
-                    onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
-                    valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                    Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
+                    Slider(
+                        value = settings.strobeHz,
+                        onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
+                        valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
+                    )
+                }
             }
             if (ModeControl.MORSE_SPEED in controls) {
-                Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
-                Slider(
-                    value = settings.morseUnitMs.toFloat(),
-                    onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                    Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
+                    Slider(
+                        value = settings.morseUnitMs.toFloat(),
+                        onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
+                        valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
+                    )
+                }
             }
         }
     }
