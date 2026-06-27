@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.flash.ModeControl
@@ -60,6 +62,13 @@ fun ModeSettingsPanel(
                 text = stringResource(R.string.strobe_photosensitivity_warning),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (mode == FlashMode.SOS_MORSE) {
+            MorsePreview(
+                symbols = Morse.toSymbols("SOS"),
+                cycleMs = Morse.patternDurationMs("SOS", settings.morseUnitMs) + settings.morseUnitMs * 7,
+                modifier = Modifier.padding(top = LumiSpacing.sm)
             )
         }
         if (ModeControl.INTENSITY in controls) {
@@ -168,6 +177,12 @@ fun ModeSettingsPanel(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+                MorsePreview(
+                    symbols = Morse.toSymbols(settings.morseText),
+                    cycleMs = Morse.patternDurationMs(settings.morseText, settings.morseUnitMs) +
+                        settings.morseUnitMs * 7,
+                    modifier = Modifier.padding(top = LumiSpacing.sm)
+                )
             }
             if (ModeControl.STROBE_HZ in controls) {
                 Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
@@ -186,5 +201,32 @@ fun ModeSettingsPanel(
                 )
             }
         }
+    }
+}
+
+/**
+ * Vista previa del patrón Morse en puntos (·) y rayas (–). Muestra exactamente lo que
+ * parpadeará el LED (los caracteres sin Morse se omiten) y la duración aproximada de un
+ * ciclo, recordando que se repite en bucle mientras el modo esté encendido.
+ */
+@Composable
+private fun MorsePreview(
+    symbols: String,
+    cycleMs: Long,
+    modifier: Modifier = Modifier
+) {
+    if (symbols.isBlank()) return
+    val glyphs = symbols.replace('.', '·').replace('-', '–')
+    Column(modifier.fillMaxWidth()) {
+        Text(
+            text = glyphs,
+            style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = stringResource(R.string.morse_preview_caption, "%.1f".format(cycleMs / 1000f)),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

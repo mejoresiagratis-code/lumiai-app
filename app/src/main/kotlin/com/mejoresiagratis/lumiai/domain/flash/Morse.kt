@@ -43,6 +43,27 @@ object Morse {
     fun sos(unitMs: Long): LongArray = toDurations("SOS", unitMs)
 
     /**
+     * Representación legible en puntos/rayas. Letras separadas por espacio y palabras por "/".
+     * Los caracteres sin Morse se omiten, igual que en la emisión real, para que la vista
+     * previa muestre exactamente lo que parpadeará el LED.
+     */
+    fun toSymbols(text: String): String {
+        val sb = StringBuilder()
+        var firstWord = true
+        for (word in normalize(text).uppercase().split(' ')) {
+            val letters = word.mapNotNull { TABLE[it] }
+            if (letters.isEmpty()) continue
+            if (!firstWord) sb.append(" / ")
+            firstWord = false
+            sb.append(letters.joinToString(" "))
+        }
+        return sb.toString()
+    }
+
+    /** Duración (ms) de una pasada del patrón, para mostrar el largo aproximado del ciclo. */
+    fun patternDurationMs(text: String, unitMs: Long): Long = toDurations(text, unitMs).sum()
+
+    /**
      * Quita diacríticos (á→a, ñ→n, ü→u, ç→c…) descomponiendo en NFD y eliminando las
      * marcas combinantes, para no perder caracteres acentuados al codificar a Morse.
      */

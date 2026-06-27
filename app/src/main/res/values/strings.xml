@@ -7,6 +7,7 @@
     <string name="mode_sos">SOS</string>
     <string name="mode_strobe">Estrobo</string>
     <string name="strobe_photosensitivity_warning">El parpadeo rápido puede causar molestias o crisis a personas con epilepsia fotosensible. Úsalo con precaución.</string>
+    <string name="morse_preview_caption">Vista previa · se repite en bucle · ciclo ≈ %1$s s</string>
     <string name="mode_beacon">Baliza</string>
     <string name="action_on">Encender</string>
     <string name="action_off">Apagar</string>
