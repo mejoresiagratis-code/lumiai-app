@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
@@ -61,31 +60,38 @@ fun LumiAiTheme(
             isAmoled = false,
             style = paletteStyle
         )
-        val primary by animateColorAsState(gen.primary, label = "primary")
-        val onPrimary by animateColorAsState(gen.onPrimary, label = "onPrimary")
-        val primaryContainer by animateColorAsState(gen.primaryContainer, label = "primaryContainer")
-        val onPrimaryContainer by animateColorAsState(gen.onPrimaryContainer, label = "onPrimaryContainer")
-        val secondary by animateColorAsState(gen.secondary, label = "secondary")
-        val onSecondary by animateColorAsState(gen.onSecondary, label = "onSecondary")
-        val secondaryContainer by animateColorAsState(gen.secondaryContainer, label = "secondaryContainer")
-        val onSecondaryContainer by animateColorAsState(gen.onSecondaryContainer, label = "onSecondaryContainer")
-        val tertiary by animateColorAsState(gen.tertiary, label = "tertiary")
-        val onTertiary by animateColorAsState(gen.onTertiary, label = "onTertiary")
-        val tertiaryContainer by animateColorAsState(gen.tertiaryContainer, label = "tertiaryContainer")
-        val onTertiaryContainer by animateColorAsState(gen.onTertiaryContainer, label = "onTertiaryContainer")
-        base.copy(
-            primary = primary,
-            onPrimary = onPrimary,
-            primaryContainer = primaryContainer,
-            onPrimaryContainer = onPrimaryContainer,
-            secondary = secondary,
-            onSecondary = onSecondary,
-            secondaryContainer = secondaryContainer,
-            onSecondaryContainer = onSecondaryContainer,
-            tertiary = tertiary,
-            onTertiary = onTertiary,
-            tertiaryContainer = tertiaryContainer,
-            onTertiaryContainer = onTertiaryContainer
+        // Adoptamos el esquema COMPLETO generado desde la semilla, incluidos los neutros
+        // (fondo, superficie, surfaceVariant, contorno y contenedores). Así TODA la vista
+        // —bordes, fondos y detalles— refuerza la paleta del acento elegido en lugar de
+        // arrastrar los neutros ámbar de marca. Animamos cada rol para que el cambio de
+        // modo/acento (incluido Multicolor) sea suave y no haya saltos de color.
+        gen.copy(
+            primary = animateColorAsState(gen.primary, label = "primary").value,
+            onPrimary = animateColorAsState(gen.onPrimary, label = "onPrimary").value,
+            primaryContainer = animateColorAsState(gen.primaryContainer, label = "primaryContainer").value,
+            onPrimaryContainer = animateColorAsState(gen.onPrimaryContainer, label = "onPrimaryContainer").value,
+            secondary = animateColorAsState(gen.secondary, label = "secondary").value,
+            onSecondary = animateColorAsState(gen.onSecondary, label = "onSecondary").value,
+            secondaryContainer = animateColorAsState(gen.secondaryContainer, label = "secondaryContainer").value,
+            onSecondaryContainer = animateColorAsState(gen.onSecondaryContainer, label = "onSecondaryContainer").value,
+            tertiary = animateColorAsState(gen.tertiary, label = "tertiary").value,
+            onTertiary = animateColorAsState(gen.onTertiary, label = "onTertiary").value,
+            tertiaryContainer = animateColorAsState(gen.tertiaryContainer, label = "tertiaryContainer").value,
+            onTertiaryContainer = animateColorAsState(gen.onTertiaryContainer, label = "onTertiaryContainer").value,
+            background = animateColorAsState(gen.background, label = "background").value,
+            onBackground = animateColorAsState(gen.onBackground, label = "onBackground").value,
+            surface = animateColorAsState(gen.surface, label = "surface").value,
+            onSurface = animateColorAsState(gen.onSurface, label = "onSurface").value,
+            surfaceVariant = animateColorAsState(gen.surfaceVariant, label = "surfaceVariant").value,
+            onSurfaceVariant = animateColorAsState(gen.onSurfaceVariant, label = "onSurfaceVariant").value,
+            surfaceTint = animateColorAsState(gen.surfaceTint, label = "surfaceTint").value,
+            outline = animateColorAsState(gen.outline, label = "outline").value,
+            outlineVariant = animateColorAsState(gen.outlineVariant, label = "outlineVariant").value,
+            surfaceContainerLowest = animateColorAsState(gen.surfaceContainerLowest, label = "scLowest").value,
+            surfaceContainerLow = animateColorAsState(gen.surfaceContainerLow, label = "scLow").value,
+            surfaceContainer = animateColorAsState(gen.surfaceContainer, label = "scMid").value,
+            surfaceContainerHigh = animateColorAsState(gen.surfaceContainerHigh, label = "scHigh").value,
+            surfaceContainerHighest = animateColorAsState(gen.surfaceContainerHighest, label = "scHighest").value
         )
     }
     MaterialTheme(
