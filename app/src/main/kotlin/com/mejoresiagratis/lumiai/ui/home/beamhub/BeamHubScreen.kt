@@ -67,6 +67,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -139,6 +141,12 @@ fun BeamHubScreen(
     val surface = MaterialTheme.colorScheme.surface
     val onSurface = MaterialTheme.colorScheme.onSurface
 
+    // Tamaños adaptativos: el sheet nunca pasa del 42% de la pantalla (con scroll interno) y
+    // el orbe se encoge según la altura disponible, acotado, para no solaparse nunca con el sheet.
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val sheetMaxHeight = (screenHeightDp * 0.42f).dp
+    val orbSize = (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
+
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -185,7 +193,7 @@ fun BeamHubScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 360.dp)
+                        .heightIn(max = sheetMaxHeight)
                         .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .hazeEffect(
                             state = hazeState,
@@ -266,6 +274,7 @@ fun BeamHubScreen(
                     PowerOrb(
                         isOn = state.isOn,
                         onToggle = viewModel::toggle,
+                        size = orbSize,
                         pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
                         pulseFlashMs = if (state.mode == FlashMode.BEACON) state.settings.beaconFlashMs else null
                     )
@@ -433,6 +442,7 @@ private fun PowerOrb(
     isOn: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    size: Dp = 252.dp,
     pulsePeriodMs: Long? = null,
     pulseFlashMs: Long? = null
 ) {
@@ -477,14 +487,14 @@ private fun PowerOrb(
 
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
 
-    Box(modifier = modifier.requiredSize(252.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.requiredSize(size), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
-                .size(252.dp)
+                .size(size)
                 .clip(CircleShape)
                 .background(primary.copy(alpha = haloAlpha))
         )
-        Canvas(modifier = Modifier.size(224.dp)) {
+        Canvas(modifier = Modifier.size(size * (224f / 252f))) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val rOuter = size.minDimension / 2f - 2.dp.toPx()
             val rInner = rOuter - 12.dp.toPx()
@@ -507,7 +517,7 @@ private fun PowerOrb(
         }
         Box(
             modifier = Modifier
-                .size(176.dp)
+                .size(size * (176f / 252f))
                 .scale(scale)
                 .clip(CircleShape)
                 .background(
@@ -518,7 +528,7 @@ private fun PowerOrb(
                 .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(56.dp)) {
+            Canvas(modifier = Modifier.size(size * (56f / 252f))) {
                 val sw = 7.dp.toPx()
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val r = (size.minDimension / 2f) - sw
