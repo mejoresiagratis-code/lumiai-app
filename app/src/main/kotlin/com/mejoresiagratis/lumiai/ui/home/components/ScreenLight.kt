@@ -6,6 +6,8 @@ import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +23,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import kotlin.math.abs
 
 /** Presets de color para el Modo Pantalla (el LED es monocromo; el color solo es posible aquí). */
 val SCREEN_PRESETS: List<Int> = listOf(
@@ -52,6 +56,17 @@ val SCREEN_PRESETS: List<Int> = listOf(
     0xFF4D8BFF.toInt(), // Azul
     0xFF57D08A.toInt(), // Verde
     0xFFC9A6FF.toInt()  // Violeta
+)
+
+/** Preset nombrado: fija color + brillo de una vez para un uso típico del Modo Pantalla. */
+data class ScreenPreset(val labelRes: Int, val argb: Int, val brightness: Float)
+
+/** Atajos honestos: solo color y brillo, sin prometer nada que la pantalla no haga. */
+val SCREEN_NAMED_PRESETS: List<ScreenPreset> = listOf(
+    ScreenPreset(R.string.screen_preset_white, 0xFFFFFFFF.toInt(), 1f),       // Blanco máximo
+    ScreenPreset(R.string.screen_preset_warm, 0xFFFFE6B0.toInt(), 0.85f),     // Cálido
+    ScreenPreset(R.string.screen_preset_reading, 0xFFFFF2D6.toInt(), 0.55f),  // Lectura (cálido suave)
+    ScreenPreset(R.string.screen_preset_night, 0xFFFF3B30.toInt(), 0.22f)     // Rojo nocturno (visión nocturna)
 )
 
 @Composable
@@ -134,6 +149,41 @@ fun ScreenLight(
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White
                 )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(top = LumiSpacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    SCREEN_NAMED_PRESETS.forEach { preset ->
+                        val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (sel) Color.White.copy(alpha = 0.18f)
+                                    else Color.White.copy(alpha = 0.06f)
+                                )
+                                .border(
+                                    width = if (sel) 1.5.dp else 1.dp,
+                                    color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .clickable {
+                                    onColorChange(preset.argb)
+                                    onBrightnessChange(preset.brightness)
+                                }
+                                .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                        ) {
+                            Text(
+                                text = stringResource(preset.labelRes),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
