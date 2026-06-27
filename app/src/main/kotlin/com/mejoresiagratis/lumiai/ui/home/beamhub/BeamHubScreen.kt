@@ -81,6 +81,7 @@ import com.mejoresiagratis.lumiai.ui.home.FlashViewModel
 import com.mejoresiagratis.lumiai.ui.home.components.MODE_CATALOG
 import com.mejoresiagratis.lumiai.ui.home.components.ModeSettingsPanel
 import com.mejoresiagratis.lumiai.ui.home.components.ModeUi
+import com.mejoresiagratis.lumiai.ui.home.components.ScreenBeacon
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.home.components.modeHasAdvanced
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
@@ -113,6 +114,20 @@ fun BeamHubScreen(
             brightness = state.settings.screenBrightness,
             onColorChange = { argb -> viewModel.updateSettings { it.copy(screenArgb = argb) } },
             onBrightnessChange = { b -> viewModel.updateSettings { it.copy(screenBrightness = b) } },
+            onTap = viewModel::toggle
+        )
+        return
+    }
+
+    // Baliza en dispositivos sin LED: el destello va por la pantalla.
+    val screenBeaconActive = state.isOn &&
+        state.mode == FlashMode.BEACON &&
+        !state.capabilities.hasFlash
+    BackHandler(enabled = screenBeaconActive) { viewModel.toggle() }
+    if (screenBeaconActive) {
+        ScreenBeacon(
+            intervalMs = state.settings.beaconIntervalMs,
+            flashMs = state.settings.beaconFlashMs,
             onTap = viewModel::toggle
         )
         return

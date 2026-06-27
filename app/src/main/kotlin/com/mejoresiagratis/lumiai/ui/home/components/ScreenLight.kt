@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -23,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -173,5 +178,76 @@ fun ScreenLight(
                 )
             }
         }
+    }
+}
+
+/**
+ * Baliza en pantalla para dispositivos sin LED: parpadea el display a blanco al ritmo del
+ * intervalo, con el brillo de ventana al máximo mientras dura. Toca para apagar.
+ */
+@Composable
+fun ScreenBeacon(
+    intervalMs: Long,
+    flashMs: Long,
+    onTap: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cd = stringResource(R.string.screen_exit_cd)
+    val window = (LocalContext.current as? Activity)?.window
+
+    LaunchedEffect(Unit) {
+        window?.let {
+            val lp = it.attributes
+            lp.screenBrightness = FlashSettings.MAX_SCREEN_BRIGHTNESS
+            it.attributes = lp
+        }
+    }
+    DisposableEffect(Unit) {
+        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window?.let {
+                it.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                val lp = it.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                it.attributes = lp
+            }
+        }
+    }
+
+    val period = intervalMs.toInt().coerceAtLeast(200)
+    val flash = flashMs.toInt().coerceIn(20, period / 2)
+    val fade = (flash + 90).coerceAtMost(period - 10)
+    val transition = rememberInfiniteTransition(label = "screenBeacon")
+    val alpha by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = period
+                1f at 0
+                1f at flash
+                0f at fade
+                0f at period
+            }
+        ),
+        label = "screenBeaconAlpha"
+    )
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onTap
+            )
+            .semantics { contentDescription = cd }
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.White.copy(alpha = alpha))
+        )
     }
 }

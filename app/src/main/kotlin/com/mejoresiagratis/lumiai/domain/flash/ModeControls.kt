@@ -6,8 +6,8 @@ import com.mejoresiagratis.lumiai.domain.model.FlashMode
 /** Controles de ajuste que un modo puede exponer. Anadir aqui al crecer la app. */
 enum class ModeControl { INTENSITY, STROBE_HZ, MORSE_SPEED, BEACON_INTERVAL, BEACON_FLASH }
 
-/** Los modos de LED requieren flash; el modo Pantalla no. */
-fun FlashMode.requiresFlash(): Boolean = this != FlashMode.SCREEN
+/** Los modos de LED requieren flash; Pantalla y Baliza no (Baliza cae a la pantalla). */
+fun FlashMode.requiresFlash(): Boolean = this != FlashMode.SCREEN && this != FlashMode.BEACON
 
 /** Que controles pide cada modo. */
 fun FlashMode.controls(): Set<ModeControl> = when (this) {
