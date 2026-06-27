@@ -55,6 +55,13 @@ fun ModeSettingsPanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        if (mode == FlashMode.STROBE) {
+            Text(
+                text = stringResource(R.string.strobe_photosensitivity_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         if (ModeControl.INTENSITY in controls) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
