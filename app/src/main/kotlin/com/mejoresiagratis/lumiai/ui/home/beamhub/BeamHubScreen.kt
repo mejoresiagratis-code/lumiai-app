@@ -274,7 +274,7 @@ fun BeamHubScreen(
                     PowerOrb(
                         isOn = state.isOn,
                         onToggle = viewModel::toggle,
-                        size = orbSize,
+                        orbDiameter = orbSize,
                         pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
                         pulseFlashMs = if (state.mode == FlashMode.BEACON) state.settings.beaconFlashMs else null
                     )
@@ -442,7 +442,7 @@ private fun PowerOrb(
     isOn: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 252.dp,
+    orbDiameter: Dp = 252.dp,
     pulsePeriodMs: Long? = null,
     pulseFlashMs: Long? = null
 ) {
@@ -487,14 +487,14 @@ private fun PowerOrb(
 
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
 
-    Box(modifier = modifier.requiredSize(size), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.requiredSize(orbDiameter), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
-                .size(size)
+                .size(orbDiameter)
                 .clip(CircleShape)
                 .background(primary.copy(alpha = haloAlpha))
         )
-        Canvas(modifier = Modifier.size(size * (224f / 252f))) {
+        Canvas(modifier = Modifier.size(orbDiameter * (224f / 252f))) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val rOuter = size.minDimension / 2f - 2.dp.toPx()
             val rInner = rOuter - 12.dp.toPx()
@@ -517,7 +517,7 @@ private fun PowerOrb(
         }
         Box(
             modifier = Modifier
-                .size(size * (176f / 252f))
+                .size(orbDiameter * (176f / 252f))
                 .scale(scale)
                 .clip(CircleShape)
                 .background(
@@ -528,7 +528,7 @@ private fun PowerOrb(
                 .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(size * (56f / 252f))) {
+            Canvas(modifier = Modifier.size(orbDiameter * (56f / 252f))) {
                 val sw = 7.dp.toPx()
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val r = (size.minDimension / 2f) - sw
