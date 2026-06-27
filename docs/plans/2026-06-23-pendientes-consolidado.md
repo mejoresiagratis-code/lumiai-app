@@ -1,10 +1,28 @@
 # LumiAI · Pendientes consolidados (migración + roadmap de producto)
 
-Fecha: 23 jun 2026 · HEAD de referencia: `8033cf9`
+Fecha: 23 jun 2026 · HEAD de referencia: `b6d8413` (act.)
 Fuentes cruzadas: **roadmap de migración a Beam Hub** (`roadmap_src.html`) +
 **roadmap/propuesta de producto** (`lumiai-roadmap-propuesta.html`), contrastadas
 contra el estado **real** del repo (no contra los recuerdos ni contra los HTML, que
 son del 22 jun y van por detrás).
+
+---
+
+## A0. Cerrado en esta sesión (posterior al consolidado original)
+
+- ✅ **Modo Baliza v1 COMPLETO** (modo nuevo): dominio + motor de temporización, presets
+  **Localización**/**Alta visibilidad** + personalizado (intervalo/destello), intensidad
+  gateada, tope anti-fotosensibilidad (intervalo ≥ 400 ms), persistencia, **auto-apagado**
+  (Off/15/30/60 min), **pulso del orbe** sincronizado y **variante en Pantalla** para
+  móviles sin LED (parpadeo del display). → cubre además el "sin-flash → Pantalla" que era
+  futuro.
+- ✅ **Estado sin-flash honesto** (migración 2.2): oculta el orbe y guía a Pantalla.
+- ✅ **Icono monocromo (themed icon)** + fallback mipmap API<26 + quick-wins de Lint
+  (recursos sin usar, aviso de orientación suprimido).
+- ✅ **Morse robusto**: normaliza acentos (á→A, ñ→N) y avisa de caracteres no soportados.
+- ✅ **Aviso de fotosensibilidad en Estrobo** (parte de seguridad de Fase 1).
+- ✅ **Intensidad real en Continuo CONFIRMADA** (`turnOnTorchWithStrengthLevel`, en vivo,
+  gateada por `supportsTorchStrength`) — ya estaba bien.
 
 ---
 
@@ -34,8 +52,7 @@ son del 22 jun y van por detrás).
 ## B. Pendiente de la MIGRACIÓN (solo queda nivel .2 robusta puntual y .3 profesional)
 
 ### .2 Robusta (barato, alto valor)
-- **Estado sin-flash:** hoy solo muestra aviso; falta **ocultar el orbe de LED y guiar
-  explícitamente a Pantalla** (migración 2.2).
+- ~~**Estado sin-flash**~~ → ✅ **HECHO** (orbe oculto + guía a Pantalla; ver A0).
 - **Indicador de batería en el Hub** (estaba en el mockup; opcional/cosmético).
 - **Tests de Compose del Hub** (orbe on/off, nombre de modo, `contentDescription`) y
   **test del mapper de acento** (valor persistido → color).
@@ -73,8 +90,8 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 - **Fase 3 (cuenta):** **vincular sesión anónima ↔ cuenta real** (no perder uid/progreso);
   cuenta completa: verificación de correo, restablecer contraseña, reautenticación,
   **borrar cuenta (RGPD)**; Firebase App Check; errores traducidos por tipo.
-- **Fase 3.5 (Morse):** avisar de caracteres no soportados y **normalizar acentos (á→A)**;
-  vista previa punto/raya + contador de repeticiones; historial de mensajes recientes.
+- **Fase 3.5 (Morse):** ✅ acentos normalizados + aviso de no soportados (HECHO, ver A0).
+  Falta: vista previa punto/raya + contador de repeticiones; historial de mensajes recientes.
 - **Pulido (orientación/insets):** edge-to-edge **uniforme en todas las pantallas**
   (Ajustes, Acceder); tablets en horizontal con layout adaptado.
 
@@ -83,9 +100,9 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
   (Blanco, Cálido, Rojo nocturno, Lectura, Fiesta), rueda de color completa (hoy slider de
   tono), y gesto para **volver a mostrar el panel** tras ocultarlo.
 
-### Modos nuevos (sección 03 — NINGUNO implementado aún)
-- **Baliza / Intervalo** — Básico, esfuerzo bajo. Temporización pura del LED (intervalo +
-  duty cycle). *Candidato a v1 por barato.*
+### Modos nuevos (sección 03)
+- ~~**Baliza / Intervalo**~~ → ✅ **IMPLEMENTADO v1 COMPLETO** (ver A0: presets, auto-apagado,
+  pulso del orbe, variante en Pantalla). Resto de modos nuevos siguen sin implementar.
 - **Vela / Llama** — Avanzado, medio. Ruido aleatorio sobre la intensidad (API 33+); mejor
   aún en Pantalla con tono cálido. *Candidato a v1.*
 - **Pantalla multicolor / Fiesta** — Avanzado, bajo. Ciclo de color del display.
@@ -107,8 +124,8 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
   escalonado (5% → 100%).
 - Calidad de release: **firma de release con secretos en CI**, R8 + subida de mapping,
   pre-launch report, Crashlytics + métricas anónimas (con consentimiento).
-- Assets/avisos del análisis de Lint: **icono monocromo (themed icon)**, eliminar 3
-  recursos sin usar, suprimir/aceptar aviso de orientación bloqueada,
+- Assets/avisos de Lint: ✅ **icono monocromo (themed icon)** + recursos sin usar + aviso de
+  orientación (HECHO, ver A0). Resto de quick-wins de Lint según informe,
   revisar `CredentialManagerSignInWithGoogle` en `AuthScreen.kt`.
 
 ---
