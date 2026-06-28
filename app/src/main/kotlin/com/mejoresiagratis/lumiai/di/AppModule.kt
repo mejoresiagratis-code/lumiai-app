@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.di
 import com.mejoresiagratis.lumiai.data.settings.DataStoreFlashStateRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreOnboardingPreferencesRepository
 import com.mejoresiagratis.lumiai.data.auth.FirebaseAuthRepository
+import com.mejoresiagratis.lumiai.data.entitlement.DataStoreTemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DefaultEntitlementRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreThemePreferencesRepository
 import com.mejoresiagratis.lumiai.data.torch.Camera2TorchController
@@ -11,6 +12,7 @@ import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
+import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import com.mejoresiagratis.lumiai.domain.repository.OnboardingPreferencesRepository
 import com.mejoresiagratis.lumiai.domain.repository.ThemePreferencesRepository
@@ -51,4 +53,8 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindEntitlementRepo(impl: DefaultEntitlementRepository): EntitlementRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTemporaryUnlockRepo(impl: DataStoreTemporaryUnlockRepository): TemporaryUnlockRepository
 }
