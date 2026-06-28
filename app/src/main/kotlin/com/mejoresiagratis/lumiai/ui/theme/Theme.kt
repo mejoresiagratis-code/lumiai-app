@@ -22,6 +22,7 @@ val LocalReduceMotion = staticCompositionLocalOf { false }
 
 /** Vibracion habilitada por el usuario (la leen las pantallas para feedback haptico). */
 val LocalHapticsEnabled = staticCompositionLocalOf { true }
+val LocalAutoLockScreen = staticCompositionLocalOf { false }
 
 @Composable
 fun LumiAiTheme(

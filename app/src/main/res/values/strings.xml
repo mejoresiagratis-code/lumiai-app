@@ -22,6 +22,8 @@
     <string name="a11y_high_contrast_desc">Refuerza el contraste de colores y bordes.</string>
     <string name="a11y_haptics_title">Vibración</string>
     <string name="a11y_haptics_desc">Vibra al encender o apagar la luz.</string>
+    <string name="a11y_auto_lock_title">Bloquear pantalla automáticamente</string>
+    <string name="a11y_auto_lock_desc">Al activar el modo Pantalla se bloquea para evitar apagados accidentales. Mantén pulsado para desbloquear.</string>
     <string name="a11y_brightness">Brillo de pantalla</string>
     <string name="a11y_intensity">Intensidad del LED</string>
     <string name="a11y_interval">Intervalo de la baliza</string>

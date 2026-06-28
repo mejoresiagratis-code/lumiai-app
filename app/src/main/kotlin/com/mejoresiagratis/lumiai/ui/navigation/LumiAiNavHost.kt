@@ -33,7 +33,9 @@ fun LumiAiNavHost(
     highContrast: Boolean,
     onSetHighContrast: (Boolean) -> Unit,
     haptics: Boolean,
-    onSetHaptics: (Boolean) -> Unit
+    onSetHaptics: (Boolean) -> Unit,
+    autoLockScreen: Boolean,
+    onSetAutoLockScreen: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = startDestination) {
@@ -66,6 +68,8 @@ fun LumiAiNavHost(
                 onSetHighContrast = onSetHighContrast,
                 haptics = haptics,
                 onSetHaptics = onSetHaptics,
+                autoLockScreen = autoLockScreen,
+                onSetAutoLockScreen = onSetAutoLockScreen,
                 onOpenAuth = { navController.navigate(Routes.AUTH) },
                 onBack = { navController.popBackStack() }
             )

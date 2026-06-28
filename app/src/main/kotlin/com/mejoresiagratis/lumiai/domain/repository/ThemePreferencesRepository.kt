@@ -23,4 +23,7 @@ interface ThemePreferencesRepository {
 
     val haptics: Flow<Boolean>
     suspend fun setHaptics(value: Boolean)
+
+    val autoLockScreen: Flow<Boolean>
+    suspend fun setAutoLockScreen(value: Boolean)
 }

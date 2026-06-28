@@ -22,6 +22,7 @@ import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.navigation.LumiAiNavHost
 import com.mejoresiagratis.lumiai.ui.navigation.Routes
 import com.mejoresiagratis.lumiai.ui.start.StartViewModel
+import com.mejoresiagratis.lumiai.ui.theme.LocalAutoLockScreen
 import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LumiAiTheme
 import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
@@ -52,6 +53,7 @@ private fun LumiAiApp(
     val highContrast: Boolean by themeViewModel.highContrast.collectAsStateWithLifecycle()
     val reduceMotion: Boolean by themeViewModel.reduceMotion.collectAsStateWithLifecycle()
     val haptics: Boolean by themeViewModel.haptics.collectAsStateWithLifecycle()
+    val autoLockScreen: Boolean by themeViewModel.autoLockScreen.collectAsStateWithLifecycle()
     val activeMode: FlashMode by themeViewModel.currentMode.collectAsStateWithLifecycle()
     val completed: Boolean? by startViewModel.onboardingCompleted.collectAsStateWithLifecycle()
 
@@ -63,7 +65,10 @@ private fun LumiAiApp(
         reduceMotion = reduceMotion,
         activeMode = activeMode
     ) {
-        CompositionLocalProvider(LocalHapticsEnabled provides haptics) {
+        CompositionLocalProvider(
+            LocalHapticsEnabled provides haptics,
+            LocalAutoLockScreen provides autoLockScreen
+        ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -87,7 +92,9 @@ private fun LumiAiApp(
                     highContrast = highContrast,
                     onSetHighContrast = themeViewModel::setHighContrast,
                     haptics = haptics,
-                    onSetHaptics = themeViewModel::setHaptics
+                    onSetHaptics = themeViewModel::setHaptics,
+                    autoLockScreen = autoLockScreen,
+                    onSetAutoLockScreen = themeViewModel::setAutoLockScreen
                 )
             }
         }

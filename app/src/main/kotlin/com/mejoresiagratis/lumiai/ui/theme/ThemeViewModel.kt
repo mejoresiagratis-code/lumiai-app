@@ -39,6 +39,9 @@ class ThemeViewModel @Inject constructor(
     val haptics: StateFlow<Boolean> =
         repo.haptics.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
+    val autoLockScreen: StateFlow<Boolean> =
+        repo.autoLockScreen.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /** Modo activo, para que el acento Multicolor siga al modo en vivo. */
     val currentMode: StateFlow<FlashMode> =
         flashState.mode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FlashMode.CONTINUOUS)
@@ -65,5 +68,9 @@ class ThemeViewModel @Inject constructor(
 
     fun setHaptics(value: Boolean) {
         viewModelScope.launch { repo.setHaptics(value) }
+    }
+
+    fun setAutoLockScreen(value: Boolean) {
+        viewModelScope.launch { repo.setAutoLockScreen(value) }
     }
 }

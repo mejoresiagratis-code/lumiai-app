@@ -25,6 +25,7 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val reduceMotionKey = booleanPreferencesKey("a11y_reduce_motion")
     private val highContrastKey = booleanPreferencesKey("a11y_high_contrast")
     private val hapticsKey = booleanPreferencesKey("a11y_haptics")
+    private val autoLockScreenKey = booleanPreferencesKey("a11y_auto_lock_screen")
 
     // Default de la app: tema oscuro.
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
@@ -74,5 +75,12 @@ class DataStoreThemePreferencesRepository @Inject constructor(
 
     override suspend fun setHaptics(value: Boolean) {
         dataStore.edit { it[hapticsKey] = value }
+    }
+
+    // Auto-bloqueo del modo Pantalla: desactivado por defecto (el usuario opta por activarlo).
+    override val autoLockScreen: Flow<Boolean> = dataStore.data.map { p -> p[autoLockScreenKey] ?: false }
+
+    override suspend fun setAutoLockScreen(value: Boolean) {
+        dataStore.edit { it[autoLockScreenKey] = value }
     }
 }

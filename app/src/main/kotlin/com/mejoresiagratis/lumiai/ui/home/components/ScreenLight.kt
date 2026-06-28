@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.ui.theme.LocalAutoLockScreen
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import kotlin.math.abs
@@ -126,7 +127,8 @@ fun ScreenLight(
     // Panel de ajustes ocultable: colapsado deja solo el asa superior para reabrirlo y
     // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
     var panelExpanded by remember { mutableStateOf(true) }
-    var locked by rememberSaveable { mutableStateOf(false) }
+    val autoLockScreen = LocalAutoLockScreen.current
+    var locked by rememberSaveable { mutableStateOf(autoLockScreen) }
 
     Box(
         modifier

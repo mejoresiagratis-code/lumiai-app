@@ -95,6 +95,8 @@ fun SettingsScreen(
     onSetHighContrast: (Boolean) -> Unit,
     haptics: Boolean,
     onSetHaptics: (Boolean) -> Unit,
+    autoLockScreen: Boolean,
+    onSetAutoLockScreen: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel()
@@ -287,6 +289,12 @@ fun SettingsScreen(
                     descRes = R.string.a11y_high_contrast_desc,
                     checked = highContrast,
                     onCheckedChange = onSetHighContrast
+                )
+                SettingsToggle(
+                    titleRes = R.string.a11y_auto_lock_title,
+                    descRes = R.string.a11y_auto_lock_desc,
+                    checked = autoLockScreen,
+                    onCheckedChange = onSetAutoLockScreen
                 )
                 if (hasVibrator) {
                     SettingsToggle(
