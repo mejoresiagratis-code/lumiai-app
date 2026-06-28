@@ -149,6 +149,13 @@ son del 22 jun y van por detrás).
 - **Gesto de arrastre** para expandir/colapsar la hoja (hoy es toggle "Ver más / Ver menos").
 
 ### .3 Profesional (DIFERIDO como hito de modernización de toolchain)
+
+> **Plan detallado por fases:** `2026-06-28-restyle-m3-expressive-roadmap.md` — lavado de cara
+> M3 Expressive en dos vías (Vía A: *look* Expressive con el toolchain actual, riesgo bajo;
+> Vía B: APIs Expressive reales tras bump, gated). Mantiene todas las funciones (solo capa de
+> presentación), default **ámbar/negro como el Splash**, y **un ejemplo visual por fase** en
+> `docs/mockups/` (primero: `2026-06-28-hub-ambar-m3.html`). Regla: preguntar antes de borrar nada.
+
 - Compose BOM bump → **M3 Expressive + Material motion** + transiciones `sharedBounds`
   Hub ↔ Ajustes.
 - Microinteracciones en chips, blur progresivo en el borde de la hoja, halo/anillo Morse
