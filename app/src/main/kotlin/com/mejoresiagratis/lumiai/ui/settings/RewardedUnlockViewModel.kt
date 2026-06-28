@@ -53,10 +53,14 @@ class RewardedUnlockViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), RewardedUnlockUi())
 
-    fun watchAd(activity: Activity, onGranted: () -> Unit, onUnavailable: () -> Unit) {
+    fun watchAd(
+        activity: Activity,
+        onReward: (RewardProgress.Outcome) -> Unit,
+        onUnavailable: () -> Unit
+    ) {
         rewardedAdController.showIfAvailable(
             activity = activity,
-            onReward = { outcome -> if (outcome.grantsUnlock) onGranted() },
+            onReward = onReward,
             onUnavailable = onUnavailable
         )
     }

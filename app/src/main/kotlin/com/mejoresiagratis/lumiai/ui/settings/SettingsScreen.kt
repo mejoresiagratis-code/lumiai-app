@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.settings
 
 import android.app.Activity
 import com.mejoresiagratis.lumiai.BuildConfig
+import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
@@ -292,8 +293,14 @@ fun SettingsScreen(
                         if (act != null) {
                             rewardedUnlockViewModel.watchAd(
                                 activity = act,
-                                onGranted = {
-                                    Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
+                                onReward = { outcome ->
+                                    val msg = if (outcome.grantsUnlock) {
+                                        context.getString(R.string.pro_granted)
+                                    } else {
+                                        val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                        context.getString(R.string.pro_progress_more, remaining)
+                                    }
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 },
                                 onUnavailable = {
                                     Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()

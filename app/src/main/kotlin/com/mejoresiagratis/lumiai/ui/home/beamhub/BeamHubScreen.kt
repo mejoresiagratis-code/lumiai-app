@@ -1,5 +1,9 @@
 package com.mejoresiagratis.lumiai.ui.home.beamhub
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
@@ -34,6 +38,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +47,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -78,13 +84,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.entitlement.AccessState
+import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
+import com.mejoresiagratis.lumiai.domain.entitlement.Tier
 import com.mejoresiagratis.lumiai.domain.entitlement.tier
+import com.mejoresiagratis.lumiai.ui.settings.RewardedUnlockViewModel
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
@@ -113,7 +123,8 @@ import kotlin.math.sin
 fun BeamHubScreen(
     onOpenSettings: () -> Unit,
     onOpenAuth: () -> Unit,
-    viewModel: FlashViewModel = hiltViewModel()
+    viewModel: FlashViewModel = hiltViewModel(),
+    rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
@@ -151,6 +162,39 @@ fun BeamHubScreen(
     }
 
     val hazeState = remember { HazeState() }
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    var lockedDialogMode by remember { mutableStateOf<FlashMode?>(null) }
+
+    lockedDialogMode?.let { mode ->
+        val canSignIn = mode.tier == Tier.ADVANCED && !state.access.entitlements.hasAccount
+        LockedModeDialog(
+            canSignIn = canSignIn,
+            onWatchAd = {
+                lockedDialogMode = null
+                val act = activity
+                if (act != null) {
+                    rewardedUnlockViewModel.watchAd(
+                        activity = act,
+                        onReward = { outcome ->
+                            if (outcome.grantsUnlock) {
+                                Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
+                                viewModel.selectMode(mode)
+                            } else {
+                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                Toast.makeText(context, context.getString(R.string.pro_progress_more, remaining), Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onUnavailable = {
+                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            },
+            onSignIn = { lockedDialogMode = null; onOpenAuth() },
+            onDismiss = { lockedDialogMode = null }
+        )
+    }
     val primary = MaterialTheme.colorScheme.primary
     val background = MaterialTheme.colorScheme.background
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -308,7 +352,7 @@ fun BeamHubScreen(
                 ModeRail(
                     selected = state.mode,
                     onSelect = viewModel::selectMode,
-                    onLocked = { onOpenAuth() },
+                    onLocked = { lockedDialogMode = it },
                     caps = state.capabilities,
                     access = state.access,
                     modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
@@ -661,4 +705,41 @@ internal fun PowerOrb(
             }
         }
     }
+}
+
+@Composable
+private fun LockedModeDialog(
+    canSignIn: Boolean,
+    onWatchAd: () -> Unit,
+    onSignIn: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.mode_locked_title)) },
+        text = {
+            Text(
+                stringResource(
+                    if (canSignIn) R.string.mode_locked_body else R.string.mode_locked_body_ad_only
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onWatchAd) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                if (canSignIn) {
+                    TextButton(onClick = onSignIn) { Text(stringResource(R.string.mode_unlock_sign_in)) }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            }
+        }
+    )
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -150,4 +150,11 @@
     <string name="pro_watch_ad_loading">Preparando anuncio…</string>
     <string name="pro_granted">¡Has desbloqueado 1 h de Pro!</string>
     <string name="pro_ad_unavailable">Anuncio no disponible, inténtalo en unos segundos.</string>
+    <string name="pro_progress_more">Anuncio visto · te falta %1$d para 1 h de Pro.</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="mode_locked_title">Modo bloqueado</string>
+    <string name="mode_locked_body">Desbloquéalo gratis: mira anuncios (2 = 1 h de Pro) o inicia sesión.</string>
+    <string name="mode_locked_body_ad_only">Desbloquéalo gratis viendo anuncios (2 = 1 h de Pro).</string>
+    <string name="mode_unlock_watch_ad">Ver anuncio</string>
+    <string name="mode_unlock_sign_in">Iniciar sesión</string>
 </resources>
