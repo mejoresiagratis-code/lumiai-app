@@ -1,6 +1,6 @@
 # LumiAI · Pendientes consolidados (migración + roadmap de producto)
 
-Fecha: 23 jun 2026 · HEAD de referencia: `b6d8413` (act.)
+Fecha: 23 jun 2026 · act. 28 jun · HEAD de referencia: `d7cf814`
 Fuentes cruzadas: **roadmap de migración a Beam Hub** (`roadmap_src.html`) +
 **roadmap/propuesta de producto** (`lumiai-roadmap-propuesta.html`), contrastadas
 contra el estado **real** del repo (no contra los recuerdos ni contra los HTML, que
@@ -23,6 +23,28 @@ son del 22 jun y van por detrás).
 - ✅ **Aviso de fotosensibilidad en Estrobo** (parte de seguridad de Fase 1).
 - ✅ **Intensidad real en Continuo CONFIRMADA** (`turnOnTorchWithStrengthLevel`, en vivo,
   gateada por `supportsTorchStrength`) — ya estaba bien.
+
+---
+
+## A1. Pulido de UI por acento + layout (esta sesión, HEAD `d7cf814`)
+
+- ✅ **Tema por acento COMPLETO**: el esquema M3 generado se adopta entero, **incluidos los
+  neutros** (fondo, superficie, contorno, contenedores). Toda la vista —bordes, fondos y
+  detalles— refuerza la paleta del acento (Multicolor sigue al modo). Blanco→Monochrome
+  (neutro real), Ámbar→TonalSpot (cálido), cromáticos→Content. Roles animados.
+- ✅ **Layout full-width**: se elimina el padding lateral del contenido; el rail de modos
+  sangra a los bordes; la hoja de Control pasa a padding `md`.
+- ✅ **Contraste de la hoja de Control**: superficie elevada (`surfaceContainerHighest`),
+  borde superior (`outlineVariant`), sombra y asa más visible → ya no se confunde con el fondo.
+- ✅ **Avisos → icono de info + toast descartable**: los avisos de modo (Estrobo fotosensible,
+  ayuda de Baliza) se muestran al tocar un icono ⓘ en la cabecera y se cierran al pulsar en
+  cualquier parte de la pantalla (overlay de alto contraste vía `inverseSurface`).
+- ✅ **Pantalla: panel de ajustes ocultable** — se colapsa dejando solo el asa superior para
+  reabrirlo, maximizando la superficie de luz; tocar fuera del panel sigue saliendo del modo.
+- ✅ **Presets nombrados de Pantalla** (Blanco/Cálido/Lectura/Noche) color + brillo de un toque.
+- ✅ **Vista previa Morse** (puntos/rayas + duración de ciclo) para SOS y Morse de texto.
+- ✅ **Beam Hub adaptativo** (consolidado aquí): hoja ≤ 42% con scroll, orbe que escala a la
+  pantalla, sin solape con el botón de encendido; ritmo de espaciado 16/4 dp.
 
 ---
 
@@ -90,15 +112,20 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 - **Fase 3 (cuenta):** **vincular sesión anónima ↔ cuenta real** (no perder uid/progreso);
   cuenta completa: verificación de correo, restablecer contraseña, reautenticación,
   **borrar cuenta (RGPD)**; Firebase App Check; errores traducidos por tipo.
-- **Fase 3.5 (Morse):** ✅ acentos normalizados + aviso de no soportados (HECHO, ver A0).
-  Falta: vista previa punto/raya + contador de repeticiones; historial de mensajes recientes.
+- **Fase 3.5 (Morse):** ✅ acentos normalizados + aviso de no soportados + ✅ **vista previa
+  punto/raya con duración de ciclo** (HECHO, ver A0/A1). Falta: contador de repeticiones;
+  historial de mensajes recientes.
 - **Pulido (orientación/insets):** edge-to-edge **uniforme en todas las pantallas**
   (Ajustes, Acceder); tablets en horizontal con layout adaptado.
 
 ### Pantalla v2 — huecos menores frente a la propuesta
-- Núcleo hecho (presets, tono, brillo). Falta: **set de presets honestos nombrados**
-  (Blanco, Cálido, Rojo nocturno, Lectura, Fiesta), rueda de color completa (hoy slider de
-  tono), y gesto para **volver a mostrar el panel** tras ocultarlo.
+- Núcleo hecho (presets, tono, brillo). ✅ **Presets nombrados** (Blanco/Cálido/Lectura/Noche)
+  y ✅ **panel ocultable + asa para reabrir** (HECHO, ver A1). Falta: rueda de color completa
+  (hoy slider de tono) y más presets (p. ej. Fiesta).
+- 🔒 **(Futuro) Bloqueo/desbloqueo de modo** para evitar salidas accidentales o no deseadas:
+  empezando por **Pantalla** (que hoy sale al tocar fuera) y extensible al resto de modos.
+  Idea: candado que fija el modo encendido; desbloqueo explícito (mantener pulsado / doble
+  toque) antes de permitir salir. Pendiente definir UX, indicador visible y persistencia.
 
 ### Modos nuevos (sección 03)
 - ~~**Baliza / Intervalo**~~ → ✅ **IMPLEMENTADO v1 COMPLETO** (ver A0: presets, auto-apagado,
