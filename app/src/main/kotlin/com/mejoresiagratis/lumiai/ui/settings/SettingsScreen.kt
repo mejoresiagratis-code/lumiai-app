@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -57,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +72,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -83,6 +86,7 @@ import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.solidColor
 import kotlinx.coroutines.launch
 
@@ -490,15 +494,16 @@ private fun SettingsSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
         Text(
-            text = stringResource(headerRes),
-            style = MaterialTheme.typography.labelLarge,
+            text = stringResource(headerRes).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 2.sp,
             modifier = Modifier
                 .padding(start = LumiSpacing.md)
                 .semantics { heading() }
         )
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -660,9 +665,15 @@ private fun AccentSwatch(
 ) {
     val label = stringResource(accentLabel(accent))
     val ring = MaterialTheme.colorScheme.onSurface
+    val swatchScale by animateFloatAsState(
+        targetValue = if (selected) 1f else 0.92f,
+        animationSpec = LumiMotion.emphasized(),
+        label = "swatchScale"
+    )
     Box(
         modifier = Modifier
             .size(52.dp)
+            .scale(swatchScale)
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
