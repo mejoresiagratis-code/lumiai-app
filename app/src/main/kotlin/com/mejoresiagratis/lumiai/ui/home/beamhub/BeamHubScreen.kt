@@ -9,6 +9,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -59,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -110,6 +112,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LocalReduceMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -516,21 +519,27 @@ internal fun ModePill(
     locked: Boolean,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    // Shape-morph + muelle al seleccionar (estilo M3 Expressive, Via A).
+    val cornerDp by animateDpAsState(
+        targetValue = if (selected) 28.dp else 18.dp,
+        animationSpec = LumiMotion.emphasized(),
+        label = "pillCorner"
+    )
+    val pillScale by animateFloatAsState(
+        targetValue = if (selected) 1.03f else 1f,
+        animationSpec = LumiMotion.emphasized(),
+        label = "pillScale"
+    )
+    val shape = RoundedCornerShape(cornerDp)
     val container = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
     val content = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        MaterialTheme.colorScheme.onPrimary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
     }
     val isSel = selected
     val lockedLabel = stringResource(R.string.mode_locked_cd)
@@ -538,10 +547,21 @@ internal fun ModePill(
         modifier = Modifier
             .width(88.dp)
             .height(88.dp)
-            .shadow(elevation = if (selected) 10.dp else 3.dp, shape = shape, clip = false)
+            .scale(pillScale)
+            .shadow(elevation = if (selected) 8.dp else 2.dp, shape = shape, clip = false)
             .clip(shape)
             .background(container)
-            .border(width = if (selected) 2.dp else 1.dp, color = borderColor, shape = shape)
+            .then(
+                if (selected) {
+                    Modifier
+                } else {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                        shape = shape
+                    )
+                }
+            )
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
                 this.selected = isSel
@@ -596,8 +616,23 @@ internal fun PowerOrb(
     val onPrimary = MaterialTheme.colorScheme.onPrimary
     val reduceMotion = LocalReduceMotion.current
 
-    val glow by animateFloatAsState(targetValue = if (isOn) 0.5f else 0f, label = "orbGlow")
-    val scale by animateFloatAsState(targetValue = if (isOn) 1f else 0.94f, label = "orbScale")
+    val innerSize = orbDiameter * (176f / 252f)
+    val glow by animateFloatAsState(
+        targetValue = if (isOn) 0.5f else 0f,
+        animationSpec = LumiMotion.effects(),
+        label = "orbGlow"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isOn) 1f else 0.94f,
+        animationSpec = LumiMotion.emphasized(),
+        label = "orbScale"
+    )
+    // Forma del orbe: cuadrado redondeado apagado -> circulo encendido (shape-morph Expressive).
+    val orbCorner by animateDpAsState(
+        targetValue = if (isOn) innerSize / 2 else innerSize * 0.34f,
+        animationSpec = LumiMotion.emphasized(),
+        label = "orbCorner"
+    )
 
     val transition = rememberInfiniteTransition(label = "orbBeam")
     val sweep by transition.animateFloat(
@@ -636,13 +671,24 @@ internal fun PowerOrb(
     val torchLabel = stringResource(R.string.a11y_torch)
     val orbStateLabel = stringResource(if (isOn) R.string.a11y_state_on else R.string.a11y_state_off)
 
-    Box(modifier = modifier.requiredSize(orbDiameter), contentAlignment = Alignment.Center) {
-        Box(
-            modifier = Modifier
-                .size(orbDiameter)
-                .clip(CircleShape)
-                .background(primary.copy(alpha = haloAlpha))
-        )
+    Box(
+        modifier = modifier
+            .requiredSize(orbDiameter)
+            .drawBehind {
+                if (haloAlpha > 0f) {
+                    val r = size.minDimension / 2f
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(primary.copy(alpha = haloAlpha), Color.Transparent),
+                            center = Offset(size.width / 2f, size.height / 2f),
+                            radius = r
+                        ),
+                        radius = r
+                    )
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
         Canvas(modifier = Modifier.size(orbDiameter * (224f / 252f))) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val rOuter = size.minDimension / 2f - 2.dp.toPx()
@@ -666,9 +712,9 @@ internal fun PowerOrb(
         }
         Box(
             modifier = Modifier
-                .size(orbDiameter * (176f / 252f))
+                .size(innerSize)
                 .scale(scale)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(orbCorner))
                 .background(
                     Brush.radialGradient(
                         listOf(primary, primary.copy(alpha = if (isOn) 0.92f else 0.55f))
