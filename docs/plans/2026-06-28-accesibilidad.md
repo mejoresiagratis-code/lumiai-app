@@ -128,7 +128,7 @@ Pocas y con sentido. Persisten en DataStore. Toggles:
 ### Lote 6 — QA y verificación ✅ (QA en dispositivo hecho · 28 jun)
 - [x] Pasada de **Accessibility Scanner** + **TalkBack** + fuente 200% en dispositivo.
 - [x] Contraste por acento revisado (alto contraste disponible para acentos límite).
-- [x] Tests de `semantics` del orbe (apagado/encendido + click) con **Robolectric + Compose UI test**, en `testDebugUnitTest` (CI los compila y ejecuta). Resto (pill/nombre de modo) — opcional, hito de testing.
+- [x] Tests de `semantics` con **Robolectric + Compose UI test** (`testDebugUnitTest`): **orbe** (apagado/encendido + click) y **ModePill** (selected true/false, rol Tab, stateDescription al bloquear). Resto opcional: nombre de modo a nivel de Hub (requiere Hilt).
 
 ## Fuera de alcance (v1.1+)
 - Avisos por sonido (TFLite/YAMNet) y comandos de voz: features con su propio hito.

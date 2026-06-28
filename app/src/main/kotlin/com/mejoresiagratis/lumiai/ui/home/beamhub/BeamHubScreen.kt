@@ -466,7 +466,7 @@ private fun ModeRail(
 }
 
 @Composable
-private fun ModePill(
+internal fun ModePill(
     item: ModeUi,
     selected: Boolean,
     locked: Boolean,
