@@ -138,8 +138,9 @@ fun BeamHubScreen(
     val hazeState = remember { HazeState() }
     val primary = MaterialTheme.colorScheme.primary
     val background = MaterialTheme.colorScheme.background
-    val surface = MaterialTheme.colorScheme.surface
     val onSurface = MaterialTheme.colorScheme.onSurface
+    val sheetContainer = MaterialTheme.colorScheme.surfaceContainerHighest
+    val sheetBorder = MaterialTheme.colorScheme.outlineVariant
 
     // Tamaños adaptativos: el sheet nunca pasa del 42% de la pantalla (con scroll interno) y
     // el orbe se encoge según la altura disponible, acotado, para no solaparse nunca con el sheet.
@@ -194,13 +195,23 @@ fun BeamHubScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = sheetMaxHeight)
+                        .shadow(
+                            elevation = 16.dp,
+                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                            clip = false
+                        )
                         .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .hazeEffect(
                             state = hazeState,
-                            style = HazeDefaults.style(backgroundColor = surface, blurRadius = 24.dp)
+                            style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = sheetBorder,
+                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                         )
                         .navigationBarsPadding()
-                        .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
+                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
                 ) {
@@ -209,7 +220,7 @@ fun BeamHubScreen(
                             .align(Alignment.CenterHorizontally)
                             .size(width = 40.dp, height = 4.dp)
                             .clip(CircleShape)
-                            .background(onSurface.copy(alpha = 0.3f))
+                            .background(onSurface.copy(alpha = 0.45f))
                     )
                     var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
                     Row(
@@ -247,8 +258,7 @@ fun BeamHubScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = LumiSpacing.lg),
+                    .padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ModeRail(
@@ -348,7 +358,7 @@ private fun ModeRail(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             letterSpacing = 2.sp,
-            modifier = Modifier.padding(start = LumiSpacing.xs, bottom = LumiSpacing.sm)
+            modifier = Modifier.padding(start = LumiSpacing.md, bottom = LumiSpacing.sm)
         )
         Row(
             modifier = Modifier
@@ -356,6 +366,7 @@ private fun ModeRail(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
         ) {
+            Spacer(modifier = Modifier.width(LumiSpacing.sm))
             available.forEach { item ->
                 val locked = !entitlements.unlocks(item.mode.tier)
                 ModePill(
@@ -365,6 +376,7 @@ private fun ModeRail(
                     onClick = { if (locked) onLocked(item.mode) else onSelect(item.mode) }
                 )
             }
+            Spacer(modifier = Modifier.width(LumiSpacing.sm))
         }
     }
 }
