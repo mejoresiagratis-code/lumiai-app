@@ -201,3 +201,35 @@ manuales (Fase 0) → **PREGUNTAR** antes de borrarlos.
 Plan guardado. Ejecución sugerida: **fase a fase**, empezando por la Fase 0/1 (mockup ámbar ya
 disponible). Cuando apruebes el mockup de una fase, hago el re-skin de esa fase reutilizando el
 composable existente y te paso a confirmar CI. ¿Empezamos por la Fase 1 (Beam Hub)?
+
+---
+
+## Registro de ejecución (28 jun 2026)
+
+**Vía A (toolchain actual) — COMPLETA.** Cada fase: re-skin solo de presentación,
+sin tocar lógica, sin borrar nada, con verificación estática (balances, imports,
+claves `R.string`, semántica/tests intactos) y un mockup ámbar/oscuro de ejemplo.
+
+| Fase | Alcance | Commit(s) | Mockup |
+|------|---------|-----------|--------|
+| Backup | rama `backup/pre-m3-restyle` + tag `backup-pre-m3-restyle-20260628` | `6fe16df` | — |
+| F0 | Tokens (Shape/Motion/Type) | `20c5d89` | — |
+| F1 | Beam Hub (orbe shape-morph + rail) | `6116b93` | hub-ambar |
+| F2 | Hoja de Control + ajustes de modo; panel Pantalla como hoja | `b1cab42`, `c3ae77a` | control-sheet-ambar-f2 |
+| F3 | Ajustes (tarjetas, cabeceras eyebrow, swatches con muelle) | `a9c4ee0` | settings-ambar-f3 |
+| F4 | Auth (badge squircle) + Onboarding (indicador con muelle) | `1396e6a`, `6df35f5` | auth-onboarding-ambar-f4 |
+| F5 | Alerta Sonora (tarjetas 28dp + cabeceras eyebrow) | `9eaba66` | sound-alert-ambar-f5 |
+
+**Principios aplicados en todas:** semántica de accesibilidad intacta (`contentDescription`,
+`stateDescription`, `heading()`, `Role.*`); `PowerOrbSemanticsTest` y `ModePillSemanticsTest`
+siguen válidos; imports huérfanos retirados (`CircleShape` en Auth/Onboarding); muelles vía
+`LumiMotion` (emphasized/standard/effects); escala de forma de F0 reutilizada (18/28/40dp).
+
+### Pendiente
+- **F6 — Vía B (GATED, alto riesgo):** requiere bump de toolchain (Kotlin 2.1+, AGP 8.9+,
+  compileSdk 36, BOM 2025.x / Material3 1.4+). Sustituye los muelles/formas manuales por las
+  APIs reales de M3 Expressive (botones/segmented/slider expresivos, `MaterialShapes`,
+  motion scheme). **No iniciar sin decisión explícita**: no se puede validar en sandbox y
+  arrastra el retiro de `-Xskip-metadata-version-check` y posibles roturas de dependencias.
+- **F7 — QA visual en dispositivo (responsabilidad de Pablo):** verificar orbe, rail, hoja de
+  Control, Pantalla, Ajustes, Auth/Onboarding y Alerta Sonora en ámbar/oscuro y en claro.
