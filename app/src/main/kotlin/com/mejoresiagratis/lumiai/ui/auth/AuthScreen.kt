@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import kotlinx.coroutines.launch
 
@@ -106,10 +108,17 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (state.failed) {
+            state.error?.let { err ->
                 Text(
-                    text = stringResource(R.string.auth_error_generic),
+                    text = authErrorMessage(err),
                     color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (state.passwordResetSent) {
+                Text(
+                    text = stringResource(R.string.auth_reset_sent),
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -129,6 +138,12 @@ fun AuthScreen(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
             ) { Text(stringResource(R.string.auth_register)) }
+
+            TextButton(
+                onClick = { viewModel.sendPasswordReset(email) },
+                enabled = !state.loading,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) { Text(stringResource(R.string.auth_forgot_password)) }
 
             if (webClientId != null) {
                 Text(
@@ -175,4 +190,14 @@ fun AuthScreen(
             }
         }
     }
+}
+
+@Composable
+private fun authErrorMessage(error: AuthError): String = when (error) {
+    AuthError.InvalidCredentials -> stringResource(R.string.auth_error_invalid)
+    AuthError.EmailInUse -> stringResource(R.string.auth_error_email_in_use)
+    AuthError.WeakPassword -> stringResource(R.string.auth_error_weak_password)
+    AuthError.Network -> stringResource(R.string.auth_error_network)
+    AuthError.RecentLoginRequired -> stringResource(R.string.auth_error_generic)
+    AuthError.Unknown -> stringResource(R.string.auth_error_generic)
 }

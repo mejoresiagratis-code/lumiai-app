@@ -63,6 +63,25 @@
     <string name="auth_google">Continuar con Google</string>
     <string name="auth_or">o</string>
     <string name="auth_error_generic">No se pudo completar. Revisa los datos e inténtalo de nuevo.</string>
+    <string name="auth_error_invalid">Correo o contraseña incorrectos.</string>
+    <string name="auth_error_email_in_use">Ese correo ya tiene una cuenta. Inicia sesión.</string>
+    <string name="auth_error_weak_password">La contraseña es demasiado débil (mínimo 6 caracteres).</string>
+    <string name="auth_error_network">Sin conexión. Inténtalo de nuevo.</string>
+    <string name="auth_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="auth_reset_sent">Te hemos enviado un correo para restablecer la contraseña.</string>
+    <string name="account_email_verified">Correo verificado</string>
+    <string name="account_email_unverified">Correo sin verificar</string>
+    <string name="account_resend_verification">Reenviar verificación</string>
+    <string name="account_verification_sent">Correo de verificación enviado.</string>
+    <string name="account_delete">Borrar cuenta</string>
+    <string name="account_delete_confirm_title">¿Borrar tu cuenta?</string>
+    <string name="account_delete_confirm_body">Esta acción es permanente y elimina tu cuenta y tus datos asociados. No se puede deshacer.</string>
+    <string name="account_delete_cancel">Cancelar</string>
+    <string name="account_reauth_title">Confirma tu identidad</string>
+    <string name="account_reauth_body">Por seguridad, vuelve a introducir tu contraseña para borrar la cuenta.</string>
+    <string name="account_reauth_google_body">Por seguridad, vuelve a iniciar sesión con Google para borrar la cuenta.</string>
+    <string name="account_reauth_google_action">Continuar con Google</string>
+    <string name="account_deleted">Tu cuenta se ha borrado.</string>
     <!-- Morse de texto (Fase 3.5) -->
     <string name="mode_text_morse">Morse de texto</string>
     <string name="mode_text_morse_short">Morse</string>
