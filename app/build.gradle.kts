@@ -70,6 +70,15 @@ android {
     }
 }
 
+// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0). Este proyecto usa Kotlin 2.0.21,
+// cuyo compilador rechaza metadata más nueva. Permitimos leerla sin subir Kotlin todavía;
+// solo afecta a la lectura de binarios (no a nuestro código) y aplica a compile + KSP.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
+    }
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
 
