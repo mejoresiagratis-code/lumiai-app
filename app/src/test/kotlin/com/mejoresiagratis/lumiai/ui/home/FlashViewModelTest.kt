@@ -6,6 +6,7 @@ import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
+import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.util.FakeFlashStateRepository
 import com.mejoresiagratis.lumiai.util.FakeTorchController
 import com.mejoresiagratis.lumiai.util.MainDispatcherRule
@@ -30,8 +31,13 @@ class FlashViewModelTest {
     private val entitlementRepo: EntitlementRepository = object : EntitlementRepository {
         override val entitlements = flowOf(Entitlements())
     }
+    private val temporaryUnlock: TemporaryUnlockRepository = object : TemporaryUnlockRepository {
+        override val proUntilMillis = flowOf(0L)
+        override suspend fun extend(durationMillis: Long) {}
+        override suspend fun clear() {}
+    }
 
-    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, torch)
+    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, temporaryUnlock, torch)
 
     @Test
     fun `toggle on starts engine and reflects state`() = runTest {
