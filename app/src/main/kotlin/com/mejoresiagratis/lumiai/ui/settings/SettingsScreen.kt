@@ -105,6 +105,7 @@ fun SettingsScreen(
     onSetAutoLockScreen: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
     onOpenGod: () -> Unit,
+    onOpenSoundAlert: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
@@ -376,6 +377,9 @@ fun SettingsScreen(
                     )
                     Button(onClick = onOpenGod, modifier = Modifier.fillMaxWidth()) {
                         Text("Abrir God mode")
+                    }
+                    Button(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
+                        Text("Abrir Alerta sonora (beta)")
                     }
                 }
             }
