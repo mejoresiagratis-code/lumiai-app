@@ -176,6 +176,7 @@ fun ScreenLight(
 
         Surface(
             color = Color(0xF00B0E13),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
