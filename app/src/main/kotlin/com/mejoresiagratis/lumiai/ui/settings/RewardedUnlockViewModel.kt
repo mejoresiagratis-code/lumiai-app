@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.ads.RewardedAdController
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
+import com.mejoresiagratis.lumiai.domain.entitlement.Tier
 import com.mejoresiagratis.lumiai.domain.entitlement.TemporaryUnlock
+import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.domain.repository.RewardProgressRepository
 import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,15 +24,20 @@ data class RewardedUnlockUi(
     val remainingMillis: Long = 0L,
     val adsWatched: Int = 0,
     val adsPerGrant: Int = RewardProgress.ADS_PER_GRANT,
-    val adReady: Boolean = false
+    val adReady: Boolean = false,
+    /** Acceso efectivo al tier IA: suscripción Pro o desbloqueo temporal activo. */
+    val proUnlocked: Boolean = false
 )
 
 @HiltViewModel
 class RewardedUnlockViewModel @Inject constructor(
     temporaryUnlock: TemporaryUnlockRepository,
     rewardProgress: RewardProgressRepository,
+    entitlementRepo: EntitlementRepository,
     private val rewardedAdController: RewardedAdController
 ) : ViewModel() {
+
+    private val entitlements = entitlementRepo.entitlements
 
     private val ticker = flow {
         while (true) {
@@ -43,13 +50,16 @@ class RewardedUnlockViewModel @Inject constructor(
         temporaryUnlock.proUntilMillis,
         rewardProgress.count,
         rewardedAdController.isReady,
+        entitlements,
         ticker
-    ) { proUntil, count, ready, now ->
+    ) { proUntil, count, ready, ent, now ->
+        val active = TemporaryUnlock.isActive(proUntil, now)
         RewardedUnlockUi(
-            active = TemporaryUnlock.isActive(proUntil, now),
+            active = active,
             remainingMillis = TemporaryUnlock.remainingMillis(proUntil, now),
             adsWatched = count,
-            adReady = ready
+            adReady = ready,
+            proUnlocked = ent.unlocks(Tier.AI) || active
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), RewardedUnlockUi())
 

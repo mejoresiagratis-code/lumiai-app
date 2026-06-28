@@ -367,6 +367,25 @@ fun SettingsScreen(
                 }
             }
 
+            SettingsSection(R.string.sound_alert_section) {
+                Text(
+                    text = stringResource(R.string.sound_alert_explainer),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (proUi.proUnlocked) {
+                    Button(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.sound_alert_open))
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.sound_alert_locked),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             if (BuildConfig.DEBUG) {
                 Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                     Text(
@@ -377,9 +396,6 @@ fun SettingsScreen(
                     )
                     Button(onClick = onOpenGod, modifier = Modifier.fillMaxWidth()) {
                         Text("Abrir God mode")
-                    }
-                    Button(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
-                        Text("Abrir Alerta sonora (beta)")
                     }
                 }
             }

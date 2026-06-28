@@ -145,6 +145,10 @@
     <string name="pro_section">Acceso Pro</string>
     <string name="pro_explainer">Mira 2 anuncios y consigue 1 hora de funciones Pro, sin coste.</string>
     <string name="pro_remaining">Pro activo · te queda %1$s</string>
+    <string name="sound_alert_section">Alerta sonora</string>
+    <string name="sound_alert_explainer">Avisa con destellos del flash o parpadeo de pantalla cuando reconoce sonidos importantes (timbre, alarma, llanto…). Todo en el dispositivo. Función Pro.</string>
+    <string name="sound_alert_open">Abrir alerta sonora</string>
+    <string name="sound_alert_locked">Disponible con Pro, o tras desbloquear tiempo viendo un anuncio en «Acceso Pro».</string>
     <string name="pro_progress">Anuncios vistos: %1$d/%2$d</string>
     <string name="pro_watch_ad">Ver anuncio para 1 h de Pro</string>
     <string name="pro_watch_ad_loading">Preparando anuncio…</string>
