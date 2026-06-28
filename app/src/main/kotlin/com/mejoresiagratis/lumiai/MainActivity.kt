@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -21,6 +22,7 @@ import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.navigation.LumiAiNavHost
 import com.mejoresiagratis.lumiai.ui.navigation.Routes
 import com.mejoresiagratis.lumiai.ui.start.StartViewModel
+import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LumiAiTheme
 import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -49,6 +51,7 @@ private fun LumiAiApp(
     val accentStyle: AccentStyle by themeViewModel.accentStyle.collectAsStateWithLifecycle()
     val highContrast: Boolean by themeViewModel.highContrast.collectAsStateWithLifecycle()
     val reduceMotion: Boolean by themeViewModel.reduceMotion.collectAsStateWithLifecycle()
+    val haptics: Boolean by themeViewModel.haptics.collectAsStateWithLifecycle()
     val activeMode: FlashMode by themeViewModel.currentMode.collectAsStateWithLifecycle()
     val completed: Boolean? by startViewModel.onboardingCompleted.collectAsStateWithLifecycle()
 
@@ -60,6 +63,7 @@ private fun LumiAiApp(
         reduceMotion = reduceMotion,
         activeMode = activeMode
     ) {
+        CompositionLocalProvider(LocalHapticsEnabled provides haptics) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -81,9 +85,12 @@ private fun LumiAiApp(
                     reduceMotion = reduceMotion,
                     onSetReduceMotion = themeViewModel::setReduceMotion,
                     highContrast = highContrast,
-                    onSetHighContrast = themeViewModel::setHighContrast
+                    onSetHighContrast = themeViewModel::setHighContrast,
+                    haptics = haptics,
+                    onSetHaptics = themeViewModel::setHaptics
                 )
             }
+        }
         }
     }
 }

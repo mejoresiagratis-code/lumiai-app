@@ -20,4 +20,7 @@ interface ThemePreferencesRepository {
 
     val highContrast: Flow<Boolean>
     suspend fun setHighContrast(value: Boolean)
+
+    val haptics: Flow<Boolean>
+    suspend fun setHaptics(value: Boolean)
 }

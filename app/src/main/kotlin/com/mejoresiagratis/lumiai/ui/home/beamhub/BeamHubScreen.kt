@@ -95,6 +95,9 @@ import com.mejoresiagratis.lumiai.ui.home.components.ModeUi
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenBeacon
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.home.components.modeHasAdvanced
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LocalReduceMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import dev.chrisbanes.haze.HazeDefaults
@@ -113,6 +116,8 @@ fun BeamHubScreen(
     viewModel: FlashViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val haptic = LocalHapticFeedback.current
+    val hapticsEnabled = LocalHapticsEnabled.current
 
     LaunchedEffect(state.entitlements, state.mode) {
         if (!state.entitlements.unlocks(state.mode.tier)) viewModel.selectMode(FlashMode.CONTINUOUS)
@@ -322,7 +327,10 @@ fun BeamHubScreen(
                     }
                     PowerOrb(
                         isOn = state.isOn,
-                        onToggle = viewModel::toggle,
+                        onToggle = {
+                            if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.toggle()
+                        },
                         orbDiameter = orbSize,
                         pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
                         pulseFlashMs = if (state.mode == FlashMode.BEACON) state.settings.beaconFlashMs else null

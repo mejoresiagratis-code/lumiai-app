@@ -36,6 +36,9 @@ class ThemeViewModel @Inject constructor(
     val highContrast: StateFlow<Boolean> =
         repo.highContrast.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    val haptics: StateFlow<Boolean> =
+        repo.haptics.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
     /** Modo activo, para que el acento Multicolor siga al modo en vivo. */
     val currentMode: StateFlow<FlashMode> =
         flashState.mode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FlashMode.CONTINUOUS)
@@ -58,5 +61,9 @@ class ThemeViewModel @Inject constructor(
 
     fun setHighContrast(value: Boolean) {
         viewModelScope.launch { repo.setHighContrast(value) }
+    }
+
+    fun setHaptics(value: Boolean) {
+        viewModelScope.launch { repo.setHaptics(value) }
     }
 }

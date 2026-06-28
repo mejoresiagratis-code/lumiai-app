@@ -20,6 +20,9 @@ import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 /** Reducir movimiento efectivo (pref del usuario u opción del sistema). Lo leen orbe/ticks. */
 val LocalReduceMotion = staticCompositionLocalOf { false }
 
+/** Vibracion habilitada por el usuario (la leen las pantallas para feedback haptico). */
+val LocalHapticsEnabled = staticCompositionLocalOf { true }
+
 @Composable
 fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,

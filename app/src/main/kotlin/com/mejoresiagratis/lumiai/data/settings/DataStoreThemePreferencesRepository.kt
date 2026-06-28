@@ -24,6 +24,7 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val accentStyleKey = stringPreferencesKey("accent_style")
     private val reduceMotionKey = booleanPreferencesKey("a11y_reduce_motion")
     private val highContrastKey = booleanPreferencesKey("a11y_high_contrast")
+    private val hapticsKey = booleanPreferencesKey("a11y_haptics")
 
     // Default de la app: tema oscuro.
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
@@ -66,5 +67,12 @@ class DataStoreThemePreferencesRepository @Inject constructor(
 
     override suspend fun setHighContrast(value: Boolean) {
         dataStore.edit { it[highContrastKey] = value }
+    }
+
+    // Vibracion: por defecto activada (sin efecto en dispositivos sin vibrador).
+    override val haptics: Flow<Boolean> = dataStore.data.map { p -> p[hapticsKey] ?: true }
+
+    override suspend fun setHaptics(value: Boolean) {
+        dataStore.edit { it[hapticsKey] = value }
     }
 }

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import android.os.Vibrator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -92,6 +93,8 @@ fun SettingsScreen(
     onSetReduceMotion: (Boolean) -> Unit,
     highContrast: Boolean,
     onSetHighContrast: (Boolean) -> Unit,
+    haptics: Boolean,
+    onSetHaptics: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel()
@@ -100,6 +103,9 @@ fun SettingsScreen(
     val isGuest = user == null || user?.isAnonymous == true
     val accountUi by accountViewModel.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val hasVibrator = remember {
+        runCatching { context.getSystemService(Vibrator::class.java)?.hasVibrator() == true }.getOrDefault(false)
+    }
     val scope = rememberCoroutineScope()
     val webClientId = accountViewModel.webClientId
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -282,6 +288,14 @@ fun SettingsScreen(
                     checked = highContrast,
                     onCheckedChange = onSetHighContrast
                 )
+                if (hasVibrator) {
+                    SettingsToggle(
+                        titleRes = R.string.a11y_haptics_title,
+                        descRes = R.string.a11y_haptics_desc,
+                        checked = haptics,
+                        onCheckedChange = onSetHaptics
+                    )
+                }
             }
         }
     }
