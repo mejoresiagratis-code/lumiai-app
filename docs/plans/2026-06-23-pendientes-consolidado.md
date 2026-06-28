@@ -1,6 +1,6 @@
 # LumiAI · Pendientes consolidados (migración + roadmap de producto)
 
-Fecha: 23 jun 2026 · act. 28 jun · HEAD de referencia: `d7cf814`
+Fecha: 23 jun 2026 · act. 28 jun (tarde) · HEAD de referencia: `80f388e`
 Fuentes cruzadas: **roadmap de migración a Beam Hub** (`roadmap_src.html`) +
 **roadmap/propuesta de producto** (`lumiai-roadmap-propuesta.html`), contrastadas
 contra el estado **real** del repo (no contra los recuerdos ni contra los HTML, que
@@ -45,6 +45,31 @@ son del 22 jun y van por detrás).
 - ✅ **Vista previa Morse** (puntos/rayas + duración de ciclo) para SOS y Morse de texto.
 - ✅ **Beam Hub adaptativo** (consolidado aquí): hoja ≤ 42% con scroll, orbe que escala a la
   pantalla, sin solape con el botón de encendido; ritmo de espaciado 16/4 dp.
+
+---
+
+## A2. Cerrado en esta sesión (28 jun, tarde) — identidad, accesibilidad, cuenta y bloqueo
+
+- ✅ **Set de iconos de marca propio** (planos, geométricos, monocromos y tintables): linterna
+  como héroe, modos (sol/puntos/rayo/punto-raya/baliza), ajustes, atrás, candado, info, check;
+  splash bicolor ámbar.
+- ✅ **Rediseño moderno de Ajustes** (tarjetas agrupadas, tarjeta de cuenta con avatar + píldora
+  de estado, segmented de tema, rejilla de swatches con anillo/check) y de **Auth** (badge de
+  marca, toggle Acceder/Registro, divisor "o" + Google), con objetivos táctiles ≥48dp y semántica.
+- ✅ **Hito D (cuenta/RGPD) COMPLETO**: registro/acceso, **verificación de correo** + reenvío,
+  **restablecer contraseña**, **reautenticación** (password y Google), **borrar cuenta (RGPD)**
+  con diálogo de confirmación, **errores en español por tipo** y vinculación de credenciales.
+- ✅ **Sistema de acento ampliado**: nuevo **Amarillo** (#FFD60A, distinto del Ámbar), **tema
+  oscuro por defecto** y estilo **Cálido/Vívido** (Blanco→Monochrome, Cálido→TonalSpot,
+  Vívido→Content).
+- ✅ **Accesibilidad Capa A+B**: semántica/roles/estado, objetivos táctiles, encabezados y
+  etiquetas de sliders; **reduce-motion**, **alto contraste** (contrastLevel) y **vibración/
+  háptica** (gateada por hardware). *Falta QA en dispositivo (Lote 6).*
+- ✅ **Onboarding rediseñado** con la identidad de marca (badge circular, indicador píldora,
+  Atrás + Saltar con alturas estables).
+- ✅ **Bloqueo de Pantalla (v1)**: candado + **overlay** que conserva el brillo y se desbloquea
+  con **pulsación larga**; **pref persistida "Bloquear pantalla automáticamente"** (auto-bloqueo
+  al entrar, Ajustes → Accesibilidad). *Falta extender a Baliza-en-Pantalla y al resto de modos.*
 
 ---
 
@@ -105,13 +130,17 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 - **Fase 1 (motor/LED):** resiliencia del LED (recuperar si otra app ocupa la cámara,
   reintento + mensaje); aviso/limitación por batería baja o calor en estrobo prolongado;
   política de ciclo de vida al apagar pantalla / quitar de recientes.
-- **Fase 1.5 (diseño):** accesibilidad (etiquetas TalkBack, contraste ≥ 4.5:1, fuente
-  dinámica); tests de Compose de estados clave; QA de tema claro/oscuro.
-- **Fase 2 (onboarding):** manejar "no volver a preguntar" con acceso a ajustes del
-  sistema; reanudar onboarding interrumpido; respetar "Saltar".
-- **Fase 3 (cuenta):** **vincular sesión anónima ↔ cuenta real** (no perder uid/progreso);
-  cuenta completa: verificación de correo, restablecer contraseña, reautenticación,
-  **borrar cuenta (RGPD)**; Firebase App Check; errores traducidos por tipo.
+- **Fase 1.5 (diseño):** ✅ **accesibilidad Capa A+B HECHA** (semántica/roles/estado, objetivos
+  táctiles ≥48dp, encabezados, etiquetas de sliders; reduce-motion, alto contraste, háptica).
+  Falta: **QA en dispositivo** (Accessibility Scanner, TalkBack, fuente 200%, contraste por
+  acento) → plan `2026-06-28-accesibilidad.md`; tests de Compose de estados clave.
+- **Fase 2 (onboarding):** ✅ **rediseño con identidad de marca HECHO** (badge, indicador
+  píldora, Atrás/Saltar); "Saltar" respetado. Falta: manejar "no volver a preguntar" con
+  acceso a ajustes del sistema; reanudar onboarding interrumpido.
+- **Fase 3 (cuenta):** ✅ **Hito D HECHO** — vinculación de credenciales (anónima ↔ real),
+  verificación de correo + reenvío, restablecer contraseña, reautenticación (password y
+  Google), **borrar cuenta (RGPD)** con confirmación, errores traducidos por tipo. Falta:
+  **Firebase App Check**.
 - **Fase 3.5 (Morse):** ✅ acentos normalizados + aviso de no soportados + ✅ **vista previa
   punto/raya con duración de ciclo** (HECHO, ver A0/A1). Falta: contador de repeticiones;
   historial de mensajes recientes.
@@ -122,10 +151,11 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 - Núcleo hecho (presets, tono, brillo). ✅ **Presets nombrados** (Blanco/Cálido/Lectura/Noche)
   y ✅ **panel ocultable + asa para reabrir** (HECHO, ver A1). Falta: rueda de color completa
   (hoy slider de tono) y más presets (p. ej. Fiesta).
-- 🔒 **(Futuro) Bloqueo/desbloqueo de modo** para evitar salidas accidentales o no deseadas:
-  empezando por **Pantalla** (que hoy sale al tocar fuera) y extensible al resto de modos.
-  Idea: candado que fija el modo encendido; desbloqueo explícito (mantener pulsado / doble
-  toque) antes de permitir salir. Pendiente definir UX, indicador visible y persistencia.
+- ✅ **Bloqueo de Pantalla (v1) HECHO** + pref persistida **"Bloquear pantalla automáticamente"**:
+  candado (arriba-dcha) que fija el modo encendido y **overlay** que conserva el brillo, ignora
+  toques normales y **se desbloquea con pulsación larga**; auto-bloqueo opcional al entrar
+  (Ajustes → Accesibilidad). UX, indicador visible y persistencia: resueltos para Pantalla.
+  Falta: **extender el candado a Baliza-en-Pantalla y al resto de modos** desde el Hub.
 
 ### Modos nuevos (sección 03)
 - ~~**Baliza / Intervalo**~~ → ✅ **IMPLEMENTADO v1 COMPLETO** (ver A0: presets, auto-apagado,
@@ -168,8 +198,8 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 ## E. Priorización sugerida hacia publicación (v1 mínima viable)
 1. **Robustez barata de alto impacto:** estado sin-flash (ocultar orbe + guiar a Pantalla),
    normalización de acentos en Morse, edge-to-edge uniforme.
-2. **Cuenta para Play:** vincular anónima ↔ real (no perder uid), restablecer/verificar
-   contraseña y **borrar cuenta (RGPD)** — requisito real de tienda.
+2. ✅ **Cuenta para Play (Hito D) HECHO:** vinculación anónima ↔ real, restablecer/verificar
+   contraseña, reautenticación y **borrar cuenta (RGPD)**. Pendiente menor: Firebase App Check.
 3. **Assets de tienda:** icono monocromo, ficha, política de privacidad, formulario de
    seguridad de datos.
 4. **Calidad de release:** firma en CI con secretos, R8 + mapping, Crashlytics, rollout por
