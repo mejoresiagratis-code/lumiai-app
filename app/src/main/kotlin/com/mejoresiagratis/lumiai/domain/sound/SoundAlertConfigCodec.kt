@@ -25,8 +25,7 @@ object SoundAlertConfigCodec {
             if (parts.size != 3) return@forEach
             val category = runCatching { SoundCategory.valueOf(parts[0]) }.getOrNull() ?: return@forEach
             val enabled = parts[1] == "1"
-            val sensitivity = runCatching { Sensitivity.valueOf(parts[2]) }.getOrNull()
-                ?: settings[category]?.sensitivity ?: Sensitivity.MEDIA
+            val sensitivity = runCatching { Sensitivity.valueOf(parts[2]) }.getOrNull() ?: return@forEach
             settings[category] = CategorySetting(enabled, sensitivity)
         }
         return SoundAlertConfig(settings)

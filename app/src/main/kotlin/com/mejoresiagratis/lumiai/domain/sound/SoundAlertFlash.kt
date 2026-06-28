@@ -15,7 +15,7 @@ object SoundAlertFlash {
         SoundCategory.PERRO -> longArrayOf(160, 140, 160, 500)
         SoundCategory.BEBE -> longArrayOf(650, 350)
         SoundCategory.DESPERTADOR -> longArrayOf(110, 110, 110, 110, 110, 450)
-        SoundCategory.SIRENA -> longArrayOf(90, 90, 90, 90, 90, 90, 350)
-        SoundCategory.ALARMA_HUMO -> longArrayOf(70, 70, 70, 70, 70, 70, 70, 70, 300)
+        SoundCategory.SIRENA -> longArrayOf(90, 90, 90, 90, 90, 90, 90, 350)
+        SoundCategory.ALARMA_HUMO -> longArrayOf(70, 70, 70, 70, 70, 70, 70, 300)
     }
 }
