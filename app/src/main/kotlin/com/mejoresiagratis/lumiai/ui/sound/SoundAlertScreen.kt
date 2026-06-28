@@ -78,7 +78,7 @@ fun SoundAlertScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alerta sonora (beta)") },
+                title = { Text("Alerta sonora") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -129,7 +129,7 @@ fun SoundAlertScreen(
             )
 
             OutlinedButton(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
-                Text("Restablecer ajustes")
+                Text("Restablecer")
             }
         }
     }
@@ -157,27 +157,20 @@ private fun DisclosureCard() {
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
         ) {
             Text(
-                "Qué hace",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                "Escucha el micrófono y avisa con un destello cuando reconoce un sonido " +
-                    "importante. Pensado para no perderte avisos si no puedes oírlos.",
+                "Reconoce sonidos importantes y avisa con luz, por si no puedes oírlos.",
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                "Todo ocurre en el dispositivo: no se graba audio ni se envía nada a internet.",
+                "Todo en el dispositivo; no graba ni envía audio.",
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                "No es un sistema de seguridad. La detección es aproximada y puede fallar; no " +
-                    "sustituye a un detector de humo/CO homologado ni a sus avisos.",
+                "No es un sistema de seguridad: puede fallar y no sustituye a un detector homologado.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
             Text(
-                "Escuchar de forma continua consume batería; mejor con el móvil cargando.",
+                "Consume batería; mejor cargando.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -197,11 +190,9 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
-            Text(
-                if (micGranted) "Permiso concedido." else "Permiso necesario para escuchar.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (!micGranted) {
+            if (micGranted) {
+                Text("Concedido.", style = MaterialTheme.typography.bodyMedium)
+            } else {
                 Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
                     Text("Conceder micrófono")
                 }
@@ -228,19 +219,19 @@ private fun ListenCard(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                if (listening) "Escuchando… revisa la notificación." else "Detenido.",
+                if (listening) "Escuchando…" else "Detenido.",
                 style = MaterialTheme.typography.bodyMedium
             )
             if (listening) {
                 OutlinedButton(onClick = onStop, modifier = Modifier.fillMaxWidth()) {
-                    Text("Parar escucha")
+                    Text("Parar")
                 }
             } else {
                 Button(
                     onClick = onStart,
                     enabled = micGranted,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Iniciar escucha") }
+                ) { Text("Iniciar") }
             }
         }
     }
@@ -274,8 +265,7 @@ private fun CategoryCard(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        category.reliabilityLabel() +
-                            if (category.safetyRelated) " · no es seguridad de vida" else "",
+                        category.reliabilityLabel(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -322,7 +312,7 @@ private fun ChannelSelector(
             )
         } else {
             Text(
-                "Sin flash en este dispositivo: avisará parpadeando la pantalla.",
+                "Sin flash: avisa con la pantalla.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
