@@ -32,6 +32,7 @@
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
     <string name="accent_section">Color de acento</string>
+    <string name="accent_selected">Seleccionado: %1$s</string>
     <string name="accent_multicolor">Multicolor (por modo)</string>
     <string name="accent_amber">Ámbar</string>
     <string name="accent_white">Blanco</string>
