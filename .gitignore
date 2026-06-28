@@ -17,6 +17,3 @@ app/build/
 # para que el SHA-1 sea estable en todas las máquinas y el CI (Google Sign-In).
 !app/lumiai-debug.keystore
 google-services.json
-
-# Modelo de IA (asset externo, no versionar)
-app/src/main/assets/*.tflite
