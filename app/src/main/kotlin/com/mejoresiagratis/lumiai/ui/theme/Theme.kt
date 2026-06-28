@@ -7,6 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
@@ -14,6 +16,9 @@ import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
+
+/** Reducir movimiento efectivo (pref del usuario u opción del sistema). Lo leen orbe/ticks. */
+val LocalReduceMotion = staticCompositionLocalOf { false }
 
 @Composable
 fun LumiAiTheme(
@@ -101,12 +106,14 @@ fun LumiAiTheme(
             surfaceContainerHighest = animRole(gen.surfaceContainerHighest, reduceMotion, "scHighest")
         )
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = LumiAiTypography,
-        shapes = LumiShapes,
-        content = content
-    )
+    CompositionLocalProvider(LocalReduceMotion provides reduceMotion) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = LumiAiTypography,
+            shapes = LumiShapes,
+            content = content
+        )
+    }
 }
 
 @androidx.compose.runtime.Composable

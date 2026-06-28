@@ -95,6 +95,7 @@ import com.mejoresiagratis.lumiai.ui.home.components.ModeUi
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenBeacon
 import com.mejoresiagratis.lumiai.ui.home.components.ScreenLight
 import com.mejoresiagratis.lumiai.ui.home.components.modeHasAdvanced
+import com.mejoresiagratis.lumiai.ui.theme.LocalReduceMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
@@ -541,6 +542,7 @@ private fun PowerOrb(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val reduceMotion = LocalReduceMotion.current
 
     val glow by animateFloatAsState(targetValue = if (isOn) 0.5f else 0f, label = "orbGlow")
     val scale by animateFloatAsState(targetValue = if (isOn) 1f else 0.94f, label = "orbScale")
@@ -554,7 +556,7 @@ private fun PowerOrb(
     )
 
     // Pulso sincronizado con el destello de Baliza: brillo durante el flash, atenuado en la pausa.
-    val pulsing = pulsePeriodMs != null && isOn
+    val pulsing = pulsePeriodMs != null && isOn && !reduceMotion
     val period = (pulsePeriodMs ?: 0L).toInt().coerceAtLeast(200)
     val flash = (pulseFlashMs ?: 0L).toInt().coerceIn(20, period / 2)
     val fade = (flash + 90).coerceAtMost(period - 10)
@@ -600,7 +602,7 @@ private fun PowerOrb(
                 val a = (angle - 90f) * (PI.toFloat() / 180f)
                 val cosA = cos(a)
                 val sinA = sin(a)
-                val lit = isOn && (((angle - sweep) % 360f + 360f) % 360f) < 60f
+                val lit = isOn && (reduceMotion || (((angle - sweep) % 360f + 360f) % 360f) < 60f)
                 drawLine(
                     color = if (lit) primary else primary.copy(alpha = if (isOn) 0.32f else 0.18f),
                     start = Offset(center.x + cosA * rInner, center.y + sinA * rInner),
