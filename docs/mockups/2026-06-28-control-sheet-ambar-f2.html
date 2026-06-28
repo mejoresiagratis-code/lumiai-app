@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiAI · Fase 2 · Hoja de Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amber:#FFB300;--amber-c:#3C2F12;--on-amber:#1A1206;--bg:#0E1116;--surface:#14181F;
+    --surf-c:#1B212B;--surf-tonal:#222A36;--surf-ch:#2A3340;--outline:#333B49;--ink:#F3F5F9;--ink-soft:#A6B0BF;--spring:cubic-bezier(.34,1.56,.64,1)}
+  *{box-sizing:border-box}body{margin:0;font-family:"Inter",sans-serif;color:var(--ink);background:
+    radial-gradient(900px 480px at 80% -10%,#20180a 0%,rgba(32,24,10,0) 60%),var(--bg);
+    min-height:100vh;padding:44px 24px 64px;-webkit-font-smoothing:antialiased}
+  .page{max-width:920px;margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);background:#2A2113;border:1px solid var(--amber-c);padding:7px 14px;border-radius:999px;margin-bottom:18px}
+  .eyebrow .dot{width:8px;height:8px;border-radius:999px;background:var(--amber);box-shadow:0 0 0 4px rgba(255,179,0,.18)}
+  h1{font-family:"Bricolage Grotesque";font-weight:800;font-size:clamp(28px,4vw,42px);letter-spacing:-.02em;margin:0 0 12px}
+  .sub{color:var(--ink-soft);font-size:16px;line-height:1.6;margin:0 0 30px;max-width:640px}
+  .sub b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  /* sheet */
+  .sheet{background:var(--surface);border:1px solid var(--outline);border-radius:30px 30px 22px 22px;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.8);overflow:hidden}
+  .sheet-in{padding:8px 18px 22px}
+  .grab{width:42px;height:5px;border-radius:999px;background:var(--outline);margin:12px auto 8px}
+  .sheet h4{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin:6px 2px 12px}
+  /* tonal group */
+  .group{background:var(--surf-tonal);border-radius:24px;padding:16px;margin-bottom:12px}
+  .rowb{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .lab{font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .val{font-family:"Bricolage Grotesque";font-weight:800;font-size:22px;color:var(--amber)}
+  .slider{position:relative;height:30px;border-radius:999px;background:var(--surf-ch);overflow:hidden}
+  .slider .fill{position:absolute;inset:0;border-radius:999px;background:linear-gradient(90deg,#FFD879,var(--amber))}
+  .slider .knob{position:absolute;top:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .mini{font-size:12px;color:var(--ink-soft);margin:14px 2px 6px}
+  /* tonal buttons */
+  .btns{display:flex;gap:10px;margin-bottom:6px}
+  .tbtn{flex:1;text-align:center;background:var(--amber-c);color:#FFD879;border:0;border-radius:16px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .25s var(--spring)}
+  .tbtn:active{transform:scale(.96)}
+  /* segmented */
+  .seg{display:flex;gap:8px;margin-top:4px}
+  .chip{flex:1;text-align:center;border:1px solid var(--outline);border-radius:14px;padding:9px 0;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:all .25s var(--spring)}
+  .chip.sel{background:var(--amber);color:var(--on-amber);border-color:var(--amber);border-radius:18px}
+  /* right notes */
+  .panel{background:var(--surface);border:1px solid var(--outline);border-radius:24px;padding:22px}
+  .panel h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:17px;margin:0 0 14px}
+  .feat{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--surf-ch)}.feat:first-of-type{border-top:0}
+  .feat .ic{flex:0 0 36px;height:36px;border-radius:12px;background:#2A2113;border:1px solid var(--amber-c);display:grid;place-items:center;color:var(--amber);font-weight:800}
+  .feat b{display:block;font-size:14px;margin-bottom:2px}.feat span{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .foot{color:var(--ink-soft);font-size:12.5px;margin-top:26px;line-height:1.6}
+</style></head><body>
+<div class="page">
+  <span class="eyebrow"><span class="dot"></span>Fase 2 · Hoja de Control</span>
+  <h1>Ajustes de modo en superficies tonales</h1>
+  <p class="sub">Cada control se agrupa en una <b>tarjeta tonal</b> redondeada (jerarquía por tono,
+  no por sombras). Presets en botones tonales, auto-apagado segmentado. Mismas funciones y rangos;
+  solo cambia la piel. Ejemplo con el modo <b>Baliza</b>.</p>
+  <div class="grid">
+    <div class="sheet"><div class="sheet-in">
+      <div class="grab"></div>
+      <h4>Control · Baliza</h4>
+
+      <div class="group">
+        <div class="rowb"><span class="lab">Intensidad</span><span class="val">66%</span></div>
+        <div class="slider"><div class="fill" style="width:66%"></div><div class="knob" style="left:66%"></div></div>
+      </div>
+
+      <div class="group">
+        <div class="btns">
+          <button class="tbtn">Localización</button>
+          <button class="tbtn">Alta visibilidad</button>
+        </div>
+        <div class="mini">Intervalo: 2000 ms</div>
+        <div class="slider"><div class="fill" style="width:58%"></div><div class="knob" style="left:58%"></div></div>
+        <div class="mini">Destello: 150 ms</div>
+        <div class="slider"><div class="fill" style="width:30%"></div><div class="knob" style="left:30%"></div></div>
+        <div class="mini">Auto-apagado</div>
+        <div class="seg">
+          <div class="chip sel">Off</div><div class="chip">15 min</div><div class="chip">30 min</div><div class="chip">60 min</div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="panel">
+      <h3>Qué cambia en Fase 2</h3>
+      <div class="feat"><div class="ic">▢</div><div><b>Superficies tonales</b><span>Cada control vive en una tarjeta redondeada sobre tono, no separada por líneas o sombras duras.</span></div></div>
+      <div class="feat"><div class="ic">⬚</div><div><b>Escala de forma nueva</b><span>Radios generosos de los tokens de Fase 0 (md/lg) en tarjetas y controles.</span></div></div>
+      <div class="feat"><div class="ic">▰</div><div><b>Presets tonales</b><span>Los presets de Baliza pasan a botones tonales (FilledTonal); el auto-apagado, a segmentado con muelle.</span></div></div>
+      <div class="feat"><div class="ic">≡</div><div><b>Pantalla = hoja</b><span>El panel del Modo Pantalla gana esquinas superiores redondeadas, como una hoja.</span></div></div>
+      <p class="foot"><b>Sin cambios de lógica:</b> sliders, rangos, callbacks y semántica idénticos.
+      Implementado en <code>ModeSettingsPanel.kt</code> (b1cab42) y <code>ScreenLight.kt</code> (c3ae77a).</p>
+    </div>
+  </div>
+</div></body></html>
