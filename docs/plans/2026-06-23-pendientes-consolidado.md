@@ -1,6 +1,6 @@
 # LumiAI · Pendientes consolidados (migración + roadmap de producto)
 
-Fecha: 23 jun 2026 · act. 28 jun (tarde) · HEAD de referencia: `80f388e`
+Fecha: 23 jun 2026 · act. 28 jun (tarde) · HEAD de referencia: `a143f70`
 Fuentes cruzadas: **roadmap de migración a Beam Hub** (`roadmap_src.html`) +
 **roadmap/propuesta de producto** (`lumiai-roadmap-propuesta.html`), contrastadas
 contra el estado **real** del repo (no contra los recuerdos ni contra los HTML, que
@@ -166,13 +166,33 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 - **Pantalla multicolor / Fiesta** — Avanzado, bajo. Ciclo de color del display.
 - **Sincronizado con sonido** — Avanzado, alto. Amplitud de micro en tiempo real (permiso
   de micrófono). Honesto: no es "IA" ni reconocimiento musical.
-- **(Horizonte)** Lectura/Sueño warm-screen; **IA real on-device**: detección de sonido
-  TFLite YAMNet (llanto de bebé / alarma de humo / timbre) + comandos de voz.
+- **(Horizonte) Lectura/Sueño warm-screen.**
+- **(Horizonte) Modos con IA — investigado 28 jun** (propuesta comparativa HTML: `lumiai-modos-ia.html`).
+  Conclusión: en una linterna la IA útil es **on-device y de percepción**, no un LLM en la nube
+  (Gemini en la nube NO sirve para tiempo real; solo encaja en el constructor por lenguaje).
+  Ranking por valor real:
+  1. **Alerta sonora** (estrella) — **YAMNet + MediaPipe Audio Classifier** escucha y flashea
+     distinto por evento (timbre/llanto de bebé/alarma de humo/sirena/golpes). IA real, on-device,
+     accesibilidad genuina, nada se sube. Permiso micro. minSdk 24. Esfuerzo medio-alto.
+  2. **Manos libres** — aplauso/chasquido (audio) o gesto (MediaPipe) para encender.
+  3. **Constructor por lenguaje** — "luz roja parpadeante lenta" → ajustes/patrón reales con
+     **Gemini Nano** on-device (solo gama alta) + fallback nube vía **Firebase AI Logic**
+     (sin clave embebida; con App Check). Único hueco donde un LLM aporta.
+  4. **Música** — beat-detection **DSP** (no IA → "reactivo al sonido"); YAMNet opcional
+     para confirmar "¿suena música?". Color solo en Pantalla.
+  5. **Ambiente** — sensor de luz adapta brillo/color de Pantalla (no IA, sin permisos).
+  Avisos: micro = `RECORD_AUDIO` (opt-in, on-device, declarar en Data Safety; choca con
+  "sin permisos innecesarios" si no se cuida); nombrar honesto, sin "AI-washing";
+  gatear por **DeviceCapabilities** (ocultar si no hay micro/sensor).
 
 ### Monetización (sección 04 — no implementada)
 - **Fase 4 — anuncios recompensados** → `temporaryUnlocks` (2 anuncios = 1 h del avanzado
   seleccionado). Robustez: consentimiento UMP (GDPR), verificación en servidor (SSV) +
   temporizador persistente, degradado sin red, mediación AdMob.
+  AdMob (cuenta): App ID `ca-app-pub-4452549520942931~7390634923`, bloque rewarded
+  `ca-app-pub-4452549520942931/3592393086`. **Regla:** IDs de **TEST** de Google en debug,
+  IDs reales **solo en release** (gateados por BuildConfig) — pulsar anuncios reales propios
+  durante pruebas puede marcar tráfico inválido y **banear la cuenta**.
 - **Fase 5 — suscripción** Play Billing v7 + modos IA. Robustez: validación en servidor +
   restaurar compras, estados reales (gracia/pausa/reembolso), IA honesta ("detección de
   sonido (TFLite)", todo en el dispositivo).
