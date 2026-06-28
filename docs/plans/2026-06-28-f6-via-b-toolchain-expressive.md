@@ -79,3 +79,46 @@ APIs reales, una a una, validando en dispositivo. Todo bajo `@OptIn(Experimental
 - [ ] Reconciliación de versiones (con tu log)
 - [ ] Adopción Expressive componente a componente
 - [ ] QA en dispositivo
+
+---
+
+## RESULTADO REAL DEL BUILD (28 jun 2026, verificado compilando)
+
+Se compiló de verdad en un entorno con JDK 17 + Android SDK 36 (Gradle 8.13). Hallazgos:
+
+**A1 · Baseline modernizado — VERDE y verificado** ✅
+- `assembleDebug` → **BUILD SUCCESSFUL** (APK debug generado, 45.7 MB).
+- `testDebugUnitTest` → **BUILD SUCCESSFUL** (todos los tests pasan, incluidos los de semántica
+  `PowerOrb`/`ModePill` con Robolectric; el cambio a test v2 de Compose del BOM no los rompió).
+- Set verificado: **AGP 8.12.0, Gradle 8.13, Kotlin 2.2.10, KSP 2.2.10-2.0.2, Hilt 2.57.1,
+  Compose BOM 2026.06.00 (→ material3 1.4.0 estable), compileSdk 36, targetSdk 35, JDK 17.**
+- El bloque `-Xskip-metadata-version-check` se **RETIRÓ**: con Kotlin 2.2.10 ya no hace falta
+  (era por AdMob 25.x). Recompilado sin él → sigue verde.
+- ⚠️ El wrapper de Gradle se subió a **8.13** (AGP 8.12 lo exige; antes 8.9).
+- Todo el restyle de Vía A (F0–F5) sigue intacto y compila sobre este toolchain.
+
+**A2 · Expressive real (material3 1.5.0-alpha) — BLOQUEADO por toolchain** ⛔ (gated)
+- El override a `material3:1.5.0-alpha22` arrastra `compose-ui:1.12.0-alpha03`, que **exige
+  AGP 9.1.0+ y compileSdk 37 (Android 17)**. Mensaje literal del build:
+  *"requires Android Gradle plugin 9.1.0 or higher"* y *"compile against version 37 or later"*.
+- Además `platforms;android-37` no está disponible con cmdline-tools de 2024 (repo ya en XML v4).
+- Conclusión: **Vía B real = migrar a AGP 9.1 (Kotlin integrado) + compileSdk 37 + Compose alpha**.
+  Es una decisión de proyecto (compilar contra Android 17 preview y Compose alpha), no un simple
+  bump. Hacerlo cuando material3 1.5 se acerque a estable o haya razón de negocio.
+
+**Cómo pasar de A1 a A2 cuando toque** (flip documentado):
+1. Subir AGP a 9.1.0+ (catálogo) y el wrapper a la Gradle que pida.
+2. Migración AGP 9 "Kotlin integrado": o `android.builtInKotlin=false` (mantener `kotlin-android`)
+   o retirar el plugin `kotlin-android`. Migrar `kotlinOptions{}` → `kotlin{ compilerOptions{} }`.
+3. `compileSdk = 37` (instalar `platforms;android-37` con cmdline-tools recientes).
+4. `implementation(libs.androidx.compose.material3.expressive)` (ya está la entrada en el catálogo).
+5. `Theme.kt`: `MaterialTheme` → `MaterialExpressiveTheme` + `MotionScheme.expressive()` (@OptIn).
+6. Iterar el checklist de componentes Expressive (sección 3).
+
+> Estado de versiones para A2 en el catálogo: la entrada `material3Expressive = "1.5.0-alpha22"`
+> y `androidx-compose-material3-expressive` quedan presentes pero **sin usar** en A1 (listas para el flip).
+
+### Estado (actualizado)
+- [x] A1 baseline modernizado — **compila + tests verdes (verificado)**
+- [x] `-Xskip-metadata-version-check` retirado (verificado)
+- [ ] A2 Expressive real — gated tras AGP 9.1 + compileSdk 37 (Android 17)

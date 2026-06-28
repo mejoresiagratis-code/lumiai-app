@@ -70,14 +70,6 @@ android {
     }
 }
 
-// Vía B: con Kotlin 2.2.10 ya se lee la metadata de AdMob 25.x (2.2.0). Mantenemos el flag
-// porque material3 1.5.0-alpha puede venir compilado con un Kotlin más nuevo; si al compilar
-// no hace falta, RETIRAR este bloque. Solo afecta a la lectura de binarios (no a nuestro código).
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-Xskip-metadata-version-check")
-    }
-}
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
@@ -92,9 +84,9 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    // Override a material3 1.5.0-alpha: trae las APIs reales de M3 Expressive
-    // (MaterialExpressiveTheme, MotionScheme, MaterialShapes, ButtonGroup, wavy...).
-    implementation(libs.androidx.compose.material3.expressive)
+    // material3 1.4.0 (estable, desde el BOM). El override a 1.5.0-alpha (Expressive real)
+    // exige AGP 9.1 + compileSdk 37 (Android 17); ver guia F6. Pendiente/gated.
+    implementation(libs.androidx.compose.material3)
     implementation(libs.material.kolor)
     implementation(libs.haze)
     implementation(libs.androidx.navigation.compose)

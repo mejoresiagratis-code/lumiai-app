@@ -3,9 +3,7 @@ package com.mejoresiagratis.lumiai.ui.theme
 import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -26,7 +24,6 @@ val LocalReduceMotion = staticCompositionLocalOf { false }
 val LocalHapticsEnabled = staticCompositionLocalOf { true }
 val LocalAutoLockScreen = staticCompositionLocalOf { false }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.DARK,
@@ -114,11 +111,8 @@ fun LumiAiTheme(
         )
     }
     CompositionLocalProvider(LocalReduceMotion provides reduceMotion) {
-        // Via B: tema Expressive real. MotionScheme aporta los muelles oficiales de M3
-        // Expressive a TODOS los componentes; nuestros LumiShapes/LumiAiTypography se mantienen.
-        MaterialExpressiveTheme(
+        MaterialTheme(
             colorScheme = colorScheme,
-            motionScheme = MotionScheme.expressive(),
             typography = LumiAiTypography,
             shapes = LumiShapes,
             content = content
