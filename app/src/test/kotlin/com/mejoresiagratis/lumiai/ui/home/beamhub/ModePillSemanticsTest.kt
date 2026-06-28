@@ -9,7 +9,6 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNode
 import com.mejoresiagratis.lumiai.ui.home.components.MODE_CATALOG
 import org.junit.Rule
 import org.junit.Test
