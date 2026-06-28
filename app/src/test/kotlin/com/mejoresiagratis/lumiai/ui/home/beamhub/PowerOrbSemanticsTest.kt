@@ -7,11 +7,13 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import com.mejoresiagratis.lumiai.R
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -22,8 +24,9 @@ import org.robolectric.annotation.GraphicsMode
  * lo compila y ejecuta. Se desactiva el auto-avance del reloj para no bloquear con las
  * animaciones infinitas del orbe; los aserts leen el árbol de semántica directamente.
  *
- * Las etiquetas son las cadenas reales en español (app de un solo idioma): a11y_torch=\"Linterna\",
- * a11y_state_on=\"Encendida\", a11y_state_off=\"Apagada\".
+ * Las etiquetas se leen de los MISMOS recursos que usa el composable (a11y_torch / a11y_state_on /
+ * a11y_state_off), no de literales: así el test es independiente del idioma por defecto (la app es
+ * bilingüe EN/ES) y de cambios de redacción.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -32,6 +35,11 @@ class PowerOrbSemanticsTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    private val res get() = RuntimeEnvironment.getApplication()
+    private val torchLabel get() = res.getString(R.string.a11y_torch)
+    private val onLabel get() = res.getString(R.string.a11y_state_on)
+    private val offLabel get() = res.getString(R.string.a11y_state_off)
 
     private fun stateMatcher(value: String) =
         SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, value)
@@ -42,8 +50,8 @@ class PowerOrbSemanticsTest {
         composeRule.setContent {
             MaterialTheme { PowerOrb(isOn = false, onToggle = {}) }
         }
-        composeRule.onNodeWithContentDescription("Linterna")
-            .assert(stateMatcher("Apagada"))
+        composeRule.onNodeWithContentDescription(torchLabel)
+            .assert(stateMatcher(offLabel))
     }
 
     @Test
@@ -52,8 +60,8 @@ class PowerOrbSemanticsTest {
         composeRule.setContent {
             MaterialTheme { PowerOrb(isOn = true, onToggle = {}) }
         }
-        composeRule.onNodeWithContentDescription("Linterna")
-            .assert(stateMatcher("Encendida"))
+        composeRule.onNodeWithContentDescription(torchLabel)
+            .assert(stateMatcher(onLabel))
     }
 
     @Test
@@ -63,7 +71,7 @@ class PowerOrbSemanticsTest {
         composeRule.setContent {
             MaterialTheme { PowerOrb(isOn = false, onToggle = { toggled = true }) }
         }
-        composeRule.onNodeWithContentDescription("Linterna").performClick()
+        composeRule.onNodeWithContentDescription(torchLabel).performClick()
         assertTrue(toggled)
     }
 }
