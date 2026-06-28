@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.home
 
 import app.cash.turbine.test
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
 import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
@@ -36,8 +37,11 @@ class FlashViewModelTest {
         override suspend fun extend(durationMillis: Long) {}
         override suspend fun clear() {}
     }
+    private val deviceFeatures: DeviceFeatures = object : DeviceFeatures {
+        override val hasMicrophone = true
+    }
 
-    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, temporaryUnlock, torch)
+    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, temporaryUnlock, torch, deviceFeatures)
 
     @Test
     fun `toggle on starts engine and reflects state`() = runTest {

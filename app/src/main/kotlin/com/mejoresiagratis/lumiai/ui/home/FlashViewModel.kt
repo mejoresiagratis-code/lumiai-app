@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
+import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
@@ -29,12 +30,14 @@ class FlashViewModel @Inject constructor(
     private val engine: EngineController,
     entitlementRepo: EntitlementRepository,
     temporaryUnlock: TemporaryUnlockRepository,
-    torch: TorchController
+    torch: TorchController,
+    deviceFeatures: DeviceFeatures
 ) : ViewModel() {
 
     private val capabilities = DeviceCapabilities(
         hasFlash = torch.hasFlash,
-        maxTorchLevel = torch.maxIntensityLevel
+        maxTorchLevel = torch.maxIntensityLevel,
+        hasMicrophone = deviceFeatures.hasMicrophone
     )
 
     // Ticker de 1 s: reevalúa la caducidad del Pro temporal para re-bloquear en vivo.
