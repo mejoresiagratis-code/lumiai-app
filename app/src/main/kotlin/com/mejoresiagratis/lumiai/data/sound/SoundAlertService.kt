@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -14,6 +15,7 @@ import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
+import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertFlash
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import com.mejoresiagratis.lumiai.domain.sound.SoundDetectionEngine
@@ -30,14 +32,13 @@ import javax.inject.Inject
 
 /**
  * Servicio en primer plano (tipo microfono) que escucha y clasifica sonidos en el dispositivo y,
- * al reconocer una categoria activa, avisa con un destello del LED (patron por ritmo) y una
- * notificacion.
+ * al reconocer una categoria activa, avisa segun su canal configurado: destello del LED (patron
+ * por ritmo), parpadeo de pantalla (ScreenFlashActivity via full-screen-intent) o ambos. Si se
+ * pidio flash pero el dispositivo no tiene, cae a pantalla para no dejar sin aviso.
  *
  * Lee la configuracion persistida (DataStore) al arrancar; los cambios de categorias/sensibilidad
- * se aplican al reiniciar la escucha (el clasificador no se reconstruye en vivo). Requiere
+ * /canal se aplican al reiniciar la escucha (el clasificador no se reconstruye en vivo). Requiere
  * RECORD_AUDIO y el modelo yamnet.tflite en assets: sin ellos sigue vivo pero no avisa.
- *
- * Caida a pantalla (cuando no hay flash) queda pendiente: si no hay LED, no destella aun.
  */
 @AndroidEntryPoint
 class SoundAlertService : Service() {
@@ -47,6 +48,7 @@ class SoundAlertService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var classifier: MediaPipeSoundClassifier? = null
+    @Volatile private var currentConfig: SoundAlertConfig = SoundAlertConfig()
     private var flashJob: Job? = null
 
     override fun onCreate() {
@@ -55,6 +57,7 @@ class SoundAlertService : Service() {
         startInForeground()
         scope.launch {
             val config = configRepo.config.first()
+            currentConfig = config
             val engine = SoundDetectionEngine(config)
             val classifier = MediaPipeSoundClassifier(
                 context = applicationContext,
@@ -83,7 +86,34 @@ class SoundAlertService : Service() {
 
     private fun onDetected(category: SoundCategory) {
         notifyDetection(category)
-        flash(category)
+        val channel = currentConfig.channel(category)
+        val flashed = channel.usesFlash && torch.hasFlash
+        if (flashed) flash(category)
+        // Pantalla si el usuario lo pidio, o como caida cuando se pidio flash pero no hay LED.
+        if (channel.usesScreen || (channel.usesFlash && !flashed)) screenFlash(category)
+    }
+
+    private fun screenFlash(category: SoundCategory) {
+        val intent = Intent(this, ScreenFlashActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(ScreenFlashActivity.EXTRA_PATTERN, SoundAlertFlash.patternFor(category))
+        }
+        val pending = PendingIntent.getActivity(
+            this,
+            category.ordinal,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Sonido detectado")
+            .setContentText(category.shortLabel())
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(pending, true)
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(SCREEN_NOTIF_ID, notif)
     }
 
     private fun flash(category: SoundCategory) {
@@ -137,6 +167,7 @@ class SoundAlertService : Service() {
     companion object {
         private const val CHANNEL_ID = "sound_alert"
         private const val NOTIF_ID = 2
+        private const val SCREEN_NOTIF_ID = 3
 
         fun start(context: Context) {
             ensureChannel(context)
