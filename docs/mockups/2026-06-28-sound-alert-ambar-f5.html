@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiAI · Fase 5 · Alerta Sonora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amber:#FFB300;--amber-c:#3C2F12;--on-amber:#1A1206;--bg:#0E1116;--surface:#14181F;
+    --surf-ch:#1E2530;--surf-v:#222A36;--seg:#1B212B;--outline:#333B49;--ink:#F3F5F9;--ink-soft:#A6B0BF;--err:#FF6B6B;--spring:cubic-bezier(.34,1.56,.64,1)}
+  *{box-sizing:border-box}body{margin:0;font-family:"Inter",sans-serif;color:var(--ink);background:
+    radial-gradient(900px 480px at 85% -10%,#20180a 0%,rgba(32,24,10,0) 60%),var(--bg);min-height:100vh;padding:44px 24px 64px;-webkit-font-smoothing:antialiased}
+  .page{max-width:980px;margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);background:#2A2113;border:1px solid var(--amber-c);padding:7px 14px;border-radius:999px;margin-bottom:18px}
+  .eyebrow .dot{width:8px;height:8px;border-radius:999px;background:var(--amber);box-shadow:0 0 0 4px rgba(255,179,0,.18)}
+  h1{font-family:"Bricolage Grotesque";font-weight:800;font-size:clamp(28px,4vw,42px);letter-spacing:-.02em;margin:0 0 12px}
+  .sub{color:var(--ink-soft);font-size:16px;line-height:1.6;margin:0 0 30px;max-width:660px}.sub b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:30px;align-items:start}
+  @media(max-width:840px){.grid{grid-template-columns:1fr}}
+  .phone{background:var(--surface);border:1px solid var(--outline);border-radius:34px;padding:20px 16px 24px;box-shadow:0 30px 80px -30px rgba(0,0,0,.8)}
+  .scr-h{font-family:"Bricolage Grotesque";font-weight:800;font-size:22px;margin:6px 6px 14px}
+  .sec{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:16px 8px 8px}
+  .card{border-radius:28px;padding:16px;margin-bottom:12px;background:var(--surf-ch)}
+  .card.info{background:var(--surf-v)}
+  .card p{margin:0 0 8px;font-size:13px;line-height:1.5;color:var(--ink-soft)}.card p:last-child{margin:0}
+  .card p.warn{color:var(--err)}
+  .cta{display:block;width:100%;background:var(--amber);color:var(--on-amber);border:0;border-radius:16px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px}
+  .rowt{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .rowt b{font-size:15px;font-weight:600;display:block}.rowt small{font-size:12px;color:var(--ink-soft)}
+  .sw{flex:0 0 auto;width:50px;height:30px;border-radius:999px;background:var(--amber);position:relative}
+  .sw::after{content:"";position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:#fff}
+  .sw.off{background:var(--seg)}.sw.off::after{right:auto;left:3px;background:var(--ink-soft)}
+  .minilab{font-size:12px;color:var(--ink-soft);margin:14px 2px 6px}
+  .seg{display:flex;background:var(--seg);border:1px solid var(--outline);border-radius:999px;padding:4px}
+  .seg div{flex:1;text-align:center;padding:8px 0;font-size:12.5px;font-weight:600;color:var(--ink-soft);border-radius:999px}
+  .seg div.sel{background:var(--amber);color:var(--on-amber)}
+  .panel{background:var(--surface);border:1px solid var(--outline);border-radius:24px;padding:22px}
+  .panel h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:17px;margin:0 0 14px}
+  .feat{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--surf-v)}.feat:first-of-type{border-top:0}
+  .feat .ic{flex:0 0 36px;height:36px;border-radius:12px;background:#2A2113;border:1px solid var(--amber-c);display:grid;place-items:center;color:var(--amber);font-weight:800}
+  .feat b{display:block;font-size:14px;margin-bottom:2px}.feat span{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .foot{color:var(--ink-soft);font-size:12.5px;margin-top:22px;line-height:1.6}.foot b{color:var(--ink)}
+</style></head><body>
+<div class="page">
+  <span class="eyebrow"><span class="dot"></span>Fase 5 · Alerta Sonora</span>
+  <h1>Alerta Sonora, misma piel honesta</h1>
+  <p class="sub">Tarjetas con radio expresivo (28dp), cabeceras <b>eyebrow</b> y segmented coherentes.
+  La función AI real (detección on-device) y sus avisos de privacidad no cambian.</p>
+  <div class="grid">
+    <div class="phone">
+      <div class="scr-h">Alerta Sonora</div>
+
+      <div class="card info">
+        <p>Detecta sonidos en el dispositivo y avisa con destello o pantalla.</p>
+        <p>El audio se procesa en local; no se graba ni se envía.</p>
+        <p class="warn">No es un sistema de seguridad. No dependas de ella para emergencias.</p>
+      </div>
+
+      <div class="sec">Micrófono</div>
+      <div class="card"><div class="rowt"><b>Permiso concedido</b></div></div>
+
+      <div class="sec">Escucha</div>
+      <div class="card">
+        <p style="margin-bottom:10px">Escuchando…</p>
+        <button class="cta" style="background:transparent;color:var(--ink);border:1px solid var(--outline)">Detener</button>
+      </div>
+
+      <div class="sec">Categorías</div>
+      <div class="card">
+        <div class="rowt"><div><b>Timbre</b><small>Fiabilidad alta</small></div><div class="sw"></div></div>
+        <div class="minilab">Sensibilidad</div>
+        <div class="seg"><div>Baja</div><div class="sel">Media</div><div>Alta</div></div>
+        <div class="minilab">Cómo avisar</div>
+        <div class="seg"><div class="sel">Flash</div><div>Pantalla</div><div>Ambas</div></div>
+      </div>
+      <div class="card">
+        <div class="rowt"><div><b>Llanto de bebé</b><small>Fiabilidad media</small></div><div class="sw off"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Qué cambia en Fase 5</h3>
+      <div class="feat"><div class="ic">▢</div><div><b>Tarjetas 28dp</b><span>Aviso, micrófono, escucha y cada categoría comparten el radio expresivo del resto de la app.</span></div></div>
+      <div class="feat"><div class="ic">A</div><div><b>Cabeceras eyebrow</b><span>Secciones en mayúsculas con tracking, en color de acento.</span></div></div>
+      <div class="feat"><div class="ic">⬓</div><div><b>Segmented coherentes</b><span>Sensibilidad y canal (Flash/Pantalla/Ambas) heredan forma y tipografía globales.</span></div></div>
+      <div class="feat"><div class="ic">🔒</div><div><b>Honestidad intacta</b><span>Mismos textos de privacidad y el aviso de que no es un sistema de seguridad.</span></div></div>
+      <p class="foot"><b>Sin cambios de lógica:</b> clasificador on-device, servicio en primer plano y canales por categoría igual.
+      Implementado en <code>SoundAlertScreen.kt</code> (9eaba66).</p>
+    </div>
+  </div>
+</div></body></html>
