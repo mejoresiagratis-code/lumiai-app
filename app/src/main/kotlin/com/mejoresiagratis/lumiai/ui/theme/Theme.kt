@@ -11,13 +11,15 @@ import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 
 @Composable
 fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
-    accent: AccentColor = AccentColor.AMBER,
+    accent: AccentColor = AccentColor.YELLOW,
+    accentStyle: AccentStyle = AccentStyle.WARM,
     activeMode: FlashMode? = null,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
@@ -49,9 +51,11 @@ fun LumiAiTheme(
         // - Ámbar  -> TonalSpot: su semilla ya es clara, el resultado es un oro fiel.
         // - Resto (cromáticos y Multicolor) -> Content: conserva el primary ≈ semilla,
         //   evitando que rojo/violeta/etc. se aclaren a salmón/pastel en tema oscuro.
-        val paletteStyle = when (accent) {
-            AccentColor.WHITE -> PaletteStyle.Monochrome
-            AccentColor.AMBER -> PaletteStyle.TonalSpot
+        // Blanco -> Monochrome (neutro real). El resto sigue el estilo elegido:
+        // Cálido -> TonalSpot (oro/tono sobrio), Vívido -> Content (primary ≈ semilla).
+        val paletteStyle = when {
+            accent == AccentColor.WHITE -> PaletteStyle.Monochrome
+            accentStyle == AccentStyle.WARM -> PaletteStyle.TonalSpot
             else -> PaletteStyle.Content
         }
         val gen = rememberDynamicColorScheme(

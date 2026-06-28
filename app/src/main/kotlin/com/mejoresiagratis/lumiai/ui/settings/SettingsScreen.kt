@@ -70,6 +70,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
@@ -83,6 +84,8 @@ fun SettingsScreen(
     onSelectTheme: (ThemeMode) -> Unit,
     accentColor: AccentColor,
     onSelectAccent: (AccentColor) -> Unit,
+    accentStyle: AccentStyle,
+    onSelectAccentStyle: (AccentStyle) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel()
@@ -251,6 +254,12 @@ fun SettingsScreen(
             // --- Apariencia: color de acento ---
             SettingsSection(R.string.accent_section) {
                 AccentSwatches(selected = accentColor, onSelect = onSelectAccent)
+                Text(
+                    text = stringResource(R.string.accent_style_label),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                AccentStyleSegmented(selected = accentStyle, onSelect = onSelectAccentStyle)
             }
         }
     }
@@ -431,6 +440,26 @@ private fun ThemeSegmented(
     }
 }
 
+@Composable
+private fun AccentStyleSegmented(
+    selected: AccentStyle,
+    onSelect: (AccentStyle) -> Unit
+) {
+    val items = listOf(
+        AccentStyle.WARM to R.string.accent_style_warm,
+        AccentStyle.VIVID to R.string.accent_style_vivid
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        items.forEachIndexed { index, (style, labelRes) ->
+            SegmentedButton(
+                selected = selected == style,
+                onClick = { onSelect(style) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size)
+            ) { Text(stringResource(labelRes)) }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccentSwatches(
@@ -517,6 +546,7 @@ private fun AccentSwatch(
 @StringRes
 private fun accentLabel(accent: AccentColor): Int = when (accent) {
     AccentColor.MULTICOLOR -> R.string.accent_multicolor
+    AccentColor.YELLOW -> R.string.accent_yellow
     AccentColor.AMBER -> R.string.accent_amber
     AccentColor.WHITE -> R.string.accent_white
     AccentColor.RED -> R.string.accent_red

@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.ui.theme
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
+import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
@@ -21,10 +22,13 @@ class ThemeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> =
-        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.LIGHT)
+        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
 
     val accentColor: StateFlow<AccentColor> =
-        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.AMBER)
+        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.YELLOW)
+
+    val accentStyle: StateFlow<AccentStyle> =
+        repo.accentStyle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentStyle.WARM)
 
     /** Modo activo, para que el acento Multicolor siga al modo en vivo. */
     val currentMode: StateFlow<FlashMode> =
@@ -36,5 +40,9 @@ class ThemeViewModel @Inject constructor(
 
     fun setAccent(accent: AccentColor) {
         viewModelScope.launch { repo.setAccentColor(accent) }
+    }
+
+    fun setAccentStyle(style: AccentStyle) {
+        viewModelScope.launch { repo.setAccentStyle(style) }
     }
 }

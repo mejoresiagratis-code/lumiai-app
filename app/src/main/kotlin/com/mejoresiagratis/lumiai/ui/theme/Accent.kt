@@ -7,6 +7,7 @@ import com.mejoresiagratis.lumiai.domain.model.FlashMode
 
 // Valores sólidos (de la lista del mockup).
 private val AmberAccent = Color(0xFFFFB300)
+private val YellowAccent = Color(0xFFFFD60A)
 private val WhiteAccent = Color(0xFFF2F4F8)
 private val RedAccent = Color(0xFFE12B2B)
 private val BlueAccent = Color(0xFF4D7BFF)
@@ -27,6 +28,7 @@ fun modeAccentColor(mode: FlashMode): Color = when (mode) {
 /** Color sólido de un acento. Multicolor cae a ámbar a nivel global (su efecto por modo vive en el Hub). */
 fun AccentColor.solidColor(): Color = when (this) {
     AccentColor.MULTICOLOR -> AmberAccent
+    AccentColor.YELLOW -> YellowAccent
     AccentColor.AMBER -> AmberAccent
     AccentColor.WHITE -> WhiteAccent
     AccentColor.RED -> RedAccent

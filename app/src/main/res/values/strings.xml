@@ -47,6 +47,10 @@
     <string name="accent_selected">Seleccionado: %1$s</string>
     <string name="accent_multicolor">Multicolor (por modo)</string>
     <string name="accent_amber">Ámbar</string>
+    <string name="accent_yellow">Amarillo</string>
+    <string name="accent_style_label">Estilo del acento</string>
+    <string name="accent_style_warm">Cálido</string>
+    <string name="accent_style_vivid">Vívido</string>
     <string name="accent_white">Blanco</string>
     <string name="accent_red">Rojo</string>
     <string name="accent_blue">Azul</string>
