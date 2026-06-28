@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -113,8 +112,8 @@ fun AuthScreen(
             // --- Cabecera de marca ---
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -127,7 +126,7 @@ fun AuthScreen(
             }
             Text(
                 text = stringResource(R.string.auth_welcome_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
             Text(
@@ -151,7 +150,7 @@ fun AuthScreen(
 
             // --- Tarjeta con campos y CTA ---
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.fillMaxWidth()
             ) {
