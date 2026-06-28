@@ -454,8 +454,6 @@ private fun StatusPill(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 @Composable
 private fun SettingsToggle(
     @StringRes titleRes: Int,
@@ -482,6 +480,8 @@ private fun SettingsToggle(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun ThemeSegmented(
     selected: ThemeMode,
     onSelect: (ThemeMode) -> Unit
