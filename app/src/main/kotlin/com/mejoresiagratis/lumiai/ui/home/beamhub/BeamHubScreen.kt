@@ -540,7 +540,7 @@ private fun ModePill(
 }
 
 @Composable
-private fun PowerOrb(
+internal fun PowerOrb(
     isOn: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
