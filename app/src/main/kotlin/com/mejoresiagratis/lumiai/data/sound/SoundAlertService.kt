@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertFlash
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
@@ -90,7 +91,9 @@ class SoundAlertService : Service() {
         flashJob?.cancel()
         flashJob = scope.launch {
             val pattern = SoundAlertFlash.patternFor(category)
-            val level = torch.maxIntensityLevel.coerceAtLeast(1)
+            // Alerta = brillo maximo. turnOn espera un PORCENTAJE (1..100), igual que FlashEngine;
+            // pasar maxIntensityLevel (nivel bruto del HW) daba el nivel minimo en algunos moviles.
+            val level = FlashSettings.MAX_INTENSITY
             try {
                 var i = 0
                 while (i < pattern.size) {
