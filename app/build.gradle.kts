@@ -114,6 +114,9 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.user.messaging.platform)
 
+    // Alerta sonora (deteccion de sonidos en el dispositivo). Requiere yamnet.tflite en assets.
+    implementation(libs.mediapipe.tasks.audio)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)

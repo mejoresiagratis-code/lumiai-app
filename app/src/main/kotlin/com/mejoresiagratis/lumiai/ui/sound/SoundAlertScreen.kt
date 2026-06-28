@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
+import com.mejoresiagratis.lumiai.data.sound.SoundAlertService
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
@@ -67,6 +68,7 @@ fun SoundAlertScreen(
     val micLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> micGranted = granted }
+    var listening by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -156,6 +158,37 @@ fun SoundAlertScreen(
                     sensitivity = config.sensitivity(category),
                     onToggle = { viewModel.setEnabled(category, it) },
                     onSensitivity = { viewModel.setSensitivity(category, it) }
+                )
+            }
+
+            HorizontalDivider()
+
+            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+                Text(
+                    "Escucha",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    if (listening) "Escuchando… revisa la notificación." else "Detenido.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (listening) {
+                    OutlinedButton(
+                        onClick = { SoundAlertService.stop(context); listening = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Parar escucha") }
+                } else {
+                    Button(
+                        onClick = { SoundAlertService.start(context); listening = true },
+                        enabled = micGranted,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Iniciar escucha") }
+                }
+                Text(
+                    "Nota: requiere el modelo yamnet.tflite en assets. Sin él no detectará nada.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

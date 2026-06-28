@@ -48,5 +48,10 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Mantiene la linterna encendida con la app en segundo plano" />
         </service>
+
+        <service
+            android:name=".data.sound.SoundAlertService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
     </application>
 </manifest>
