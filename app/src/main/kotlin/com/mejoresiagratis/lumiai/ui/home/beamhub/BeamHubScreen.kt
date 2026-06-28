@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -148,6 +150,11 @@ fun BeamHubScreen(
     val sheetMaxHeight = (screenHeightDp * 0.42f).dp
     val orbSize = (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
 
+    // Aviso contextual del modo (Estrobo/Baliza): se muestra como toast descartable al
+    // tocar el icono de info, y se cierra al pulsar en cualquier parte de la pantalla.
+    var infoVisible by remember(state.mode) { mutableStateOf(false) }
+    val infoTextRes = infoTextFor(state.mode)
+
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -228,11 +235,30 @@ fun BeamHubScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = stringResource(R.string.control_header),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.control_header),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (infoTextRes != null) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_info),
+                                    contentDescription = stringResource(R.string.info_cd),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) { infoVisible = true }
+                                )
+                            }
+                        }
                         if (modeHasAdvanced(state.mode, state.capabilities)) {
                             Text(
                                 text = stringResource(
@@ -339,7 +365,44 @@ fun BeamHubScreen(
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
+
+        if (infoVisible && infoTextRes != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { infoVisible = false }
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    shape = RoundedCornerShape(14.dp),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = LumiSpacing.lg)
+                ) {
+                    Text(
+                        text = stringResource(infoTextRes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(
+                            horizontal = LumiSpacing.lg,
+                            vertical = LumiSpacing.md
+                        )
+                    )
+                }
+            }
+        }
     }
+}
+
+/** Aviso/ayuda contextual de cada modo, mostrado bajo demanda (icono de info → toast). */
+private fun infoTextFor(mode: FlashMode): Int? = when (mode) {
+    FlashMode.STROBE -> R.string.strobe_photosensitivity_warning
+    FlashMode.BEACON -> R.string.beacon_hint
+    else -> null
 }
 
 @Composable
