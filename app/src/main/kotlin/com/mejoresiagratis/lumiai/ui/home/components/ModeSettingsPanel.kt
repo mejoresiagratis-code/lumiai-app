@@ -2,13 +2,16 @@ package com.mejoresiagratis.lumiai.ui.home.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,6 +40,28 @@ fun modeHasAdvanced(mode: FlashMode, caps: DeviceCapabilities): Boolean {
     return mode == FlashMode.TEXT_MORSE ||
         ModeControl.STROBE_HZ in controls ||
         ModeControl.MORSE_SPEED in controls
+}
+
+/**
+ * Contenedor tonal del lavado de cara M3 Expressive: agrupa un control en una superficie
+ * redondeada para dar jerarquía por tono (no por sombras duras). Solo presentación.
+ */
+@Composable
+private fun SettingGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(LumiSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm),
+            content = content
+        )
+    }
 }
 
 @Composable
@@ -73,7 +98,7 @@ fun ModeSettingsPanel(
             )
         }
         if (ModeControl.INTENSITY in controls) {
-            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+            SettingGroup {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,8 +111,8 @@ fun ModeSettingsPanel(
                     )
                     Text(
                         text = "${settings.intensityLevel}%",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -100,61 +125,63 @@ fun ModeSettingsPanel(
             }
         }
         if (ModeControl.BEACON_INTERVAL in controls) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-            ) {
-                OutlinedButton(
-                    onClick = { onChange { it.copy(beaconIntervalMs = 2000L, beaconFlashMs = 150L) } },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(R.string.beacon_preset_locator)) }
-                OutlinedButton(
-                    onClick = { onChange { it.copy(beaconIntervalMs = 600L, beaconFlashMs = 200L) } },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(R.string.beacon_preset_highvis)) }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
-                Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))
-                Slider(
-                    value = settings.beaconIntervalMs.toFloat(),
-                    onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat(),
-                    modifier = Modifier.semantics { contentDescription = a11yInterval }
-                )
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
-                Text(stringResource(R.string.settings_beacon_flash, settings.beaconFlashMs.toInt()))
-                Slider(
-                    value = settings.beaconFlashMs.toFloat(),
-                    onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat(),
-                    modifier = Modifier.semantics { contentDescription = a11yFlash }
-                )
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
-                Text(
-                    text = stringResource(R.string.settings_beacon_autooff),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            SettingGroup {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
                 ) {
-                    listOf(0, 15, 30, 60).forEach { m ->
-                        FilterChip(
-                            selected = settings.beaconAutoOffMin == m,
-                            onClick = { onChange { it.copy(beaconAutoOffMin = m) } },
-                            label = {
-                                Text(
-                                    if (m == 0) {
-                                        stringResource(R.string.autooff_off)
-                                    } else {
-                                        stringResource(R.string.autooff_minutes, m)
-                                    }
-                                )
-                            }
-                        )
+                    FilledTonalButton(
+                        onClick = { onChange { it.copy(beaconIntervalMs = 2000L, beaconFlashMs = 150L) } },
+                        modifier = Modifier.weight(1f)
+                    ) { Text(stringResource(R.string.beacon_preset_locator)) }
+                    FilledTonalButton(
+                        onClick = { onChange { it.copy(beaconIntervalMs = 600L, beaconFlashMs = 200L) } },
+                        modifier = Modifier.weight(1f)
+                    ) { Text(stringResource(R.string.beacon_preset_highvis)) }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                    Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))
+                    Slider(
+                        value = settings.beaconIntervalMs.toFloat(),
+                        onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
+                        valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat(),
+                        modifier = Modifier.semantics { contentDescription = a11yInterval }
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                    Text(stringResource(R.string.settings_beacon_flash, settings.beaconFlashMs.toInt()))
+                    Slider(
+                        value = settings.beaconFlashMs.toFloat(),
+                        onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
+                        valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat(),
+                        modifier = Modifier.semantics { contentDescription = a11yFlash }
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                    Text(
+                        text = stringResource(R.string.settings_beacon_autooff),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                    ) {
+                        listOf(0, 15, 30, 60).forEach { m ->
+                            FilterChip(
+                                selected = settings.beaconAutoOffMin == m,
+                                onClick = { onChange { it.copy(beaconAutoOffMin = m) } },
+                                label = {
+                                    Text(
+                                        if (m == 0) {
+                                            stringResource(R.string.autooff_off)
+                                        } else {
+                                            stringResource(R.string.autooff_minutes, m)
+                                        }
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -164,7 +191,7 @@ fun ModeSettingsPanel(
         if (expanded) {
             if (mode == FlashMode.TEXT_MORSE) {
                 val unsupported = Morse.unsupportedChars(settings.morseText)
-                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+                SettingGroup {
                     OutlinedTextField(
                         value = settings.morseText,
                         onValueChange = { v -> onChange { it.copy(morseText = v.take(FlashSettings.MAX_MORSE_LEN)) } },
@@ -193,7 +220,7 @@ fun ModeSettingsPanel(
                 }
             }
             if (ModeControl.STROBE_HZ in controls) {
-                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                SettingGroup {
                     Text(stringResource(R.string.settings_frequency, "%.1f".format(settings.strobeHz)))
                     Slider(
                         value = settings.strobeHz,
@@ -204,7 +231,7 @@ fun ModeSettingsPanel(
                 }
             }
             if (ModeControl.MORSE_SPEED in controls) {
-                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+                SettingGroup {
                     Text(stringResource(R.string.settings_speed, settings.morseUnitMs.toInt()))
                     Slider(
                         value = settings.morseUnitMs.toFloat(),
