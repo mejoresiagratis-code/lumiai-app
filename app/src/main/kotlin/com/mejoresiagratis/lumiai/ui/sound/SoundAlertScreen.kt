@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.sound.SoundAlertService
+import com.mejoresiagratis.lumiai.data.sound.labelRes
 import com.mejoresiagratis.lumiai.domain.sound.AlertChannel
 import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
@@ -50,9 +52,9 @@ import com.mejoresiagratis.lumiai.domain.sound.SoundReliability
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 
 /**
- * Pantalla del modo Alerta Sonora (beta, accesible solo en debug por ahora). Divulgacion
- * destacada + permiso de microfono + ajuste por categoria (activacion, sensibilidad y canal de
- * aviso) + control de escucha. El canal flash se oculta si el dispositivo no tiene flash.
+ * Pantalla del modo Alerta Sonora: divulgacion + permiso de microfono + ajuste por categoria
+ * (activacion, sensibilidad y canal de aviso) + control de escucha. El canal flash se oculta si
+ * el dispositivo no tiene flash.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +80,7 @@ fun SoundAlertScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alerta sonora") },
+                title = { Text(stringResource(R.string.sa_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -105,7 +107,7 @@ fun SoundAlertScreen(
                 onRequest = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
             )
 
-            SectionHeader("Sonidos a vigilar")
+            SectionHeader(stringResource(R.string.sa_section_sounds))
             Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                 SoundCategory.entries.forEach { category ->
                     CategoryCard(
@@ -129,7 +131,7 @@ fun SoundAlertScreen(
             )
 
             OutlinedButton(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
-                Text("Restablecer")
+                Text(stringResource(R.string.sa_reset))
             }
         }
     }
@@ -156,21 +158,15 @@ private fun DisclosureCard() {
             modifier = Modifier.padding(LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
         ) {
+            Text(stringResource(R.string.sa_what), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.sa_privacy), style = MaterialTheme.typography.bodyMedium)
             Text(
-                "Reconoce sonidos importantes y avisa con luz, por si no puedes oírlos.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                "Todo en el dispositivo; no graba ni envía audio.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                "No es un sistema de seguridad: puede fallar y no sustituye a un detector homologado.",
+                stringResource(R.string.sa_not_safety),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
             Text(
-                "Consume batería; mejor cargando.",
+                stringResource(R.string.sa_battery),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -186,15 +182,15 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
         ) {
             Text(
-                "Micrófono",
+                stringResource(R.string.sa_mic),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
             if (micGranted) {
-                Text("Concedido.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.sa_mic_granted), style = MaterialTheme.typography.bodyMedium)
             } else {
                 Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
-                    Text("Conceder micrófono")
+                    Text(stringResource(R.string.sa_mic_grant))
                 }
             }
         }
@@ -214,24 +210,24 @@ private fun ListenCard(
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
         ) {
             Text(
-                "Escucha",
+                stringResource(R.string.sa_listen),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                if (listening) "Escuchando…" else "Detenido.",
+                stringResource(if (listening) R.string.sa_listening else R.string.sa_stopped),
                 style = MaterialTheme.typography.bodyMedium
             )
             if (listening) {
                 OutlinedButton(onClick = onStop, modifier = Modifier.fillMaxWidth()) {
-                    Text("Parar")
+                    Text(stringResource(R.string.sa_stop))
                 }
             } else {
                 Button(
                     onClick = onStart,
                     enabled = micGranted,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Iniciar") }
+                ) { Text(stringResource(R.string.sa_start)) }
             }
         }
     }
@@ -260,12 +256,12 @@ private fun CategoryCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        category.displayName(),
+                        stringResource(category.labelRes()),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        category.reliabilityLabel(),
+                        stringResource(category.reliabilityRes()),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -275,10 +271,10 @@ private fun CategoryCard(
 
             if (enabled) {
                 LabeledSegmented(
-                    label = "Sensibilidad",
+                    label = stringResource(R.string.sa_sensitivity),
                     options = Sensitivity.entries,
                     selected = sensitivity,
-                    optionLabel = { it.displayName() },
+                    optionLabel = { stringResource(it.labelRes()) },
                     onSelect = onSensitivity
                 )
                 ChannelSelector(
@@ -299,7 +295,7 @@ private fun ChannelSelector(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
         Text(
-            "Cómo avisa",
+            stringResource(R.string.sa_how),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -307,12 +303,12 @@ private fun ChannelSelector(
             SegmentedRow(
                 options = AlertChannel.entries,
                 selected = channel,
-                optionLabel = { it.displayName() },
+                optionLabel = { stringResource(it.labelRes()) },
                 onSelect = onChannel
             )
         } else {
             Text(
-                "Sin flash: avisa con la pantalla.",
+                stringResource(R.string.sa_no_flash),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -325,7 +321,7 @@ private fun <T> LabeledSegmented(
     label: String,
     options: List<T>,
     selected: T,
-    optionLabel: (T) -> String,
+    optionLabel: @Composable (T) -> String,
     onSelect: (T) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
@@ -342,7 +338,7 @@ private fun <T> LabeledSegmented(
 private fun <T> SegmentedRow(
     options: List<T>,
     selected: T,
-    optionLabel: (T) -> String,
+    optionLabel: @Composable (T) -> String,
     onSelect: (T) -> Unit
 ) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -359,30 +355,22 @@ private fun <T> SegmentedRow(
     }
 }
 
-private fun SoundCategory.displayName(): String = when (this) {
-    SoundCategory.TIMBRE -> "Timbre"
-    SoundCategory.GOLPES_PUERTA -> "Golpes en la puerta"
-    SoundCategory.TELEFONO -> "Teléfono"
-    SoundCategory.PERRO -> "Perro"
-    SoundCategory.BEBE -> "Llanto de bebé"
-    SoundCategory.DESPERTADOR -> "Despertador / alarma"
-    SoundCategory.SIRENA -> "Sirena"
-    SoundCategory.ALARMA_HUMO -> "Alarma de humo/incendio"
+@StringRes
+private fun SoundCategory.reliabilityRes(): Int = when (reliability) {
+    SoundReliability.ALTA -> R.string.sa_reliab_high
+    SoundReliability.MEDIA -> R.string.sa_reliab_med
 }
 
-private fun SoundCategory.reliabilityLabel(): String = when (reliability) {
-    SoundReliability.ALTA -> "fiabilidad alta"
-    SoundReliability.MEDIA -> "fiabilidad media"
+@StringRes
+private fun Sensitivity.labelRes(): Int = when (this) {
+    Sensitivity.BAJA -> R.string.sa_sens_low
+    Sensitivity.MEDIA -> R.string.sa_sens_med
+    Sensitivity.ALTA -> R.string.sa_sens_high
 }
 
-private fun Sensitivity.displayName(): String = when (this) {
-    Sensitivity.BAJA -> "Baja"
-    Sensitivity.MEDIA -> "Media"
-    Sensitivity.ALTA -> "Alta"
-}
-
-private fun AlertChannel.displayName(): String = when (this) {
-    AlertChannel.FLASH -> "Flash"
-    AlertChannel.PANTALLA -> "Pantalla"
-    AlertChannel.AMBAS -> "Ambas"
+@StringRes
+private fun AlertChannel.labelRes(): Int = when (this) {
+    AlertChannel.FLASH -> R.string.sa_chan_flash
+    AlertChannel.PANTALLA -> R.string.sa_chan_screen
+    AlertChannel.AMBAS -> R.string.sa_chan_both
 }

@@ -105,8 +105,8 @@ class SoundAlertService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Sonido detectado")
-            .setContentText(category.shortLabel())
+            .setContentTitle(getString(R.string.sa_notif_detected))
+            .setContentText(getString(category.labelRes()))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -142,7 +142,7 @@ class SoundAlertService : Service() {
     private fun startInForeground() {
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
-            .setContentText("Escuchando alertas sonoras…")
+            .setContentText(getString(R.string.sa_notif_listening))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
             .build()
@@ -156,8 +156,8 @@ class SoundAlertService : Service() {
     private fun notifyDetection(category: SoundCategory) {
         val mgr = getSystemService(NotificationManager::class.java)
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Sonido detectado")
-            .setContentText(category.shortLabel())
+            .setContentTitle(getString(R.string.sa_notif_detected))
+            .setContentText(getString(category.labelRes()))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
             .build()
@@ -187,7 +187,7 @@ class SoundAlertService : Service() {
                     mgr.createNotificationChannel(
                         NotificationChannel(
                             CHANNEL_ID,
-                            "Alerta sonora",
+                            getString(R.string.sa_title),
                             NotificationManager.IMPORTANCE_HIGH
                         )
                     )
@@ -195,15 +195,4 @@ class SoundAlertService : Service() {
             }
         }
     }
-}
-
-private fun SoundCategory.shortLabel(): String = when (this) {
-    SoundCategory.TIMBRE -> "Timbre"
-    SoundCategory.GOLPES_PUERTA -> "Golpes en la puerta"
-    SoundCategory.TELEFONO -> "Teléfono"
-    SoundCategory.PERRO -> "Perro"
-    SoundCategory.BEBE -> "Llanto de bebé"
-    SoundCategory.DESPERTADOR -> "Despertador / alarma"
-    SoundCategory.SIRENA -> "Sirena"
-    SoundCategory.ALARMA_HUMO -> "Alarma de humo/incendio"
 }

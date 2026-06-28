@@ -161,4 +161,44 @@
     <string name="mode_locked_body_ad_only">Desbloquéalo gratis viendo anuncios (2 = 1 h de Pro).</string>
     <string name="mode_unlock_watch_ad">Ver anuncio</string>
     <string name="mode_unlock_sign_in">Iniciar sesión</string>
+
+    <!-- Alerta sonora: pantalla -->
+    <string name="sa_title">Alerta sonora</string>
+    <string name="sa_section_sounds">Sonidos a vigilar</string>
+    <string name="sa_reset">Restablecer</string>
+    <string name="sa_what">Reconoce sonidos importantes y avisa con luz, por si no puedes oírlos.</string>
+    <string name="sa_privacy">Todo en el dispositivo; no graba ni envía audio.</string>
+    <string name="sa_not_safety">No es un sistema de seguridad: puede fallar y no sustituye a un detector homologado.</string>
+    <string name="sa_battery">Consume batería; mejor cargando.</string>
+    <string name="sa_mic">Micrófono</string>
+    <string name="sa_mic_granted">Concedido.</string>
+    <string name="sa_mic_grant">Conceder micrófono</string>
+    <string name="sa_listen">Escucha</string>
+    <string name="sa_listening">Escuchando…</string>
+    <string name="sa_stopped">Detenido.</string>
+    <string name="sa_start">Iniciar</string>
+    <string name="sa_stop">Parar</string>
+    <string name="sa_sensitivity">Sensibilidad</string>
+    <string name="sa_how">Cómo avisa</string>
+    <string name="sa_no_flash">Sin flash: avisa con la pantalla.</string>
+    <string name="sa_sens_low">Baja</string>
+    <string name="sa_sens_med">Media</string>
+    <string name="sa_sens_high">Alta</string>
+    <string name="sa_chan_flash">Flash</string>
+    <string name="sa_chan_screen">Pantalla</string>
+    <string name="sa_chan_both">Ambas</string>
+    <string name="sa_reliab_high">fiabilidad alta</string>
+    <string name="sa_reliab_med">fiabilidad media</string>
+    <!-- Alerta sonora: notificaciones -->
+    <string name="sa_notif_listening">Escuchando alertas sonoras…</string>
+    <string name="sa_notif_detected">Sonido detectado</string>
+    <!-- Alerta sonora: categorías -->
+    <string name="sound_cat_doorbell">Timbre</string>
+    <string name="sound_cat_knock">Golpes en la puerta</string>
+    <string name="sound_cat_phone">Teléfono</string>
+    <string name="sound_cat_dog">Perro</string>
+    <string name="sound_cat_baby">Llanto de bebé</string>
+    <string name="sound_cat_alarm_clock">Despertador / alarma</string>
+    <string name="sound_cat_siren">Sirena</string>
+    <string name="sound_cat_smoke">Alarma de humo/incendio</string>
 </resources>
