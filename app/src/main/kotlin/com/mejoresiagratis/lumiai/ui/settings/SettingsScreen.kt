@@ -1,6 +1,10 @@
 package com.mejoresiagratis.lumiai.ui.settings
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -99,11 +103,13 @@ fun SettingsScreen(
     onSetAutoLockScreen: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
-    accountViewModel: AccountViewModel = hiltViewModel()
+    accountViewModel: AccountViewModel = hiltViewModel(),
+    rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
 ) {
     val user by accountViewModel.user.collectAsStateWithLifecycle()
     val isGuest = user == null || user?.isAnonymous == true
     val accountUi by accountViewModel.ui.collectAsStateWithLifecycle()
+    val proUi by rewardedUnlockViewModel.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val hasVibrator = remember {
         runCatching { context.getSystemService(Vibrator::class.java)?.hasVibrator() == true }.getOrDefault(false)
@@ -261,6 +267,51 @@ fun SettingsScreen(
             }
 
             // --- Tema ---
+            // --- Acceso Pro temporal ---
+            SettingsSection(R.string.pro_section) {
+                Text(
+                    text = if (proUi.active) {
+                        stringResource(R.string.pro_remaining, formatProDuration(proUi.remainingMillis))
+                    } else {
+                        stringResource(R.string.pro_explainer)
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.pro_progress, proUi.adsWatched, proUi.adsPerGrant),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val activity = remember(context) { context.findActivity() }
+                Button(
+                    onClick = {
+                        val act = activity
+                        if (act != null) {
+                            rewardedUnlockViewModel.watchAd(
+                                activity = act,
+                                onGranted = {
+                                    Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
+                                },
+                                onUnavailable = {
+                                    Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    },
+                    enabled = activity != null,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (proUi.adReady) {
+                            stringResource(R.string.pro_watch_ad)
+                        } else {
+                            stringResource(R.string.pro_watch_ad_loading)
+                        }
+                    )
+                }
+            }
+
             SettingsSection(R.string.theme_section) {
                 ThemeSegmented(selected = themeMode, onSelect = onSelectTheme)
             }
@@ -633,4 +684,18 @@ private fun accountErrorMessage(error: AuthError): String = when (error) {
     AuthError.Network -> stringResource(R.string.auth_error_network)
     AuthError.RecentLoginRequired -> stringResource(R.string.auth_error_generic)
     AuthError.Unknown -> stringResource(R.string.auth_error_generic)
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+private fun formatProDuration(ms: Long): String {
+    val totalSec = (ms / 1000L).coerceAtLeast(0L)
+    val h = totalSec / 3600L
+    val m = (totalSec % 3600L) / 60L
+    val sec = totalSec % 60L
+    return if (h > 0L) "%d:%02d:%02d".format(h, m, sec) else "%02d:%02d".format(m, sec)
 }

@@ -16,6 +16,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +27,10 @@ import javax.inject.Singleton
  * Carga y muestra anuncios recompensados de AdMob. Cada recompensa obtenida registra
  * progreso vía [RecordRewardUseCase] (2 anuncios = 1 h de Pro). El ID de unidad procede
  * de BuildConfig (IDs de prueba en debug, reales en release).
+ *
+ * Solo solicita anuncios tras [initializeAndPreload] (llamado desde MainActivity cuando UMP
+ * permite anuncios): sin esa inicialización, [preload] no hace nada (no se piden anuncios
+ * sin consentimiento).
  */
 @Singleton
 class RewardedAdController @Inject constructor(
@@ -35,8 +42,10 @@ class RewardedAdController @Inject constructor(
     private var loading = false
     private var initialized = false
 
-    /** ¿Hay un anuncio cargado y listo para mostrar? */
-    val isReady: Boolean get() = rewardedAd != null
+    private val _isReady = MutableStateFlow(false)
+
+    /** Emite si hay un anuncio cargado y listo para mostrar. */
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     /** Inicializa AdMob una sola vez y precarga un anuncio. Llamar tras obtener consentimiento. */
     fun initializeAndPreload() {
@@ -48,9 +57,9 @@ class RewardedAdController @Inject constructor(
         MobileAds.initialize(context) { preload() }
     }
 
-    /** Precarga un anuncio si no hay uno cargado ni una carga en curso. */
+    /** Precarga un anuncio si AdMob ya está inicializado y no hay uno cargado ni una carga en curso. */
     fun preload() {
-        if (loading || rewardedAd != null) return
+        if (!initialized || loading || rewardedAd != null) return
         loading = true
         RewardedAd.load(
             context,
@@ -60,11 +69,13 @@ class RewardedAdController @Inject constructor(
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad
                     loading = false
+                    _isReady.value = true
                 }
 
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     rewardedAd = null
                     loading = false
+                    _isReady.value = false
                 }
             }
         )
@@ -86,6 +97,7 @@ class RewardedAdController @Inject constructor(
             preload()
             return
         }
+        _isReady.value = false
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 rewardedAd = null

@@ -140,4 +140,14 @@
     <string name="action_show_more">Ver más</string>
     <string name="action_show_less">Ver menos</string>
     <string name="section_mode">Modo</string>
+
+    <!-- Acceso Pro temporal por anuncios -->
+    <string name="pro_section">Acceso Pro</string>
+    <string name="pro_explainer">Mira 2 anuncios y consigue 1 hora de funciones Pro, sin coste.</string>
+    <string name="pro_remaining">Pro activo · te queda %1$s</string>
+    <string name="pro_progress">Anuncios vistos: %1$d/%2$d</string>
+    <string name="pro_watch_ad">Ver anuncio para 1 h de Pro</string>
+    <string name="pro_watch_ad_loading">Preparando anuncio…</string>
+    <string name="pro_granted">¡Has desbloqueado 1 h de Pro!</string>
+    <string name="pro_ad_unavailable">Anuncio no disponible, inténtalo en unos segundos.</string>
 </resources>
