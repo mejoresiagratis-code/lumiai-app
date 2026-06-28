@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
+import com.mejoresiagratis.lumiai.domain.sound.AlertChannel
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfigCodec
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
@@ -35,6 +36,13 @@ class DataStoreSoundAlertConfigRepository @Inject constructor(
         dataStore.edit { prefs ->
             val current = SoundAlertConfigCodec.decode(prefs[key])
             prefs[key] = SoundAlertConfigCodec.encode(current.withSensitivity(category, sensitivity))
+        }
+    }
+
+    override suspend fun setChannel(category: SoundCategory, channel: AlertChannel) {
+        dataStore.edit { prefs ->
+            val current = SoundAlertConfigCodec.decode(prefs[key])
+            prefs[key] = SoundAlertConfigCodec.encode(current.withChannel(category, channel))
         }
     }
 

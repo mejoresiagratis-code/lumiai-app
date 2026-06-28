@@ -15,7 +15,7 @@ class SoundDetectionEngine(
     private val config: SoundAlertConfig,
     private val matcher: SoundLabelMatcher = SoundLabelMatcher(),
     private val debounceWindows: Int = 2,
-    private val cooldownMs: Long = 8_000L
+    private val cooldownMs: Long = 4_000L
 ) {
     private val streak = mutableMapOf<SoundCategory, Int>()
     private val lastFiredAtMs = mutableMapOf<SoundCategory, Long>()

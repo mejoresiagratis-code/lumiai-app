@@ -11,10 +11,22 @@ enum class Sensitivity(val scoreThreshold: Float) {
     ALTA(0.3f)
 }
 
-/** Ajuste de una categoria: si esta vigilada y con que sensibilidad. */
+/**
+ * Cómo avisa una categoría cuando se detecta. El LED es monocolor (honestidad): las categorías se
+ * distinguen por ritmo, no por color. [usesFlash] requiere que el dispositivo tenga flash; en su
+ * ausencia el actuador cae a pantalla para no dejar al usuario sin aviso (no se finge flash).
+ */
+enum class AlertChannel(val usesFlash: Boolean, val usesScreen: Boolean) {
+    FLASH(usesFlash = true, usesScreen = false),
+    PANTALLA(usesFlash = false, usesScreen = true),
+    AMBAS(usesFlash = true, usesScreen = true)
+}
+
+/** Ajuste de una categoria: si esta vigilada, con que sensibilidad y como avisa. */
 data class CategorySetting(
     val enabled: Boolean,
-    val sensitivity: Sensitivity = Sensitivity.MEDIA
+    val sensitivity: Sensitivity = Sensitivity.MEDIA,
+    val channel: AlertChannel = AlertChannel.FLASH
 )
 
 /**
@@ -29,6 +41,9 @@ data class SoundAlertConfig(
 
     fun sensitivity(category: SoundCategory): Sensitivity =
         settings[category]?.sensitivity ?: Sensitivity.MEDIA
+
+    fun channel(category: SoundCategory): AlertChannel =
+        settings[category]?.channel ?: AlertChannel.FLASH
 
     /** Umbral de confianza efectivo para una categoria. */
     fun threshold(category: SoundCategory): Float = sensitivity(category).scoreThreshold
@@ -53,11 +68,18 @@ data class SoundAlertConfig(
         return copy(settings = settings + (category to current.copy(sensitivity = sensitivity)))
     }
 
+    fun withChannel(category: SoundCategory, channel: AlertChannel): SoundAlertConfig {
+        val current = settings[category] ?: CategorySetting(enabled = true)
+        return copy(settings = settings + (category to current.copy(channel = channel)))
+    }
+
     companion object {
         fun defaultSettings(): Map<SoundCategory, CategorySetting> =
             SoundCategory.entries.associateWith { category ->
                 val sensitivity = if (category.safetyRelated) Sensitivity.ALTA else Sensitivity.MEDIA
-                CategorySetting(enabled = true, sensitivity = sensitivity)
+                // Las de seguridad avisan por flash y pantalla por defecto (más difícil de perder).
+                val channel = if (category.safetyRelated) AlertChannel.AMBAS else AlertChannel.FLASH
+                CategorySetting(enabled = true, sensitivity = sensitivity, channel = channel)
             }
     }
 }

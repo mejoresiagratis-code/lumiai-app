@@ -24,9 +24,36 @@ class SoundAlertCodecAndFlashTest {
         val cfg = SoundAlertConfig()
             .withEnabled(SoundCategory.PERRO, false)
             .withSensitivity(SoundCategory.TIMBRE, Sensitivity.ALTA)
+            .withChannel(SoundCategory.TIMBRE, AlertChannel.PANTALLA)
         val restored = SoundAlertConfigCodec.decode(SoundAlertConfigCodec.encode(cfg))
         assertFalse(restored.isEnabled(SoundCategory.PERRO))
         assertEquals(Sensitivity.ALTA, restored.sensitivity(SoundCategory.TIMBRE))
+        assertEquals(AlertChannel.PANTALLA, restored.channel(SoundCategory.TIMBRE))
+    }
+
+    @Test
+    fun `las categorias de seguridad avisan por ambas vias por defecto`() {
+        val cfg = SoundAlertConfig()
+        assertEquals(AlertChannel.AMBAS, cfg.channel(SoundCategory.ALARMA_HUMO))
+        assertEquals(AlertChannel.FLASH, cfg.channel(SoundCategory.TIMBRE))
+    }
+
+    @Test
+    fun `decode acepta el formato antiguo de 3 campos y asigna el canal por defecto`() {
+        // Entradas sin canal (formato F3a): se respeta enabled/sensibilidad y el canal por defecto.
+        val raw = "TIMBRE:0:ALTA;ALARMA_HUMO:1:ALTA"
+        val cfg = SoundAlertConfigCodec.decode(raw)
+        assertFalse(cfg.isEnabled(SoundCategory.TIMBRE))
+        assertEquals(Sensitivity.ALTA, cfg.sensitivity(SoundCategory.TIMBRE))
+        assertEquals(AlertChannel.FLASH, cfg.channel(SoundCategory.TIMBRE))
+        assertEquals(AlertChannel.AMBAS, cfg.channel(SoundCategory.ALARMA_HUMO))
+    }
+
+    @Test
+    fun `decode ignora una entrada con canal invalido`() {
+        val cfg = SoundAlertConfigCodec.decode("PERRO:0:MEDIA:NOEXISTE")
+        // Entrada descartada por completo -> PERRO queda en su valor por defecto (activo).
+        assertTrue(cfg.isEnabled(SoundCategory.PERRO))
     }
 
     @Test
