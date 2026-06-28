@@ -27,8 +27,8 @@ val LocalAutoLockScreen = staticCompositionLocalOf { false }
 @Composable
 fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
-    accent: AccentColor = AccentColor.YELLOW,
-    accentStyle: AccentStyle = AccentStyle.WARM,
+    accent: AccentColor = AccentColor.BLUE,
+    accentStyle: AccentStyle = AccentStyle.VIVID,
     highContrast: Boolean = false,
     reduceMotion: Boolean = false,
     activeMode: FlashMode? = null,
