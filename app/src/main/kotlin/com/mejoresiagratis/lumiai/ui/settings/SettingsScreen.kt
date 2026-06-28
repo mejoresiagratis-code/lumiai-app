@@ -55,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -345,7 +346,9 @@ private fun SettingsSection(
             text = stringResource(headerRes),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = LumiSpacing.md)
+            modifier = Modifier
+                .padding(start = LumiSpacing.md)
+                .semantics { heading() }
         )
         Surface(
             shape = RoundedCornerShape(20.dp),

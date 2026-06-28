@@ -38,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -66,7 +67,13 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -245,18 +252,23 @@ fun BeamHubScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                             if (infoTextRes != null) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_info),
-                                    contentDescription = stringResource(R.string.info_cd),
-                                    tint = MaterialTheme.colorScheme.primary,
+                                Box(
                                     modifier = Modifier
-                                        .size(20.dp)
                                         .clip(CircleShape)
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null
                                         ) { infoVisible = true }
-                                )
+                                        .minimumInteractiveComponentSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_info),
+                                        contentDescription = stringResource(R.string.info_cd),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                         if (modeHasAdvanced(state.mode, state.capabilities)) {
@@ -467,6 +479,8 @@ private fun ModePill(
     } else {
         MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
     }
+    val isSel = selected
+    val lockedLabel = stringResource(R.string.mode_locked_cd)
     Box(
         modifier = Modifier
             .width(88.dp)
@@ -475,7 +489,11 @@ private fun ModePill(
             .clip(shape)
             .background(container)
             .border(width = if (selected) 2.dp else 1.dp, color = borderColor, shape = shape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(role = Role.Tab, onClick = onClick)
+            .semantics {
+                selected = isSel
+                if (locked) stateDescription = lockedLabel
+            }
             .padding(LumiSpacing.sm)
     ) {
         Column(
@@ -561,6 +579,8 @@ private fun PowerOrb(
     val haloAlpha = if (pulsing) pulse else glow
 
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
+    val torchLabel = stringResource(R.string.a11y_torch)
+    val orbStateLabel = stringResource(if (isOn) R.string.a11y_state_on else R.string.a11y_state_off)
 
     Box(modifier = modifier.requiredSize(orbDiameter), contentAlignment = Alignment.Center) {
         Box(
@@ -600,7 +620,12 @@ private fun PowerOrb(
                         listOf(primary, primary.copy(alpha = if (isOn) 0.92f else 0.55f))
                     )
                 )
-                .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle),
+                .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = torchLabel
+                    stateDescription = orbStateLabel
+                    liveRegion = LiveRegionMode.Polite
+                },
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.size(orbDiameter * (56f / 252f))) {

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,8 +44,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
@@ -152,15 +156,25 @@ fun ScreenLight(
                     .animateContentSize()
             ) {
                 // Asa: toca para plegar/desplegar el panel de ajustes.
+                val panelToggleLabel = stringResource(R.string.a11y_panel_toggle)
+                val panelStateLabel = stringResource(
+                    if (panelExpanded) R.string.a11y_panel_expanded else R.string.a11y_panel_collapsed
+                )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { panelExpanded = !panelExpanded },
+                        ) { panelExpanded = !panelExpanded }
+                        .semantics {
+                            contentDescription = panelToggleLabel
+                            role = Role.Button
+                            stateDescription = panelStateLabel
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
