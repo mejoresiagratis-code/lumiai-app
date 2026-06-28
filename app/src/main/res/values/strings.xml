@@ -67,6 +67,10 @@
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar</string>
     <string name="onboarding_back">Atrás</string>
+    <string name="screen_lock_cd">Bloquear pantalla</string>
+    <string name="screen_locked_title">Pantalla bloqueada</string>
+    <string name="screen_locked_hint">Mantén pulsado para desbloquear</string>
+    <string name="screen_locked_cd">Pantalla bloqueada. Mantén pulsado para desbloquear.</string>
     <string name="ob1_title">Una linterna fiable</string>
     <string name="ob1_body">Ilumina al instante. Sin cámara ni permisos innecesarios.</string>
     <string name="ob2_title">Varios modos</string>

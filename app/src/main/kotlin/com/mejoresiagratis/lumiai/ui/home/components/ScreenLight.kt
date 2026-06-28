@@ -5,7 +5,9 @@ import android.graphics.Color as AndroidColor
 import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,16 +28,19 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -76,6 +82,7 @@ val SCREEN_NAMED_PRESETS: List<ScreenPreset> = listOf(
     ScreenPreset(R.string.screen_preset_night, 0xFFFF3B30.toInt(), 0.22f)     // Rojo nocturno (visión nocturna)
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScreenLight(
     argb: Int,
@@ -86,6 +93,10 @@ fun ScreenLight(
     modifier: Modifier = Modifier
 ) {
     val cd = stringResource(R.string.screen_exit_cd)
+    val lockCd = stringResource(R.string.screen_lock_cd)
+    val lockedTitle = stringResource(R.string.screen_locked_title)
+    val lockedHint = stringResource(R.string.screen_locked_hint)
+    val lockedCd = stringResource(R.string.screen_locked_cd)
     val window = (LocalContext.current as? Activity)?.window
 
     // Forzar el brillo de la ventana mientras dura el modo; restaurar al salir.
@@ -115,6 +126,7 @@ fun ScreenLight(
     // Panel de ajustes ocultable: colapsado deja solo el asa superior para reabrirlo y
     // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
     var panelExpanded by remember { mutableStateOf(true) }
+    var locked by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier
@@ -135,6 +147,30 @@ fun ScreenLight(
                 .align(Alignment.TopCenter)
                 .padding(top = LumiSpacing.xxl)
         )
+
+        if (!locked) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(LumiSpacing.lg)
+                    .clip(CircleShape)
+                    .background(onColor.copy(alpha = 0.10f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { locked = true }
+                    .minimumInteractiveComponentSize()
+                    .semantics { contentDescription = lockCd },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_lock),
+                    contentDescription = null,
+                    tint = onColor.copy(alpha = 0.75f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
 
         Surface(
             color = Color(0xF00B0E13),
@@ -278,6 +314,44 @@ fun ScreenLight(
                         onValueChange = onBrightnessChange,
                         valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
                         modifier = Modifier.semantics { contentDescription = brightnessLabel }
+                    )
+                }
+            }
+        }
+
+        if (locked) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(argb))
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                        onLongClick = { locked = false }
+                    )
+                    .semantics { contentDescription = lockedCd },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_lock),
+                        contentDescription = null,
+                        tint = onColor,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Text(
+                        text = lockedTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = onColor
+                    )
+                    Text(
+                        text = lockedHint,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = onColor.copy(alpha = 0.7f)
                     )
                 }
             }
