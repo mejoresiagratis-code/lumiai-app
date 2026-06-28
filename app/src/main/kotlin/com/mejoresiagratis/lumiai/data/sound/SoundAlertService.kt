@@ -187,7 +187,7 @@ class SoundAlertService : Service() {
                     mgr.createNotificationChannel(
                         NotificationChannel(
                             CHANNEL_ID,
-                            getString(R.string.sa_title),
+                            context.getString(R.string.sa_title),
                             NotificationManager.IMPORTANCE_HIGH
                         )
                     )
