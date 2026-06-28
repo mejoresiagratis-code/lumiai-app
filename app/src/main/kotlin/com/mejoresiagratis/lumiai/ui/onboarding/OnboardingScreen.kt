@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 
 private data class OnboardingPage(
@@ -109,7 +110,7 @@ fun OnboardingScreen(
                 Box(
                     modifier = Modifier
                         .size(120.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(36.dp))
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -122,7 +123,7 @@ fun OnboardingScreen(
                 }
                 Text(
                     text = stringResource(page.title),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = LumiSpacing.xl)
                 )
@@ -145,11 +146,16 @@ fun OnboardingScreen(
             ) {
                 PAGES.indices.forEach { i ->
                     val active = i == step
+                    val dotWidth by animateDpAsState(
+                        targetValue = if (active) 22.dp else 8.dp,
+                        animationSpec = LumiMotion.emphasized(),
+                        label = "obDot"
+                    )
                     Box(
                         modifier = Modifier
                             .padding(horizontal = LumiSpacing.xs)
                             .height(8.dp)
-                            .width(if (active) 22.dp else 8.dp)
+                            .width(dotWidth)
                             .clip(RoundedCornerShape(4.dp))
                             .background(
                                 if (active) MaterialTheme.colorScheme.primary
