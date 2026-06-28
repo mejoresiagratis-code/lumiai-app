@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.mejoresiagratis.lumiai"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.mejoresiagratis.lumiai"
@@ -70,9 +70,9 @@ android {
     }
 }
 
-// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0). Este proyecto usa Kotlin 2.0.21,
-// cuyo compilador rechaza metadata más nueva. Permitimos leerla sin subir Kotlin todavía;
-// solo afecta a la lectura de binarios (no a nuestro código) y aplica a compile + KSP.
+// Vía B: con Kotlin 2.2.10 ya se lee la metadata de AdMob 25.x (2.2.0). Mantenemos el flag
+// porque material3 1.5.0-alpha puede venir compilado con un Kotlin más nuevo; si al compilar
+// no hace falta, RETIRAR este bloque. Solo afecta a la lectura de binarios (no a nuestro código).
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xskip-metadata-version-check")
@@ -92,7 +92,9 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    // Override a material3 1.5.0-alpha: trae las APIs reales de M3 Expressive
+    // (MaterialExpressiveTheme, MotionScheme, MaterialShapes, ButtonGroup, wavy...).
+    implementation(libs.androidx.compose.material3.expressive)
     implementation(libs.material.kolor)
     implementation(libs.haze)
     implementation(libs.androidx.navigation.compose)

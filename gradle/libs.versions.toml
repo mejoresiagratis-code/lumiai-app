@@ -1,13 +1,15 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.28"
-hilt = "2.52"
+agp = "8.12.0"
+kotlin = "2.2.10"
+ksp = "2.2.10-2.0.2"
+hilt = "2.57.1"
 coreKtx = "1.13.1"
 splashscreen = "1.0.1"
 activityCompose = "1.9.2"
 lifecycle = "2.8.6"
-composeBom = "2024.09.03"
+composeBom = "2026.06.00"
+# Override de material3 con las APIs M3 Expressive (alpha). Verificar la ultima alpha al compilar.
+material3Expressive = "1.5.0-alpha22"
 navigation = "2.8.0"
 hiltNavigation = "1.2.0"
 datastore = "1.1.1"
@@ -39,6 +41,7 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material3-expressive = { group = "androidx.compose.material3", name = "material3", version.ref = "material3Expressive" }
 material-kolor = { group = "com.materialkolor", name = "material-kolor", version.ref = "materialKolor" }
 haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
