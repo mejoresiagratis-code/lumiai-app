@@ -64,12 +64,13 @@ son del 22 jun y van por detrás).
   Vívido→Content).
 - ✅ **Accesibilidad Capa A+B**: semántica/roles/estado, objetivos táctiles, encabezados y
   etiquetas de sliders; **reduce-motion**, **alto contraste** (contrastLevel) y **vibración/
-  háptica** (gateada por hardware). *Falta QA en dispositivo (Lote 6).*
+  háptica** (gateada por hardware). **QA en dispositivo hecho** (Scanner/TalkBack/fuente 200%/
+  contraste por acento). Único resto: tests instrumentados de `semantics` (diferidos, no bloquean Play).
 - ✅ **Onboarding rediseñado** con la identidad de marca (badge circular, indicador píldora,
   Atrás + Saltar con alturas estables).
 - ✅ **Bloqueo de Pantalla (v1)**: candado + **overlay** que conserva el brillo y se desbloquea
   con **pulsación larga**; **pref persistida "Bloquear pantalla automáticamente"** (auto-bloqueo
-  al entrar, Ajustes → Accesibilidad). *Falta extender a Baliza-en-Pantalla y al resto de modos.*
+  al entrar, Ajustes → Accesibilidad). **v1 cerrada** (no se extiende a otros modos, decisión de producto).
 
 ---
 
@@ -132,8 +133,8 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
   política de ciclo de vida al apagar pantalla / quitar de recientes.
 - **Fase 1.5 (diseño):** ✅ **accesibilidad Capa A+B HECHA** (semántica/roles/estado, objetivos
   táctiles ≥48dp, encabezados, etiquetas de sliders; reduce-motion, alto contraste, háptica).
-  Falta: **QA en dispositivo** (Accessibility Scanner, TalkBack, fuente 200%, contraste por
-  acento) → plan `2026-06-28-accesibilidad.md`; tests de Compose de estados clave.
+  ✅ **QA en dispositivo HECHO** (Accessibility Scanner, TalkBack, fuente 200%, contraste por
+  acento). Resto diferido: tests instrumentados de `semantics` (no bloquean Play).
 - **Fase 2 (onboarding):** ✅ **rediseño con identidad de marca HECHO** (badge, indicador
   píldora, Atrás/Saltar); "Saltar" respetado. Falta: manejar "no volver a preguntar" con
   acceso a ajustes del sistema; reanudar onboarding interrumpido.
@@ -155,7 +156,7 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
   candado (arriba-dcha) que fija el modo encendido y **overlay** que conserva el brillo, ignora
   toques normales y **se desbloquea con pulsación larga**; auto-bloqueo opcional al entrar
   (Ajustes → Accesibilidad). UX, indicador visible y persistencia: resueltos para Pantalla.
-  Falta: **extender el candado a Baliza-en-Pantalla y al resto de modos** desde el Hub.
+  **v1 cerrada**; no se extiende a otros modos (decisión de producto).
 
 ### Modos nuevos (sección 03)
 - ~~**Baliza / Intervalo**~~ → ✅ **IMPLEMENTADO v1 COMPLETO** (ver A0: presets, auto-apagado,

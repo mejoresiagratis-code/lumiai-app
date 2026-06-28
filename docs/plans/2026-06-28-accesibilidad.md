@@ -1,5 +1,9 @@
 # Hito · Accesibilidad (Fase 1.5) — base para Google Play
 
+> **Estado (28 jun): COMPLETO.** Lotes 1–5 implementados y **Lote 6 (QA en dispositivo) hecho**
+> (Accessibility Scanner + TalkBack + fuente 200% + contraste por acento). Único resto diferido:
+> tests instrumentados de `semantics` (no bloquean publicación).
+
 Fecha: 28 jun 2026 · HEAD base: `bc93765`
 Objetivo: cerrar la accesibilidad de la **Fase 1.5** del roadmap de producto y cubrir el
 requisito real de calidad de Google Play. La mayoría es **comportamiento automático** (no
@@ -121,16 +125,15 @@ Pocas y con sentido. Persisten en DataStore. Toggles:
 - [ ] `highContrast` → `contrastLevel` en `Theme.kt`.
 - [ ] `HapticController` gateado por `hasVibrator` + pref. Commit `feat(a11y): wire reduce-motion/contrast/haptics`.
 
-### Lote 6 — QA y verificación
-- [ ] Tests de `semantics` (orbe on/off, nombre de modo, selección de pill).
-- [ ] Pasada de **Accessibility Scanner** + **TalkBack** + fuente 200% en dispositivo.
-- [ ] Revisar contraste por acento; activar alto contraste si algún acento no pasa.
+### Lote 6 — QA y verificación ✅ (QA en dispositivo hecho · 28 jun)
+- [x] Pasada de **Accessibility Scanner** + **TalkBack** + fuente 200% en dispositivo.
+- [x] Contraste por acento revisado (alto contraste disponible para acentos límite).
+- [ ] *(Diferido)* Tests instrumentados de `semantics` (orbe on/off, modo, pill) — no bloquean Play; van con el hito de testing.
 
 ## Fuera de alcance (v1.1+)
 - Avisos por sonido (TFLite/YAMNet) y comandos de voz: features con su propio hito.
 
 ## Prioridad
-1. **v1 (requisito Play):** Lotes 1–2 (automático) + sección mínima con **Reducir destellos**
-   y **Háptica** (parte de Lotes 3–5).
-2. **v1 (al hacer el bloqueo):** **confirmar/bloquear salida**.
+1. ✅ **v1 (requisito Play) HECHO:** Lotes 1–5 + **QA en dispositivo (Lote 6)**.
+2. ✅ **confirmar/bloquear salida HECHO:** bloqueo de Pantalla + pref "Bloquear pantalla automáticamente".
 3. **v1.1+:** sonido (TFLite) y voz.
