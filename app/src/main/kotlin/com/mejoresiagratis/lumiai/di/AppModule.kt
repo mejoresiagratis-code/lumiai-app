@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.di
 import com.mejoresiagratis.lumiai.data.settings.DataStoreFlashStateRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreOnboardingPreferencesRepository
 import com.mejoresiagratis.lumiai.data.auth.FirebaseAuthRepository
+import com.mejoresiagratis.lumiai.data.entitlement.DataStoreEntitlementOverrideRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreRewardProgressRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreTemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DefaultEntitlementRepository
@@ -12,6 +13,7 @@ import com.mejoresiagratis.lumiai.data.torch.ServiceEngineController
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
+import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
@@ -63,4 +65,8 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindRewardProgressRepo(impl: DataStoreRewardProgressRepository): RewardProgressRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindEntitlementOverrideRepo(impl: DataStoreEntitlementOverrideRepository): EntitlementOverrideRepository
 }
