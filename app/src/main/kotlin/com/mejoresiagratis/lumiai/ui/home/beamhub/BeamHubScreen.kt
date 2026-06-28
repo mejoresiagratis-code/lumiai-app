@@ -491,7 +491,7 @@ private fun ModePill(
             .border(width = if (selected) 2.dp else 1.dp, color = borderColor, shape = shape)
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics {
-                selected = isSel
+                this.selected = isSel
                 if (locked) stateDescription = lockedLabel
             }
             .padding(LumiSpacing.sm)
