@@ -255,16 +255,19 @@ fun ScreenLight(
                             )
                         }
                     }
+                    val colorLabel = stringResource(R.string.screen_color)
                     Text(
-                        text = stringResource(R.string.screen_color),
+                        text = colorLabel,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White
                     )
                     Slider(
                         value = hue,
                         onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
-                        valueRange = 0f..360f
+                        valueRange = 0f..360f,
+                        modifier = Modifier.semantics { contentDescription = colorLabel }
                     )
+                    val brightnessLabel = stringResource(R.string.a11y_brightness)
                     Text(
                         text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium,
@@ -273,7 +276,8 @@ fun ScreenLight(
                     Slider(
                         value = brightness,
                         onValueChange = onBrightnessChange,
-                        valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS
+                        valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
+                        modifier = Modifier.semantics { contentDescription = brightnessLabel }
                     )
                 }
             }

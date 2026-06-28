@@ -15,6 +15,12 @@
     <string name="a11y_panel_toggle">Mostrar u ocultar ajustes</string>
     <string name="a11y_panel_expanded">Ajustes visibles</string>
     <string name="a11y_panel_collapsed">Ajustes ocultos</string>
+    <string name="a11y_brightness">Brillo de pantalla</string>
+    <string name="a11y_intensity">Intensidad del LED</string>
+    <string name="a11y_interval">Intervalo de la baliza</string>
+    <string name="a11y_flash">Duración del destello</string>
+    <string name="a11y_frequency">Frecuencia del estrobo</string>
+    <string name="a11y_speed">Velocidad del Morse</string>
     <string name="screen_panel_expand">Ajustes</string>
     <string name="screen_preset_white">Blanco</string>
     <string name="screen_preset_warm">Cálido</string>

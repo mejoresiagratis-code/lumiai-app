@@ -184,7 +184,7 @@ fun SettingsScreen(
                             Text(
                                 text = email ?: user?.uid.orEmpty(),
                                 style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                             if (email != null) {

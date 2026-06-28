@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.mejoresiagratis.lumiai.R
@@ -47,6 +49,11 @@ fun ModeSettingsPanel(
     modifier: Modifier = Modifier
 ) {
     val controls = mode.controls().filter { it.isAvailable(caps) }
+    val a11yIntensity = stringResource(R.string.a11y_intensity)
+    val a11yInterval = stringResource(R.string.a11y_interval)
+    val a11yFlash = stringResource(R.string.a11y_flash)
+    val a11yFrequency = stringResource(R.string.a11y_frequency)
+    val a11ySpeed = stringResource(R.string.a11y_speed)
     Column(
         modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
@@ -87,7 +94,8 @@ fun ModeSettingsPanel(
                 Slider(
                     value = settings.intensityLevel.toFloat(),
                     onValueChange = { v -> onChange { it.copy(intensityLevel = v.toInt()) } },
-                    valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat()
+                    valueRange = FlashSettings.MIN_INTENSITY.toFloat()..FlashSettings.MAX_INTENSITY.toFloat(),
+                    modifier = Modifier.semantics { contentDescription = a11yIntensity }
                 )
             }
         }
@@ -110,7 +118,8 @@ fun ModeSettingsPanel(
                 Slider(
                     value = settings.beaconIntervalMs.toFloat(),
                     onValueChange = { v -> onChange { it.copy(beaconIntervalMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat()
+                    valueRange = FlashSettings.MIN_BEACON_INTERVAL.toFloat()..FlashSettings.MAX_BEACON_INTERVAL.toFloat(),
+                    modifier = Modifier.semantics { contentDescription = a11yInterval }
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
@@ -118,7 +127,8 @@ fun ModeSettingsPanel(
                 Slider(
                     value = settings.beaconFlashMs.toFloat(),
                     onValueChange = { v -> onChange { it.copy(beaconFlashMs = v.toLong()) } },
-                    valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat()
+                    valueRange = FlashSettings.MIN_BEACON_FLASH.toFloat()..FlashSettings.MAX_BEACON_FLASH.toFloat(),
+                    modifier = Modifier.semantics { contentDescription = a11yFlash }
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
@@ -188,7 +198,8 @@ fun ModeSettingsPanel(
                     Slider(
                         value = settings.strobeHz,
                         onValueChange = { v -> onChange { it.copy(strobeHz = v) } },
-                        valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ
+                        valueRange = FlashSettings.MIN_STROBE_HZ..FlashSettings.MAX_STROBE_HZ,
+                        modifier = Modifier.semantics { contentDescription = a11yFrequency }
                     )
                 }
             }
@@ -198,7 +209,8 @@ fun ModeSettingsPanel(
                     Slider(
                         value = settings.morseUnitMs.toFloat(),
                         onValueChange = { v -> onChange { it.copy(morseUnitMs = v.toLong()) } },
-                        valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat()
+                        valueRange = FlashSettings.MIN_UNIT_MS.toFloat()..FlashSettings.MAX_UNIT_MS.toFloat(),
+                        modifier = Modifier.semantics { contentDescription = a11ySpeed }
                     )
                 }
             }
