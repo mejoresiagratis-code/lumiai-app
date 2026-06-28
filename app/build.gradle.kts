@@ -33,9 +33,15 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+            // IDs de PRUEBA de Google en debug: nunca generan impresiones reales.
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+            buildConfigField("String", "ADMOB_REWARDED_UNIT_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
         }
         release {
             isMinifyEnabled = true
+            // IDs reales de la cuenta de AdMob de LumiAI.
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-4452549520942931~7390634923"
+            buildConfigField("String", "ADMOB_REWARDED_UNIT_ID", "\"ca-app-pub-4452549520942931/3592393086\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -54,6 +60,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -94,6 +101,9 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
+
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
