@@ -12,7 +12,22 @@ interface AuthRepository {
 
     suspend fun ensureAnonymous()
     suspend fun signInWithEmail(email: String, password: String): Result<Unit>
+
+    /** Registra; si la sesión es anónima, **vincula** (conserva el uid) en vez de crear. */
     suspend fun registerWithEmail(email: String, password: String): Result<Unit>
+
+    /** Google: si la sesión es anónima, **vincula**; si la cuenta ya existe, entra a ella. */
     suspend fun signInWithGoogleIdToken(idToken: String): Result<Unit>
+
     suspend fun signOut()
+
+    /** Refresca el usuario (p. ej. para reflejar `isEmailVerified` tras verificar). */
+    suspend fun reloadUser()
+    suspend fun sendEmailVerification(): Result<Unit>
+    suspend fun sendPasswordReset(email: String): Result<Unit>
+    suspend fun reauthenticateWithPassword(password: String): Result<Unit>
+    suspend fun reauthenticateWithGoogle(idToken: String): Result<Unit>
+
+    /** Borra la cuenta (RGPD) y vuelve a sesión anónima para que la app siga usable. */
+    suspend fun deleteAccount(): Result<Unit>
 }
