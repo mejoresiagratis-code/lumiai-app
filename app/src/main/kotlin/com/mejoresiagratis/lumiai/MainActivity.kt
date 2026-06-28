@@ -26,12 +26,18 @@ import com.mejoresiagratis.lumiai.ui.theme.LocalAutoLockScreen
 import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LumiAiTheme
 import com.mejoresiagratis.lumiai.ui.theme.ThemeViewModel
+import com.mejoresiagratis.lumiai.ads.AdsConsentManager
+import com.mejoresiagratis.lumiai.ads.RewardedAdController
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val startViewModel: StartViewModel by viewModels()
+
+    @Inject lateinit var adsConsentManager: AdsConsentManager
+    @Inject lateinit var rewardedAdController: RewardedAdController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -39,6 +45,11 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { startViewModel.onboardingCompleted.value == null }
         enableEdgeToEdge()
         setContent { LumiAiApp() }
+
+        // Consentimiento (UMP) antes de cualquier anuncio; AdMob solo se inicializa si se permite.
+        adsConsentManager.gatherConsent(this) { canRequestAds ->
+            if (canRequestAds) rewardedAdController.initializeAndPreload()
+        }
     }
 }
 
