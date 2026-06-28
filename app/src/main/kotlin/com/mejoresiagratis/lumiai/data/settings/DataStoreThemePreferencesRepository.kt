@@ -27,30 +27,30 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val hapticsKey = booleanPreferencesKey("a11y_haptics")
     private val autoLockScreenKey = booleanPreferencesKey("a11y_auto_lock_screen")
 
-    // Default de la app: tema claro (dirección visual M3 Expressive · azul vivo).
+    // Default de la app: tema oscuro con ámbar, como el Splash.
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
-        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.LIGHT.name) }
-            .getOrDefault(ThemeMode.LIGHT)
+        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.DARK.name) }
+            .getOrDefault(ThemeMode.DARK)
     }
 
     override suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[themeKey] = mode.name }
     }
 
-    // Default de la app: acento azul vivo.
+    // Default de la app: acento ámbar (igual que la linterna del Splash).
     override val accentColor: Flow<AccentColor> = dataStore.data.map { p ->
-        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.BLUE.name) }
-            .getOrDefault(AccentColor.BLUE)
+        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.AMBER.name) }
+            .getOrDefault(AccentColor.AMBER)
     }
 
     override suspend fun setAccentColor(accent: AccentColor) {
         dataStore.edit { it[accentKey] = accent.name }
     }
 
-    // Default de la app: estilo vívido (primary ≈ semilla, azul saturado).
+    // Default de la app: estilo cálido (TonalSpot, oro ámbar sobrio).
     override val accentStyle: Flow<AccentStyle> = dataStore.data.map { p ->
-        runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.VIVID.name) }
-            .getOrDefault(AccentStyle.VIVID)
+        runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.WARM.name) }
+            .getOrDefault(AccentStyle.WARM)
     }
 
     override suspend fun setAccentStyle(style: AccentStyle) {
