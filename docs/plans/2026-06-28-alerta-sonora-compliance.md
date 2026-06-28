@@ -1,6 +1,17 @@
 # Alerta Sonora — Borrador de cumplimiento (Data Safety + política)
 
-Estado: **borrador F1**. No vinculante hasta revisión legal y QA. Sirve para preparar el
+> **Actualización 28 jun (noche) — estado real: F0–F4 IMPLEMENTADO.** El feature está
+> funcionalmente completo: modelo de 8 categorías, motor de detección, clasificador
+> MediaPipe/YAMNet, servicio en primer plano de micrófono, persistencia en DataStore,
+> aviso por canal Flash/Pantalla/Ambas + parpadeo de pantalla (`USE_FULL_SCREEN_INTENT`),
+> gating por Pro/anuncio y divulgación destacada en la pantalla. Etiquetas AudioSet
+> **validadas** contra el mapa oficial de YAMNet. Lo que sigue abajo era el plan F1; los
+> permisos y la postura de privacidad se mantienen. **Pendiente real (F5):** publicar la
+> política, rellenar Data Safety (incl. justificación de FGS-micrófono y full-screen-intent)
+> y decidir el empaquetado del `.tflite` (en APK vs descarga). Falta también el QA en
+> dispositivo de los tres canales.
+
+Estado original: **borrador F1**. No vinculante hasta revisión legal y QA. Sirve para preparar el
 formulario de Data Safety de Play y la sección de política de privacidad antes de activar el
 runtime de IA (F2+).
 

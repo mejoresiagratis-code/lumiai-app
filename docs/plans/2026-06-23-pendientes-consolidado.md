@@ -1,6 +1,6 @@
 # LumiAI · Pendientes consolidados (migración + roadmap de producto)
 
-Fecha: 23 jun 2026 · act. 28 jun (tarde) · HEAD de referencia: `a143f70`
+Fecha: 23 jun 2026 · act. 28 jun (noche) · HEAD de referencia: `3e39496`
 Fuentes cruzadas: **roadmap de migración a Beam Hub** (`roadmap_src.html`) +
 **roadmap/propuesta de producto** (`lumiai-roadmap-propuesta.html`), contrastadas
 contra el estado **real** del repo (no contra los recuerdos ni contra los HTML, que
@@ -74,6 +74,46 @@ son del 22 jun y van por detrás).
 
 ---
 
+## A3. Cerrado en esta sesión (28 jun, noche) — Alerta Sonora (IA real) + i18n
+
+- ✅ **Modo Alerta Sonora F0–F4 COMPLETO** (primer modo de IA real, on-device): IA de
+  percepción con **YAMNet + MediaPipe Audio Classifier**, sin nube, nada se graba ni se sube.
+  - **Modelo de dominio**: 8 categorías (Timbre, Golpes en la puerta, Teléfono, Perro, Llanto
+    de bebé, Despertador/alarma, Sirena, Alarma de humo/incendio), cada una con etiquetas
+    AudioSet, fiabilidad (alta/media) y marca de seguridad. **17 etiquetas validadas carácter a
+    carácter** contra el mapa oficial de 521 clases de YAMNet (test + recurso + script).
+  - **Motor de detección** (FSM pura, cooldown 4 s, ventana de debounce) + **clasificador**
+    MediaPipe/YAMNet (glue confirmada compila en CI).
+  - **Servicio en primer plano** (`foregroundServiceType=microphone`) que escucha y **avisa por
+    canal configurable por categoría**: **Flash / Pantalla / Ambas** (cadencia por patrón
+    distinto por evento). El canal Flash se oculta si el dispositivo no tiene LED.
+  - **Parpadeo de pantalla** vía `ScreenFlashActivity` (full-screen-intent, despierta pantalla)
+    como aviso o fallback sin flash. Permiso `USE_FULL_SCREEN_INTENT` declarado.
+  - **Persistencia** en DataStore (categorías, sensibilidad y canal; codec 4 campos compatible
+    hacia atrás).
+  - **Gating por entitlement**: accesible con **Pro de pago O desbloqueo temporal por anuncio**;
+    entrada en Ajustes → "Alerta sonora" (no en el carrusel de modos — decisión de producto).
+  - **Bug de QA en dispositivo resuelto**: el flash de aviso no parpadeaba porque pasaba el
+    nivel de HW crudo; ahora usa `MAX_INTENSITY` (%) como la linterna normal.
+  - Resto (F5): decidir **empaquetado del `.tflite`** (en APK vs descarga), justificación de
+    Data Safety (FGS-microphone + full-screen-intent), ficha por idioma. Ver
+    `2026-06-28-alerta-sonora-compliance.md`.
+- ✅ **i18n bilingüe EN/ES** (según guidelines de Android): `values/strings.xml` pasa a
+  **inglés** (locale por defecto/fallback) y nuevo `values-es/strings.xml` con el español
+  completo; **paridad exacta de 192 claves** y placeholders verificados. `res/xml/locales_config.xml`
+  + `android:localeConfig` → **selector de idioma por-app de Android 13+**. Literales del feature
+  de sonido extraídos a recursos (claves `sa_*` / `sound_cat_*`, mapeo único `labelRes()`
+  compartido por pantalla y servicio). Strings solo-debug (God/Superusuario) quedan hardcodeadas
+  a propósito (nunca se publican).
+- ✅ **Proceso anti-regresión**: `docs/build-failures-memo.md` — registro de fallos de CI +
+  **checklist pre-push** (receptor de `getString`/Context; impacto de cambiar el locale en tests
+  que asertan texto; paridad de claves; firmas vs tests; patrones par; codec). A consultar antes
+  de cada push y a ampliar tras cada fallo. (Hoy: 2 fallos de compile por `getString` en companion
+  y 1 de test por literales en español al cambiar el locale → `PowerOrbSemanticsTest` ahora lee
+  recursos, locale-independiente.)
+
+---
+
 ## A. Ya completado (contexto, incl. trabajo posterior a los roadmaps del 22 jun)
 
 - **Migración Beam Hub: completa.** Hub con orbe central (enciende/apaga), dial de
@@ -86,8 +126,10 @@ son del 22 jun y van por detrás).
   **Ajustes → Apariencia** con vista previa; tema **claro por defecto** + claro/oscuro/sistema.
 - **Pantalla v2: núcleo hecho.** Presets de color (incl. Cálido), slider de tono (hue),
   override de brillo real con restauración al salir, hoja que absorbe toques.
-- **Modos honestos (5):** Continuo, Pantalla, SOS, Estrobo, Morse de texto (avanzado, con
-  candado). La "consolidación de modos IA engañosos" ya está hecha de facto: el Hub solo
+- **Modos honestos (5 en el carrusel + 1 de IA gateado):** Continuo, Pantalla, SOS, Estrobo,
+  Morse de texto (avanzado, con candado), y **Alerta Sonora** (IA real, accesible desde Ajustes,
+  gateado por Pro/anuncio — ver A3). La "consolidación de modos IA engañosos" ya está hecha de
+  facto: el Hub solo
   expone modos honestos (no hay Smart/Ambient/Music/Voice falsos).
 - **Identidad visual #1–#8:** wordmark, etiqueta de modo, dial de ticks, línea de estado,
   hoja "Control" plegable, rail profesional, intensidad % en acento, fix de acentos
@@ -171,9 +213,11 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
   Conclusión: en una linterna la IA útil es **on-device y de percepción**, no un LLM en la nube
   (Gemini en la nube NO sirve para tiempo real; solo encaja en el constructor por lenguaje).
   Ranking por valor real:
-  1. **Alerta sonora** (estrella) — **YAMNet + MediaPipe Audio Classifier** escucha y flashea
-     distinto por evento (timbre/llanto de bebé/alarma de humo/sirena/golpes). IA real, on-device,
-     accesibilidad genuina, nada se sube. Permiso micro. minSdk 24. Esfuerzo medio-alto.
+  1. ~~**Alerta sonora** (estrella)~~ → ✅ **IMPLEMENTADO F0–F4 COMPLETO** (ver A3). **YAMNet +
+     MediaPipe Audio Classifier** escucha y avisa distinto por evento (timbre/llanto de bebé/
+     alarma de humo/sirena/golpes) por Flash/Pantalla/Ambas. IA real, on-device, accesibilidad
+     genuina, nada se sube. Permiso micro. minSdk 24. Gateado por Pro/anuncio. Resto: F5
+     (empaquetado del modelo, Data Safety, ficha por idioma).
   2. **Manos libres** — aplauso/chasquido (audio) o gesto (MediaPipe) para encender.
   3. **Constructor por lenguaje** — "luz roja parpadeante lenta" → ajustes/patrón reales con
      **Gemini Nano** on-device (solo gama alta) + fallback nube vía **Firebase AI Logic**
@@ -200,6 +244,13 @@ Cada fase "Completada" del producto arrastra extras de **robustez** que aún no 
 ### Publicación (Fase 6)
 - Ficha de tienda, **política de privacidad**, formulario de seguridad de datos, rollout
   escalonado (5% → 100%).
+- ✅ **i18n bilingüe EN/ES HECHO** (ver A3: `values/` inglés por defecto + `values-es/`, paridad
+  192 claves, `locales_config`). Falta: **ficha de Play por idioma** (EN/ES) y revisar capturas/
+  textos de tienda en ambos idiomas.
+- **Derivados de Alerta Sonora**: decidir **empaquetado del `.tflite`** (en APK/bundle vs
+  descarga bajo demanda — hoy va en el repo/APK); **Data Safety** debe declarar y justificar el
+  **servicio en primer plano de micrófono** y el **`USE_FULL_SCREEN_INTENT`** (accesibilidad);
+  divulgación destacada antes de `RECORD_AUDIO` (ya implementada en la pantalla).
 - Calidad de release: **firma de release con secretos en CI**, R8 + subida de mapping,
   pre-launch report, Crashlytics + métricas anónimas (con consentimiento).
 - Assets/avisos de Lint: ✅ **icono monocromo (themed icon)** + recursos sin usar + aviso de
