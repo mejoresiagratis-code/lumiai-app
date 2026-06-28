@@ -66,6 +66,7 @@
     <string name="onboarding_skip">Saltar</string>
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_back">Atrás</string>
     <string name="ob1_title">Una linterna fiable</string>
     <string name="ob1_body">Ilumina al instante. Sin cámara ni permisos innecesarios.</string>
     <string name="ob2_title">Varios modos</string>
