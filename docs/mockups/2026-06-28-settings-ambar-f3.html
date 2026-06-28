@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiAI · Fase 3 · Ajustes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amber:#FFB300;--amber-c:#3C2F12;--on-amber:#1A1206;--bg:#0E1116;--surface:#14181F;
+    --surf-ch:#1E2530;--surf-tonal:#222A36;--seg:#1B212B;--outline:#333B49;--ink:#F3F5F9;--ink-soft:#A6B0BF;--spring:cubic-bezier(.34,1.56,.64,1)}
+  *{box-sizing:border-box}body{margin:0;font-family:"Inter",sans-serif;color:var(--ink);background:
+    radial-gradient(900px 480px at 85% -10%,#20180a 0%,rgba(32,24,10,0) 60%),var(--bg);min-height:100vh;padding:44px 24px 64px;-webkit-font-smoothing:antialiased}
+  .page{max-width:980px;margin:0 auto}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);background:#2A2113;border:1px solid var(--amber-c);padding:7px 14px;border-radius:999px;margin-bottom:18px}
+  .eyebrow .dot{width:8px;height:8px;border-radius:999px;background:var(--amber);box-shadow:0 0 0 4px rgba(255,179,0,.18)}
+  h1{font-family:"Bricolage Grotesque";font-weight:800;font-size:clamp(28px,4vw,42px);letter-spacing:-.02em;margin:0 0 12px}
+  .sub{color:var(--ink-soft);font-size:16px;line-height:1.6;margin:0 0 30px;max-width:660px}.sub b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:30px;align-items:start}
+  @media(max-width:840px){.grid{grid-template-columns:1fr}}
+  .phone{background:var(--surface);border:1px solid var(--outline);border-radius:34px;padding:20px 16px 26px;box-shadow:0 30px 80px -30px rgba(0,0,0,.8)}
+  .scr-h{font-family:"Bricolage Grotesque";font-weight:800;font-size:24px;margin:6px 6px 18px}
+  .sec-head{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:18px 8px 8px}
+  .card{background:var(--surf-ch);border-radius:28px;padding:16px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .toggle b{font-size:15px;font-weight:500;display:block}.toggle span{font-size:12.5px;color:var(--ink-soft)}
+  .sw{flex:0 0 auto;width:52px;height:30px;border-radius:999px;background:var(--amber);position:relative}
+  .sw::after{content:"";position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:#fff}
+  .sw.off{background:var(--seg)}.sw.off::after{right:auto;left:3px;background:var(--ink-soft)}
+  .seg{display:flex;background:var(--seg);border:1px solid var(--outline);border-radius:999px;padding:4px;margin-top:2px}
+  .seg div{flex:1;text-align:center;padding:9px 0;font-size:13px;font-weight:600;color:var(--ink-soft);border-radius:999px;cursor:pointer}
+  .seg div.sel{background:var(--amber);color:var(--on-amber)}
+  .swatches{display:flex;flex-wrap:wrap;gap:16px;margin-top:4px}
+  .sw2{width:44px;height:44px;border-radius:50%;position:relative;cursor:pointer;transition:transform .3s var(--spring)}
+  .sw2:not(.sel){transform:scale(.92);opacity:.92}
+  .sw2.sel{outline:2.5px solid var(--ink);outline-offset:3px}
+  .sw2.sel::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:800;background:rgba(0,0,0,.28);border-radius:50%}
+  .note{font-size:12.5px;color:var(--ink-soft);margin-top:12px}
+  .panel{background:var(--surface);border:1px solid var(--outline);border-radius:24px;padding:22px}
+  .panel h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:17px;margin:0 0 14px}
+  .feat{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--surf-tonal)}.feat:first-of-type{border-top:0}
+  .feat .ic{flex:0 0 36px;height:36px;border-radius:12px;background:#2A2113;border:1px solid var(--amber-c);display:grid;place-items:center;color:var(--amber);font-weight:800}
+  .feat b{display:block;font-size:14px;margin-bottom:2px}.feat span{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .foot{color:var(--ink-soft);font-size:12.5px;margin-top:22px;line-height:1.6}
+</style></head><body>
+<div class="page">
+  <span class="eyebrow"><span class="dot"></span>Fase 3 · Ajustes</span>
+  <h1>Ajustes con carácter Expressive</h1>
+  <p class="sub">Mismas tarjetas tonales, cabeceras tipo <b>eyebrow</b> (mayúsculas + tracking), radios más
+  generosos y <b>muelle al elegir acento</b>. Sin tocar lógica ni accesibilidad.</p>
+  <div class="grid">
+    <div class="phone">
+      <div class="scr-h">Ajustes</div>
+
+      <div class="sec-head">Apariencia</div>
+      <div class="card">
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:8px">Tema</div>
+        <div class="seg"><div>Sistema</div><div class="sel">Oscuro</div><div>Claro</div></div>
+        <div style="font-size:13px;color:var(--ink-soft);margin:16px 0 8px">Estilo de acento</div>
+        <div class="seg"><div class="sel">Cálido</div><div>Vivo</div></div>
+        <div style="font-size:13px;color:var(--ink-soft);margin:16px 0 8px">Color de acento</div>
+        <div class="swatches">
+          <div class="sw2 sel" style="background:var(--amber)"></div>
+          <div class="sw2" style="background:#FFD60A"></div>
+          <div class="sw2" style="background:#fff"></div>
+          <div class="sw2" style="background:#E12B2B"></div>
+          <div class="sw2" style="background:#4D7BFF"></div>
+          <div class="sw2" style="background:#11A693"></div>
+          <div class="sw2" style="background:#9B6CFF"></div>
+          <div class="sw2" style="background:conic-gradient(#FFB300,#4D7BFF,#E12B2B,#9B6CFF,#11A693,#FFB300)"></div>
+        </div>
+        <div class="note">Acento: Ámbar</div>
+      </div>
+
+      <div class="sec-head">Comportamiento</div>
+      <div class="card">
+        <div class="toggle"><div><b>Bloqueo en Pantalla</b><span>Evita toques al iluminar</span></div><div class="sw"></div></div>
+        <div style="height:1px;background:var(--surf-tonal);margin:14px 0"></div>
+        <div class="toggle"><div><b>Vibración</b><span>Respuesta háptica al pulsar</span></div><div class="sw off"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Qué cambia en Fase 3</h3>
+      <div class="feat"><div class="ic">A</div><div><b>Cabeceras eyebrow</b><span>Títulos de sección en mayúsculas con tracking, en el color de acento.</span></div></div>
+      <div class="feat"><div class="ic">▢</div><div><b>Tarjetas más redondeadas</b><span>Las secciones pasan a radio 28dp (escala de Fase 0).</span></div></div>
+      <div class="feat"><div class="ic">◍</div><div><b>Swatches con muelle</b><span>Al elegir color, el círculo crece con rebote; los demás quedan ligeramente reducidos.</span></div></div>
+      <div class="feat"><div class="ic">⬓</div><div><b>Segmented coherente</b><span>Tema y estilo de acento heredan los tokens globales de forma/tipografía.</span></div></div>
+      <p class="foot"><b>Sin cambios de lógica ni accesibilidad:</b> <code>heading()</code>, <code>selectable</code>/RadioButton
+      y descripciones intactas. Implementado en <code>SettingsScreen.kt</code> (a9c4ee0).</p>
+    </div>
+  </div>
+</div></body></html>
