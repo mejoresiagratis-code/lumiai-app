@@ -83,7 +83,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.R
-import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
+import com.mejoresiagratis.lumiai.domain.entitlement.AccessState
 import com.mejoresiagratis.lumiai.domain.entitlement.tier
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
@@ -119,8 +119,8 @@ fun BeamHubScreen(
     val haptic = LocalHapticFeedback.current
     val hapticsEnabled = LocalHapticsEnabled.current
 
-    LaunchedEffect(state.entitlements, state.mode) {
-        if (!state.entitlements.unlocks(state.mode.tier)) viewModel.selectMode(FlashMode.CONTINUOUS)
+    LaunchedEffect(state.access, state.mode) {
+        if (!state.access.unlocks(state.mode.tier)) viewModel.selectMode(FlashMode.CONTINUOUS)
     }
 
     val screenActive = state.isOn && state.mode == FlashMode.SCREEN
@@ -310,7 +310,7 @@ fun BeamHubScreen(
                     onSelect = viewModel::selectMode,
                     onLocked = { onOpenAuth() },
                     caps = state.capabilities,
-                    entitlements = state.entitlements,
+                    access = state.access,
                     modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -432,7 +432,7 @@ private fun ModeRail(
     onSelect: (FlashMode) -> Unit,
     onLocked: (FlashMode) -> Unit,
     caps: DeviceCapabilities,
-    entitlements: Entitlements,
+    access: AccessState,
     modifier: Modifier = Modifier
 ) {
     val available = MODE_CATALOG.filter { it.mode.isAvailable(caps) }
@@ -452,7 +452,7 @@ private fun ModeRail(
         ) {
             Spacer(modifier = Modifier.width(LumiSpacing.sm))
             available.forEach { item ->
-                val locked = !entitlements.unlocks(item.mode.tier)
+                val locked = !access.unlocks(item.mode.tier)
                 ModePill(
                     item = item,
                     selected = item.mode == selected,

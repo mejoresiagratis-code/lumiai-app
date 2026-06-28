@@ -7,7 +7,10 @@ import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
+import com.mejoresiagratis.lumiai.domain.entitlement.AccessState
+import com.mejoresiagratis.lumiai.domain.entitlement.TemporaryUnlock
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
+import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -15,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +28,7 @@ class FlashViewModel @Inject constructor(
     private val repo: FlashStateRepository,
     private val engine: EngineController,
     entitlementRepo: EntitlementRepository,
+    temporaryUnlock: TemporaryUnlockRepository,
     torch: TorchController
 ) : ViewModel() {
 
@@ -32,9 +37,26 @@ class FlashViewModel @Inject constructor(
         maxTorchLevel = torch.maxIntensityLevel
     )
 
+    // Ticker de 1 s: reevalúa la caducidad del Pro temporal para re-bloquear en vivo.
+    private val ticker = flow {
+        while (true) {
+            emit(System.currentTimeMillis())
+            delay(1000L)
+        }
+    }
+
+    // Acceso efectivo: permisos permanentes combinados con el Pro temporal activo ahora.
+    private val accessFlow = combine(
+        entitlementRepo.entitlements,
+        temporaryUnlock.proUntilMillis,
+        ticker
+    ) { ent, proUntil, now ->
+        AccessState(entitlements = ent, temporaryProActive = TemporaryUnlock.isActive(proUntil, now))
+    }
+
     val uiState: StateFlow<FlashUiState> =
-        combine(repo.isOn, repo.mode, repo.settings, entitlementRepo.entitlements) { on, mode, settings, ent ->
-            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities, entitlements = ent)
+        combine(repo.isOn, repo.mode, repo.settings, accessFlow) { on, mode, settings, access ->
+            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities, access = access)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
