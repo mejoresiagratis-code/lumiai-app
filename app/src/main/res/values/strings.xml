@@ -57,6 +57,7 @@
     <string name="account_sign_in">Entrar / Crear cuenta</string>
     <string name="account_sign_out">Cerrar sesión</string>
     <string name="auth_title">Acceder</string>
+    <string name="auth_welcome_title">Tu cuenta LumiAI</string>
     <string name="auth_email">Correo electrónico</string>
     <string name="auth_password">Contraseña</string>
     <string name="auth_sign_in">Entrar</string>

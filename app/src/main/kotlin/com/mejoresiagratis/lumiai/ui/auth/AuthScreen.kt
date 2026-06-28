@@ -1,24 +1,37 @@
 package com.mejoresiagratis.lumiai.ui.auth
 
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import android.util.Log
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -29,10 +42,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -62,6 +78,7 @@ fun AuthScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isRegister by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.done) {
         if (state.done) onDone()
@@ -88,68 +105,135 @@ fun AuthScreen(
                 .padding(padding)
                 .padding(horizontal = LumiSpacing.lg)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
         ) {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text(stringResource(R.string.auth_email)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text(stringResource(R.string.auth_password)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Spacer(modifier = Modifier.height(LumiSpacing.sm))
 
-            state.error?.let { err ->
-                Text(
-                    text = authErrorMessage(err),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
+            // --- Cabecera de marca ---
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_mode_continuous),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(40.dp)
                 )
             }
-            if (state.passwordResetSent) {
-                Text(
-                    text = stringResource(R.string.auth_reset_sent),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            Text(
+                text = stringResource(R.string.auth_welcome_title),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.account_guest_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            // --- Selector Iniciar sesión / Crear cuenta ---
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val tabs = listOf(R.string.auth_sign_in, R.string.auth_register)
+                tabs.forEachIndexed { index, labelRes ->
+                    SegmentedButton(
+                        selected = (index == 1) == isRegister,
+                        onClick = { isRegister = index == 1 },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = tabs.size)
+                    ) { Text(stringResource(labelRes)) }
+                }
             }
 
-            Button(
-                onClick = { viewModel.signIn(email, password) },
-                enabled = !state.loading && email.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-            ) { Text(stringResource(R.string.auth_sign_in)) }
+            // --- Tarjeta con campos y CTA ---
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(LumiSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                ) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text(stringResource(R.string.auth_email)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.auth_password)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-            OutlinedButton(
-                onClick = { viewModel.register(email, password) },
-                enabled = !state.loading && email.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-            ) { Text(stringResource(R.string.auth_register)) }
+                    state.error?.let { err ->
+                        Text(
+                            text = authErrorMessage(err),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    if (state.passwordResetSent) {
+                        Text(
+                            text = stringResource(R.string.auth_reset_sent),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
 
-            TextButton(
-                onClick = { viewModel.sendPasswordReset(email) },
-                enabled = !state.loading,
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) { Text(stringResource(R.string.auth_forgot_password)) }
+                    Button(
+                        onClick = {
+                            if (isRegister) viewModel.register(email, password)
+                            else viewModel.signIn(email, password)
+                        },
+                        enabled = !state.loading && email.isNotBlank() && password.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text(
+                            stringResource(
+                                if (isRegister) R.string.auth_register else R.string.auth_sign_in
+                            )
+                        )
+                    }
 
+                    if (!isRegister) {
+                        TextButton(
+                            onClick = { viewModel.sendPasswordReset(email) },
+                            enabled = !state.loading,
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) { Text(stringResource(R.string.auth_forgot_password)) }
+                    }
+                }
+            }
+
+            // --- Google ---
             if (webClientId != null) {
-                Text(
-                    text = stringResource(R.string.auth_or),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text(
+                        text = stringResource(R.string.auth_or),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                }
                 OutlinedButton(
                     onClick = {
                         scope.launch {
@@ -188,6 +272,8 @@ fun AuthScreen(
             if (state.loading) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = LumiSpacing.sm))
             }
+
+            Spacer(modifier = Modifier.height(LumiSpacing.md))
         }
     }
 }
