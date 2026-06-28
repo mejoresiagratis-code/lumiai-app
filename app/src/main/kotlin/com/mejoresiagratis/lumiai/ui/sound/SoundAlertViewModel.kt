@@ -1,34 +1,34 @@
 package com.mejoresiagratis.lumiai.ui.sound
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Estado del modo Alerta Sonora en memoria. La persistencia (DataStore) y el runtime de IA
- * llegan en fases posteriores; aqui solo se permite probar en dispositivo la divulgacion y la
- * seleccion de las 8 categorias.
+ * Estado del modo Alerta Sonora respaldado por DataStore (persistente entre sesiones).
  */
 @HiltViewModel
-class SoundAlertViewModel @Inject constructor() : ViewModel() {
+class SoundAlertViewModel @Inject constructor(
+    private val repository: SoundAlertConfigRepository
+) : ViewModel() {
 
-    private val _config = MutableStateFlow(SoundAlertConfig())
-    val config: StateFlow<SoundAlertConfig> = _config.asStateFlow()
+    val config: StateFlow<SoundAlertConfig> = repository.config
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SoundAlertConfig())
 
     fun setEnabled(category: SoundCategory, enabled: Boolean) =
-        _config.update { it.withEnabled(category, enabled) }
+        viewModelScope.launch { repository.setEnabled(category, enabled) }
 
     fun setSensitivity(category: SoundCategory, sensitivity: Sensitivity) =
-        _config.update { it.withSensitivity(category, sensitivity) }
+        viewModelScope.launch { repository.setSensitivity(category, sensitivity) }
 
-    fun reset() {
-        _config.value = SoundAlertConfig()
-    }
+    fun reset() = viewModelScope.launch { repository.reset() }
 }

@@ -10,9 +10,11 @@ import com.mejoresiagratis.lumiai.data.entitlement.DefaultEntitlementRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreThemePreferencesRepository
 import com.mejoresiagratis.lumiai.data.torch.Camera2TorchController
 import com.mejoresiagratis.lumiai.data.torch.ServiceEngineController
+import com.mejoresiagratis.lumiai.data.sound.DataStoreSoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.data.system.AndroidDeviceFeatures
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
+import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
@@ -39,6 +41,10 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindDeviceFeatures(impl: AndroidDeviceFeatures): DeviceFeatures
+
+    @Binds
+    @Singleton
+    abstract fun bindSoundAlertConfig(impl: DataStoreSoundAlertConfigRepository): SoundAlertConfigRepository
 
     @Binds
     @Singleton
