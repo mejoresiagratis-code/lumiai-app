@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +51,8 @@ import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import com.mejoresiagratis.lumiai.domain.sound.SoundReliability
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Pantalla del modo Alerta Sonora: divulgacion + permiso de microfono + ajuste por categoria
@@ -140,15 +143,17 @@ fun SoundAlertScreen(
 @Composable
 private fun SectionHeader(text: String) {
     Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary
+        text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        letterSpacing = 2.sp
     )
 }
 
 @Composable
 private fun DisclosureCard() {
     Card(
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
@@ -176,7 +181,10 @@ private fun DisclosureCard() {
 
 @Composable
 private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier.padding(LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
@@ -204,7 +212,10 @@ private fun ListenCard(
     onStart: () -> Unit,
     onStop: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier.padding(LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
@@ -244,7 +255,10 @@ private fun CategoryCard(
     onSensitivity: (Sensitivity) -> Unit,
     onChannel: (AlertChannel) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier.padding(LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
