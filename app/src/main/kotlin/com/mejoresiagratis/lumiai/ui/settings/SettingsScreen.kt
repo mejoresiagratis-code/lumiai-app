@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.ui.settings
 
 import android.app.Activity
+import com.mejoresiagratis.lumiai.BuildConfig
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
@@ -102,6 +103,7 @@ fun SettingsScreen(
     autoLockScreen: Boolean,
     onSetAutoLockScreen: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
+    onOpenGod: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
@@ -354,6 +356,20 @@ fun SettingsScreen(
                         checked = haptics,
                         onCheckedChange = onSetHaptics
                     )
+                }
+            }
+
+            if (BuildConfig.DEBUG) {
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+                    Text(
+                        text = "Superusuario (debug)",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = LumiSpacing.md)
+                    )
+                    Button(onClick = onOpenGod, modifier = Modifier.fillMaxWidth()) {
+                        Text("Abrir God mode")
+                    }
                 }
             }
         }

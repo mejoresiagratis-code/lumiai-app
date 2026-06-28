@@ -8,6 +8,7 @@ import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.auth.AuthScreen
+import com.mejoresiagratis.lumiai.ui.god.GodScreen
 import com.mejoresiagratis.lumiai.ui.home.beamhub.BeamHubScreen
 import com.mejoresiagratis.lumiai.ui.onboarding.OnboardingScreen
 import com.mejoresiagratis.lumiai.ui.settings.SettingsScreen
@@ -17,6 +18,7 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val AUTH = "auth"
+    const val GOD = "god"
 }
 
 @Composable
@@ -71,6 +73,7 @@ fun LumiAiNavHost(
                 autoLockScreen = autoLockScreen,
                 onSetAutoLockScreen = onSetAutoLockScreen,
                 onOpenAuth = { navController.navigate(Routes.AUTH) },
+                onOpenGod = { navController.navigate(Routes.GOD) },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -79,6 +82,9 @@ fun LumiAiNavHost(
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable(Routes.GOD) {
+            GodScreen(onBack = { navController.popBackStack() })
         }
     }
 }
