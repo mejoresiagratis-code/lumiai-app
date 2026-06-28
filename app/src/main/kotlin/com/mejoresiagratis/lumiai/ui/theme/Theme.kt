@@ -20,6 +20,8 @@ fun LumiAiTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     accent: AccentColor = AccentColor.YELLOW,
     accentStyle: AccentStyle = AccentStyle.WARM,
+    highContrast: Boolean = false,
+    reduceMotion: Boolean = false,
     activeMode: FlashMode? = null,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
@@ -62,7 +64,8 @@ fun LumiAiTheme(
             seedColor = seed,
             isDark = dark,
             isAmoled = false,
-            style = paletteStyle
+            style = paletteStyle,
+            contrastLevel = if (highContrast) 1.0 else 0.0
         )
         // Adoptamos el esquema COMPLETO generado desde la semilla, incluidos los neutros
         // (fondo, superficie, surfaceVariant, contorno y contenedores). Así TODA la vista
@@ -70,32 +73,32 @@ fun LumiAiTheme(
         // arrastrar los neutros ámbar de marca. Animamos cada rol para que el cambio de
         // modo/acento (incluido Multicolor) sea suave y no haya saltos de color.
         gen.copy(
-            primary = animateColorAsState(gen.primary, label = "primary").value,
-            onPrimary = animateColorAsState(gen.onPrimary, label = "onPrimary").value,
-            primaryContainer = animateColorAsState(gen.primaryContainer, label = "primaryContainer").value,
-            onPrimaryContainer = animateColorAsState(gen.onPrimaryContainer, label = "onPrimaryContainer").value,
-            secondary = animateColorAsState(gen.secondary, label = "secondary").value,
-            onSecondary = animateColorAsState(gen.onSecondary, label = "onSecondary").value,
-            secondaryContainer = animateColorAsState(gen.secondaryContainer, label = "secondaryContainer").value,
-            onSecondaryContainer = animateColorAsState(gen.onSecondaryContainer, label = "onSecondaryContainer").value,
-            tertiary = animateColorAsState(gen.tertiary, label = "tertiary").value,
-            onTertiary = animateColorAsState(gen.onTertiary, label = "onTertiary").value,
-            tertiaryContainer = animateColorAsState(gen.tertiaryContainer, label = "tertiaryContainer").value,
-            onTertiaryContainer = animateColorAsState(gen.onTertiaryContainer, label = "onTertiaryContainer").value,
-            background = animateColorAsState(gen.background, label = "background").value,
-            onBackground = animateColorAsState(gen.onBackground, label = "onBackground").value,
-            surface = animateColorAsState(gen.surface, label = "surface").value,
-            onSurface = animateColorAsState(gen.onSurface, label = "onSurface").value,
-            surfaceVariant = animateColorAsState(gen.surfaceVariant, label = "surfaceVariant").value,
-            onSurfaceVariant = animateColorAsState(gen.onSurfaceVariant, label = "onSurfaceVariant").value,
-            surfaceTint = animateColorAsState(gen.surfaceTint, label = "surfaceTint").value,
-            outline = animateColorAsState(gen.outline, label = "outline").value,
-            outlineVariant = animateColorAsState(gen.outlineVariant, label = "outlineVariant").value,
-            surfaceContainerLowest = animateColorAsState(gen.surfaceContainerLowest, label = "scLowest").value,
-            surfaceContainerLow = animateColorAsState(gen.surfaceContainerLow, label = "scLow").value,
-            surfaceContainer = animateColorAsState(gen.surfaceContainer, label = "scMid").value,
-            surfaceContainerHigh = animateColorAsState(gen.surfaceContainerHigh, label = "scHigh").value,
-            surfaceContainerHighest = animateColorAsState(gen.surfaceContainerHighest, label = "scHighest").value
+            primary = animRole(gen.primary, reduceMotion, "primary"),
+            onPrimary = animRole(gen.onPrimary, reduceMotion, "onPrimary"),
+            primaryContainer = animRole(gen.primaryContainer, reduceMotion, "primaryContainer"),
+            onPrimaryContainer = animRole(gen.onPrimaryContainer, reduceMotion, "onPrimaryContainer"),
+            secondary = animRole(gen.secondary, reduceMotion, "secondary"),
+            onSecondary = animRole(gen.onSecondary, reduceMotion, "onSecondary"),
+            secondaryContainer = animRole(gen.secondaryContainer, reduceMotion, "secondaryContainer"),
+            onSecondaryContainer = animRole(gen.onSecondaryContainer, reduceMotion, "onSecondaryContainer"),
+            tertiary = animRole(gen.tertiary, reduceMotion, "tertiary"),
+            onTertiary = animRole(gen.onTertiary, reduceMotion, "onTertiary"),
+            tertiaryContainer = animRole(gen.tertiaryContainer, reduceMotion, "tertiaryContainer"),
+            onTertiaryContainer = animRole(gen.onTertiaryContainer, reduceMotion, "onTertiaryContainer"),
+            background = animRole(gen.background, reduceMotion, "background"),
+            onBackground = animRole(gen.onBackground, reduceMotion, "onBackground"),
+            surface = animRole(gen.surface, reduceMotion, "surface"),
+            onSurface = animRole(gen.onSurface, reduceMotion, "onSurface"),
+            surfaceVariant = animRole(gen.surfaceVariant, reduceMotion, "surfaceVariant"),
+            onSurfaceVariant = animRole(gen.onSurfaceVariant, reduceMotion, "onSurfaceVariant"),
+            surfaceTint = animRole(gen.surfaceTint, reduceMotion, "surfaceTint"),
+            outline = animRole(gen.outline, reduceMotion, "outline"),
+            outlineVariant = animRole(gen.outlineVariant, reduceMotion, "outlineVariant"),
+            surfaceContainerLowest = animRole(gen.surfaceContainerLowest, reduceMotion, "scLowest"),
+            surfaceContainerLow = animRole(gen.surfaceContainerLow, reduceMotion, "scLow"),
+            surfaceContainer = animRole(gen.surfaceContainer, reduceMotion, "scMid"),
+            surfaceContainerHigh = animRole(gen.surfaceContainerHigh, reduceMotion, "scHigh"),
+            surfaceContainerHighest = animRole(gen.surfaceContainerHighest, reduceMotion, "scHighest")
         )
     }
     MaterialTheme(
@@ -105,3 +108,7 @@ fun LumiAiTheme(
         content = content
     )
 }
+
+@androidx.compose.runtime.Composable
+private fun animRole(target: androidx.compose.ui.graphics.Color, reduce: Boolean, label: String) =
+    if (reduce) target else animateColorAsState(target, label = label).value

@@ -14,4 +14,10 @@ interface ThemePreferencesRepository {
 
     val accentStyle: Flow<AccentStyle>
     suspend fun setAccentStyle(style: AccentStyle)
+
+    val reduceMotion: Flow<Boolean>
+    suspend fun setReduceMotion(value: Boolean)
+
+    val highContrast: Flow<Boolean>
+    suspend fun setHighContrast(value: Boolean)
 }

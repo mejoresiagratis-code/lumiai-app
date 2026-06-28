@@ -30,6 +30,12 @@ class ThemeViewModel @Inject constructor(
     val accentStyle: StateFlow<AccentStyle> =
         repo.accentStyle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentStyle.WARM)
 
+    val reduceMotion: StateFlow<Boolean> =
+        repo.reduceMotion.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val highContrast: StateFlow<Boolean> =
+        repo.highContrast.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /** Modo activo, para que el acento Multicolor siga al modo en vivo. */
     val currentMode: StateFlow<FlashMode> =
         flashState.mode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FlashMode.CONTINUOUS)
@@ -44,5 +50,13 @@ class ThemeViewModel @Inject constructor(
 
     fun setAccentStyle(style: AccentStyle) {
         viewModelScope.launch { repo.setAccentStyle(style) }
+    }
+
+    fun setReduceMotion(value: Boolean) {
+        viewModelScope.launch { repo.setReduceMotion(value) }
+    }
+
+    fun setHighContrast(value: Boolean) {
+        viewModelScope.launch { repo.setHighContrast(value) }
     }
 }

@@ -15,6 +15,11 @@
     <string name="a11y_panel_toggle">Mostrar u ocultar ajustes</string>
     <string name="a11y_panel_expanded">Ajustes visibles</string>
     <string name="a11y_panel_collapsed">Ajustes ocultos</string>
+    <string name="a11y_section">Accesibilidad</string>
+    <string name="a11y_reduce_motion_title">Reducir movimiento</string>
+    <string name="a11y_reduce_motion_desc">Atenúa pulsos y animaciones. También se respeta el ajuste del sistema.</string>
+    <string name="a11y_high_contrast_title">Alto contraste</string>
+    <string name="a11y_high_contrast_desc">Refuerza el contraste de colores y bordes.</string>
     <string name="a11y_brightness">Brillo de pantalla</string>
     <string name="a11y_intensity">Intensidad del LED</string>
     <string name="a11y_interval">Intervalo de la baliza</string>

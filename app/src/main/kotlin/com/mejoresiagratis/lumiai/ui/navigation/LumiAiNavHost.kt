@@ -27,7 +27,11 @@ fun LumiAiNavHost(
     accentColor: AccentColor,
     onSelectAccent: (AccentColor) -> Unit,
     accentStyle: AccentStyle,
-    onSelectAccentStyle: (AccentStyle) -> Unit
+    onSelectAccentStyle: (AccentStyle) -> Unit,
+    reduceMotion: Boolean,
+    onSetReduceMotion: (Boolean) -> Unit,
+    highContrast: Boolean,
+    onSetHighContrast: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = startDestination) {
@@ -54,6 +58,10 @@ fun LumiAiNavHost(
                 onSelectAccent = onSelectAccent,
                 accentStyle = accentStyle,
                 onSelectAccentStyle = onSelectAccentStyle,
+                reduceMotion = reduceMotion,
+                onSetReduceMotion = onSetReduceMotion,
+                highContrast = highContrast,
+                onSetHighContrast = onSetHighContrast,
                 onOpenAuth = { navController.navigate(Routes.AUTH) },
                 onBack = { navController.popBackStack() }
             )

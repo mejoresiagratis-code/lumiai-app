@@ -47,10 +47,19 @@ private fun LumiAiApp(
     val themeMode: ThemeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
     val accent: AccentColor by themeViewModel.accentColor.collectAsStateWithLifecycle()
     val accentStyle: AccentStyle by themeViewModel.accentStyle.collectAsStateWithLifecycle()
+    val highContrast: Boolean by themeViewModel.highContrast.collectAsStateWithLifecycle()
+    val reduceMotion: Boolean by themeViewModel.reduceMotion.collectAsStateWithLifecycle()
     val activeMode: FlashMode by themeViewModel.currentMode.collectAsStateWithLifecycle()
     val completed: Boolean? by startViewModel.onboardingCompleted.collectAsStateWithLifecycle()
 
-    LumiAiTheme(themeMode = themeMode, accent = accent, accentStyle = accentStyle, activeMode = activeMode) {
+    LumiAiTheme(
+        themeMode = themeMode,
+        accent = accent,
+        accentStyle = accentStyle,
+        highContrast = highContrast,
+        reduceMotion = reduceMotion,
+        activeMode = activeMode
+    ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -68,7 +77,11 @@ private fun LumiAiApp(
                     accentColor = accent,
                     onSelectAccent = themeViewModel::setAccent,
                     accentStyle = accentStyle,
-                    onSelectAccentStyle = themeViewModel::setAccentStyle
+                    onSelectAccentStyle = themeViewModel::setAccentStyle,
+                    reduceMotion = reduceMotion,
+                    onSetReduceMotion = themeViewModel::setReduceMotion,
+                    highContrast = highContrast,
+                    onSetHighContrast = themeViewModel::setHighContrast
                 )
             }
         }

@@ -34,6 +34,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,6 +88,10 @@ fun SettingsScreen(
     onSelectAccent: (AccentColor) -> Unit,
     accentStyle: AccentStyle,
     onSelectAccentStyle: (AccentStyle) -> Unit,
+    reduceMotion: Boolean,
+    onSetReduceMotion: (Boolean) -> Unit,
+    highContrast: Boolean,
+    onSetHighContrast: (Boolean) -> Unit,
     onOpenAuth: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel()
@@ -261,6 +267,22 @@ fun SettingsScreen(
                 )
                 AccentStyleSegmented(selected = accentStyle, onSelect = onSelectAccentStyle)
             }
+
+            // --- Accesibilidad (Capa B) ---
+            SettingsSection(R.string.a11y_section) {
+                SettingsToggle(
+                    titleRes = R.string.a11y_reduce_motion_title,
+                    descRes = R.string.a11y_reduce_motion_desc,
+                    checked = reduceMotion,
+                    onCheckedChange = onSetReduceMotion
+                )
+                SettingsToggle(
+                    titleRes = R.string.a11y_high_contrast_title,
+                    descRes = R.string.a11y_high_contrast_desc,
+                    checked = highContrast,
+                    onCheckedChange = onSetHighContrast
+                )
+            }
         }
     }
 
@@ -420,6 +442,32 @@ private fun StatusPill(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Composable
+private fun SettingsToggle(
+    @StringRes titleRes: Int,
+    @StringRes descRes: Int,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, onValueChange = onCheckedChange, role = Role.Switch),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = stringResource(descRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
 private fun ThemeSegmented(
     selected: ThemeMode,
     onSelect: (ThemeMode) -> Unit
