@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -32,7 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,6 +108,9 @@ fun ScreenLight(
 
     val hue = remember(argb) { FloatArray(3).also { AndroidColor.colorToHSV(argb, it) }[0] }
     val onColor = if (AndroidColor.luminance(argb) > 0.5f) Color.Black else Color.White
+    // Panel de ajustes ocultable: colapsado deja solo el asa superior para reabrirlo y
+    // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
+    var panelExpanded by remember { mutableStateOf(true) }
 
     Box(
         modifier
@@ -143,89 +149,119 @@ fun ScreenLight(
                         onClick = {}
                     )
                     .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
+                    .animateContentSize()
             ) {
-                Text(
-                    text = stringResource(R.string.screen_panel_title),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White
-                )
-                Row(
+                // Asa: toca para plegar/desplegar el panel de ajustes.
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(top = LumiSpacing.sm),
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { panelExpanded = !panelExpanded },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
                 ) {
-                    SCREEN_NAMED_PRESETS.forEach { preset ->
-                        val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(
-                                    if (sel) Color.White.copy(alpha = 0.18f)
-                                    else Color.White.copy(alpha = 0.06f)
-                                )
-                                .border(
-                                    width = if (sel) 1.5.dp else 1.dp,
-                                    color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
-                                    shape = RoundedCornerShape(50)
-                                )
-                                .clickable {
-                                    onColorChange(preset.argb)
-                                    onBrightnessChange(preset.brightness)
-                                }
-                                .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
-                        ) {
-                            Text(
-                                text = stringResource(preset.labelRes),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = LumiSpacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
-                ) {
-                    SCREEN_PRESETS.forEach { preset ->
-                        val selected = preset == argb
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(Color(preset))
-                                .border(
-                                    width = if (selected) 3.dp else 1.dp,
-                                    color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
-                                    shape = CircleShape
-                                )
-                                .clickable { onColorChange(preset) }
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = LumiSpacing.sm)
+                            .size(width = 44.dp, height = 5.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.5f))
+                    )
+                    if (!panelExpanded) {
+                        Text(
+                            text = stringResource(R.string.screen_panel_expand),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(bottom = LumiSpacing.xs)
                         )
                     }
                 }
-                Text(
-                    text = stringResource(R.string.screen_color),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White
-                )
-                Slider(
-                    value = hue,
-                    onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
-                    valueRange = 0f..360f
-                )
-                Text(
-                    text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White
-                )
-                Slider(
-                    value = brightness,
-                    onValueChange = onBrightnessChange,
-                    valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS
-                )
+                if (panelExpanded) {
+                    Text(
+                        text = stringResource(R.string.screen_panel_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(top = LumiSpacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                    ) {
+                        SCREEN_NAMED_PRESETS.forEach { preset ->
+                            val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(
+                                        if (sel) Color.White.copy(alpha = 0.18f)
+                                        else Color.White.copy(alpha = 0.06f)
+                                    )
+                                    .border(
+                                        width = if (sel) 1.5.dp else 1.dp,
+                                        color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                                        shape = RoundedCornerShape(50)
+                                    )
+                                    .clickable {
+                                        onColorChange(preset.argb)
+                                        onBrightnessChange(preset.brightness)
+                                    }
+                                    .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                            ) {
+                                Text(
+                                    text = stringResource(preset.labelRes),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = LumiSpacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                    ) {
+                        SCREEN_PRESETS.forEach { preset ->
+                            val selected = preset == argb
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(preset))
+                                    .border(
+                                        width = if (selected) 3.dp else 1.dp,
+                                        color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
+                                        shape = CircleShape
+                                    )
+                                    .clickable { onColorChange(preset) }
+                            )
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.screen_color),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                    Slider(
+                        value = hue,
+                        onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
+                        valueRange = 0f..360f
+                    )
+                    Text(
+                        text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                    Slider(
+                        value = brightness,
+                        onValueChange = onBrightnessChange,
+                        valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS
+                    )
+                }
             }
         }
     }

@@ -9,6 +9,7 @@
     <string name="strobe_photosensitivity_warning">El parpadeo rápido puede causar molestias o crisis a personas con epilepsia fotosensible. Úsalo con precaución.</string>
     <string name="morse_preview_caption">Vista previa · se repite en bucle · ciclo ≈ %1$s s</string>
     <string name="info_cd">Más información</string>
+    <string name="screen_panel_expand">Ajustes</string>
     <string name="screen_preset_white">Blanco</string>
     <string name="screen_preset_warm">Cálido</string>
     <string name="screen_preset_reading">Lectura</string>
