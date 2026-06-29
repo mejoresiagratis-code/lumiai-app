@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.mejoresiagratis.lumiai"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mejoresiagratis.lumiai"
@@ -54,10 +54,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -70,6 +66,12 @@ android {
     }
 }
 
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
@@ -84,7 +86,8 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    // Override a material3 1.5.0-alpha: APIs M3 Expressive reales (experimentales).
+    implementation(libs.androidx.compose.material3.expressive)
     implementation(libs.material.kolor)
     implementation(libs.haze)
     implementation(libs.androidx.navigation.compose)
