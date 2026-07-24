@@ -195,6 +195,8 @@
     <string name="sa_chan_flash">Flash</string>
     <string name="sa_chan_screen">Screen</string>
     <string name="sa_chan_both">Both</string>
+    <string name="sa_card_expanded_cd">Settings visible</string>
+    <string name="sa_card_collapsed_cd">Settings hidden</string>
     <string name="sa_reliab_high">high reliability</string>
     <string name="sa_reliab_med">medium reliability</string>
     <!-- Sound alert: notifications -->

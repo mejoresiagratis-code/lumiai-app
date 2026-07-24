@@ -195,6 +195,8 @@
     <string name="sa_chan_flash">Flash</string>
     <string name="sa_chan_screen">Pantalla</string>
     <string name="sa_chan_both">Ambas</string>
+    <string name="sa_card_expanded_cd">Ajustes visibles</string>
+    <string name="sa_card_collapsed_cd">Ajustes ocultos</string>
     <string name="sa_reliab_high">fiabilidad alta</string>
     <string name="sa_reliab_med">fiabilidad media</string>
     <!-- Alerta sonora: notificaciones -->
