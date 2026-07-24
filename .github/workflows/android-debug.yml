@@ -16,6 +16,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,12 +29,14 @@ jobs:
 
       - name: Setup Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
-
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      # Una sola invocación: configuración única del proyecto y grafo de tareas
+      # compartido entre tests y APK (antes eran dos invocaciones = doble configure).
+      # El daemon queda activo dentro del step (gradle/actions lo gestiona).
+      - name: Unit tests + debug APK
+        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -44,9 +47,13 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+  # Solo bajo demanda (workflow_dispatch): antes corría en cada push en paralelo,
+  # duplicando setup de JDK+Gradle y ocupando runner sin bloquear nada.
   quality:
-    name: Quality (no bloqueante)
+    name: Quality (no bloqueante, manual)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - name: Checkout
@@ -73,7 +80,7 @@ jobs:
 
       - name: Android Lint (solo informe)
         continue-on-error: true
-        run: ./gradlew :app:lintDebug --no-daemon --stacktrace
+        run: ./gradlew :app:lintDebug --stacktrace
 
       - name: Upload lint report
         uses: actions/upload-artifact@v4

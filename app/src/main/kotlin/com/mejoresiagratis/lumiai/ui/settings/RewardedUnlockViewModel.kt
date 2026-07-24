@@ -26,7 +26,9 @@ data class RewardedUnlockUi(
     val adsPerGrant: Int = RewardProgress.ADS_PER_GRANT,
     val adReady: Boolean = false,
     /** Acceso efectivo al tier IA: suscripción Pro o desbloqueo temporal activo. */
-    val proUnlocked: Boolean = false
+    val proUnlocked: Boolean = false,
+    /** Suscripción Pro real (SIN contar el desbloqueo temporal). Gate estricto de Multicolor. */
+    val hasSubscription: Boolean = false
 )
 
 @HiltViewModel
@@ -59,7 +61,8 @@ class RewardedUnlockViewModel @Inject constructor(
             remainingMillis = TemporaryUnlock.remainingMillis(proUntil, now),
             adsWatched = count,
             adReady = ready,
-            proUnlocked = ent.unlocks(Tier.AI) || active
+            proUnlocked = ent.unlocks(Tier.AI) || active,
+            hasSubscription = ent.hasSubscription
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), RewardedUnlockUi())
 

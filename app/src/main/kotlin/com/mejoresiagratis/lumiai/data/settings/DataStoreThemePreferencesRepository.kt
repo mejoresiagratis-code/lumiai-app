@@ -37,20 +37,21 @@ class DataStoreThemePreferencesRepository @Inject constructor(
         dataStore.edit { it[themeKey] = mode.name }
     }
 
-    // Default de la app: acento ámbar (igual que la linterna del Splash).
+    // Default de la app: acento azul vívido (igual que el Splash). Solo aplica si el
+    // usuario no eligió nunca un acento (la clave persistida se respeta siempre).
     override val accentColor: Flow<AccentColor> = dataStore.data.map { p ->
-        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.AMBER.name) }
-            .getOrDefault(AccentColor.AMBER)
+        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.BLUE.name) }
+            .getOrDefault(AccentColor.BLUE)
     }
 
     override suspend fun setAccentColor(accent: AccentColor) {
         dataStore.edit { it[accentKey] = accent.name }
     }
 
-    // Default de la app: estilo cálido (TonalSpot, oro ámbar sobrio).
+    // Default de la app: estilo vívido (Content, primary ≈ semilla — azul directo).
     override val accentStyle: Flow<AccentStyle> = dataStore.data.map { p ->
-        runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.WARM.name) }
-            .getOrDefault(AccentStyle.WARM)
+        runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.VIVID.name) }
+            .getOrDefault(AccentStyle.VIVID)
     }
 
     override suspend fun setAccentStyle(style: AccentStyle) {

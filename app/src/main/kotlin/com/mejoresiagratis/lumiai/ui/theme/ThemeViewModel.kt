@@ -25,10 +25,10 @@ class ThemeViewModel @Inject constructor(
         repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
 
     val accentColor: StateFlow<AccentColor> =
-        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.YELLOW)
+        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.BLUE)
 
     val accentStyle: StateFlow<AccentStyle> =
-        repo.accentStyle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentStyle.WARM)
+        repo.accentStyle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentStyle.VIVID)
 
     val reduceMotion: StateFlow<Boolean> =
         repo.reduceMotion.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

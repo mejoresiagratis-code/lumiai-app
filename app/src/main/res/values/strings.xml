@@ -65,6 +65,14 @@
     <string name="accent_blue">Blue</string>
     <string name="accent_green">Green</string>
     <string name="accent_violet">Violet</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_locked_cd">%1$s — locked</string>
+    <string name="accent_locked_account_title">Unlock more colours</string>
+    <string name="accent_locked_account_body">Create a free account (or sign in) to use all solid accent colours. Blue and Orange are always free.</string>
+    <string name="accent_locked_pro_title">Multicolour is a Pro perk</string>
+    <string name="accent_locked_pro_body">The Multicolour accent (one colour per mode) is exclusive to Pro subscribers.</string>
+    <string name="accent_locked_sign_in">Create account / sign in</string>
+    <string name="dialog_close">Close</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_start">Start</string>

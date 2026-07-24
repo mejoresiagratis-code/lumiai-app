@@ -65,6 +65,14 @@
     <string name="accent_blue">Azul</string>
     <string name="accent_green">Verde</string>
     <string name="accent_violet">Violeta</string>
+    <string name="accent_orange">Naranja</string>
+    <string name="accent_locked_cd">%1$s — bloqueado</string>
+    <string name="accent_locked_account_title">Desbloquea más colores</string>
+    <string name="accent_locked_account_body">Crea una cuenta gratis (o inicia sesión) para usar todos los colores de acento sólidos. Azul y Naranja son siempre libres.</string>
+    <string name="accent_locked_pro_title">Multicolor es exclusivo Pro</string>
+    <string name="accent_locked_pro_body">El acento Multicolor (un color por modo) es exclusivo de los suscriptores Pro.</string>
+    <string name="accent_locked_sign_in">Crear cuenta / iniciar sesión</string>
+    <string name="dialog_close">Cerrar</string>
     <string name="onboarding_skip">Saltar</string>
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar</string>

@@ -62,6 +62,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -125,6 +126,15 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val webClientId = accountViewModel.webClientId
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
+
+    // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
+    // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
+    LaunchedEffect(accentColor, isGuest, proUi.hasSubscription) {
+        if (!accentColor.isUnlocked(hasAccount = !isGuest, hasSubscription = proUi.hasSubscription)) {
+            onSelectAccent(AccentColor.BLUE)
+        }
+    }
     var reauthPassword by remember { mutableStateOf("") }
     val launchGoogleReauth: () -> Unit = {
         val id = webClientId
@@ -332,7 +342,14 @@ fun SettingsScreen(
 
             // --- Apariencia: color de acento ---
             SettingsSection(R.string.accent_section) {
-                AccentSwatches(selected = accentColor, onSelect = onSelectAccent)
+                AccentSwatches(
+                    selected = accentColor,
+                    hasAccount = !isGuest,
+                    hasSubscription = proUi.hasSubscription,
+                    onSelect = onSelectAccent,
+                    onLockedAccount = { accentLockDialog = AccentLock.ACCOUNT },
+                    onLockedPro = { accentLockDialog = AccentLock.PRO }
+                )
                 Text(
                     text = stringResource(R.string.accent_style_label),
                     style = MaterialTheme.typography.bodyMedium,
@@ -404,6 +421,46 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    accentLockDialog?.let { lock ->
+        AlertDialog(
+            onDismissRequest = { accentLockDialog = null },
+            title = {
+                Text(
+                    stringResource(
+                        if (lock == AccentLock.PRO) R.string.accent_locked_pro_title
+                        else R.string.accent_locked_account_title
+                    )
+                )
+            },
+            text = {
+                Text(
+                    stringResource(
+                        if (lock == AccentLock.PRO) R.string.accent_locked_pro_body
+                        else R.string.accent_locked_account_body
+                    )
+                )
+            },
+            confirmButton = {
+                if (lock == AccentLock.ACCOUNT) {
+                    TextButton(onClick = { accentLockDialog = null; onOpenAuth() }) {
+                        Text(stringResource(R.string.accent_locked_sign_in))
+                    }
+                } else {
+                    TextButton(onClick = { accentLockDialog = null }) {
+                        Text(stringResource(R.string.dialog_close))
+                    }
+                }
+            },
+            dismissButton = if (lock == AccentLock.ACCOUNT) {
+                {
+                    TextButton(onClick = { accentLockDialog = null }) {
+                        Text(stringResource(R.string.dialog_close))
+                    }
+                }
+            } else null
+        )
     }
 
     if (showDeleteConfirm) {
@@ -629,11 +686,18 @@ private fun AccentStyleSegmented(
     }
 }
 
+/** Motivo de bloqueo de un swatch de acento (para elegir el diálogo). */
+private enum class AccentLock { ACCOUNT, PRO }
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccentSwatches(
     selected: AccentColor,
-    onSelect: (AccentColor) -> Unit
+    hasAccount: Boolean,
+    hasSubscription: Boolean,
+    onSelect: (AccentColor) -> Unit,
+    onLockedAccount: () -> Unit,
+    onLockedPro: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
         FlowRow(
@@ -642,10 +706,18 @@ private fun AccentSwatches(
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
         ) {
             AccentColor.entries.forEach { ac ->
+                val locked = !ac.isUnlocked(hasAccount = hasAccount, hasSubscription = hasSubscription)
                 AccentSwatch(
                     accent = ac,
                     selected = selected == ac,
-                    onClick = { onSelect(ac) }
+                    locked = locked,
+                    onClick = {
+                        when {
+                            !locked -> onSelect(ac)
+                            ac.requiresSubscription -> onLockedPro()
+                            else -> onLockedAccount()
+                        }
+                    }
                 )
             }
         }
@@ -661,9 +733,14 @@ private fun AccentSwatches(
 private fun AccentSwatch(
     accent: AccentColor,
     selected: Boolean,
+    locked: Boolean,
     onClick: () -> Unit
 ) {
-    val label = stringResource(accentLabel(accent))
+    val label = if (locked) {
+        stringResource(R.string.accent_locked_cd, stringResource(accentLabel(accent)))
+    } else {
+        stringResource(accentLabel(accent))
+    }
     val ring = MaterialTheme.colorScheme.onSurface
     val swatchScale by animateFloatAsState(
         targetValue = if (selected) 1f else 0.92f,
@@ -674,6 +751,7 @@ private fun AccentSwatch(
         modifier = Modifier
             .size(52.dp)
             .scale(swatchScale)
+            .alpha(if (locked) 0.55f else 1f)
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
@@ -715,19 +793,34 @@ private fun AccentSwatch(
                 modifier = Modifier.size(22.dp)
             )
         }
+        if (locked) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.35f))
+            )
+            Icon(
+                painter = painterResource(R.drawable.ic_lock),
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
 
 @StringRes
 private fun accentLabel(accent: AccentColor): Int = when (accent) {
-    AccentColor.MULTICOLOR -> R.string.accent_multicolor
-    AccentColor.YELLOW -> R.string.accent_yellow
-    AccentColor.AMBER -> R.string.accent_amber
-    AccentColor.WHITE -> R.string.accent_white
-    AccentColor.RED -> R.string.accent_red
     AccentColor.BLUE -> R.string.accent_blue
+    AccentColor.ORANGE -> R.string.accent_orange
+    AccentColor.AMBER -> R.string.accent_amber
+    AccentColor.YELLOW -> R.string.accent_yellow
     AccentColor.GREEN -> R.string.accent_green
+    AccentColor.RED -> R.string.accent_red
     AccentColor.VIOLET -> R.string.accent_violet
+    AccentColor.WHITE -> R.string.accent_white
+    AccentColor.MULTICOLOR -> R.string.accent_multicolor
 }
 
 @Composable
