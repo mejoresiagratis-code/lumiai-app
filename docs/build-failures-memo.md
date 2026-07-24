@@ -25,7 +25,8 @@
    Los tests de UI deben leer el recurso (`RuntimeEnvironment.getApplication().getString(R.string.X)`),
    NO fijar el texto. → Fallo #3.
 4. **Firmas / constructores cambiados**: `grep -rn "NombreClase(" app/src/test` para ver si
-   algún test construye con la firma vieja.
+   algún test construye con la firma vieja. Si un modo nuevo declara `requiresX()=true`,
+   buscar tests tipo "hoy ningun modo exige X" (`grep -rn "requires" app/src/test`).
 5. **Patrones de vibración/flash (`LongArray`)**: longitud **par** (pares on/off).
 6. **Codec / parsing**: una entrada inválida se descarta **entera** (no a medias).
 7. **Imports duplicados**: al insertar imports por script, el fichero puede tenerlos
@@ -64,3 +65,17 @@
   **Fix:** dedup real de imports + chequeo permanente en `pre_push_audit.sh`.
   **Lección:** los chequeos de "ya existe este import" deben mirar el fichero entero,
   no el vecindario de la inserción (→ checklist #7).
+
+- **#5** run `81620701292` · commit `4ad0ce9` (musica al carrusel) ·
+  `testDebugUnitTest` FAILED · `ModeAvailabilityTest` 2 tests
+  (`ningun modo actual requiere microfono` / `la presencia de microfono no
+  cambia...`).
+  **Causa:** tests-contrato del F0 de Alerta Sonora que fijaban "hoy ningun
+  modo exige microfono"; Musica (v0.3.1) ya declara `requiresMicrophone()=true`
+  y los dejo obsoletos. **El APK se genero igual** (assembleDebug corrio
+  tras el fallo de test y crashea el job solo por el resultado de tests).
+  **Fix:** tests actualizados al contrato actual (Musica exige microfono;
+  el resto no) en vez de "ningun modo".
+  **Lección:** al anadir `requiresX()=true` a un modo nuevo, buscar tests
+  que fijen el contrato "hoy ningun modo exige X" y actualizarlos en el
+  mismo commit que el modo (→ checklist #4, ampliado).

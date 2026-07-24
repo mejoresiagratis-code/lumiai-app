@@ -42,21 +42,29 @@ class ModeAvailabilityTest {
         assertTrue(modeAvailable(requiresFlash = true, requiresMicrophone = true, caps(flash = true, mic = true)))
     }
 
-    // --- Contrato actual del enum: hoy ningun modo exige microfono ---
+    // --- Contrato actual del enum: Musica exige microfono; el resto, no ---
 
     @Test
-    fun `ningun modo actual requiere microfono`() {
+    fun `solo musica requiere microfono hoy`() {
         FlashMode.entries.forEach { mode ->
-            assertFalse("'$mode' no deberia requerir microfono aun", mode.requiresMicrophone())
+            val expected = mode == FlashMode.MUSIC
+            assertTrue(
+                "'$mode'.requiresMicrophone() deberia ser $expected",
+                mode.requiresMicrophone() == expected
+            )
         }
     }
 
     @Test
-    fun `la presencia de microfono no cambia la disponibilidad de los modos actuales`() {
+    fun `la presencia de microfono solo afecta a musica`() {
         FlashMode.entries.forEach { mode ->
             val conMic = mode.isAvailable(caps(flash = true, mic = true))
             val sinMic = mode.isAvailable(caps(flash = true, mic = false))
-            assertTrue("'$mode' no debe depender del microfono todavia", conMic == sinMic)
+            if (mode == FlashMode.MUSIC) {
+                assertTrue("'$mode' debe ocultarse sin microfono", conMic && !sinMic)
+            } else {
+                assertTrue("'$mode' no debe depender del microfono", conMic == sinMic)
+            }
         }
     }
 }
