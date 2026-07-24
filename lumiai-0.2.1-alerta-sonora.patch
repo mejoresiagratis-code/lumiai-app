@@ -1,0 +1,1224 @@
+From c4e0ea83bdebd00e3be09fd11a3f88cba3c5fb7d Mon Sep 17 00:00:00 2001
+From: mejoresiagratis-code <mejoresiagratis-code@users.noreply.github.com>
+Date: Fri, 24 Jul 2026 17:36:59 +0000
+Subject: [PATCH] restyle(alerta-sonora): tarjetas desplegables con iconos +
+ escucha anclada (v0.2.1)
+
+Re-skin del mockup aprobado, SOLO capa de presentacion (dominio, codec,
+servicio y ViewModel intactos; CategorySetting ya tenia sensibilidad y
+canal por categoria, no hubo que tocar el modelo).
+
+- Acordeon: una tarjeta abierta a la vez; tocar la cabecera pliega/despliega
+  (rememberSaveable, sobrevive rotacion). Activar el switch auto-despliega
+  para configurar; desactivar pliega.
+- 8 iconos nuevos de categoria (ic_sound_*): planos, monocromos, tintables,
+  mismo lenguaje que ic_mode_*. Contenedor squircle 16dp -> circulo 24dp al
+  activar (shape-morph con LumiMotion.emphasized, como el orbe de F1).
+- Chevron con giro de muelle; punto de fiabilidad (alta=primary, media=neutral).
+- Expansion con expandVertically(emphasized) + fade; tarjeta expandida sube
+  a surfaceContainerHigh.
+- Aviso de seguridad del disclaimer en errorContainer (mas visible).
+- MicCard solo aparece si falta el permiso (menos ruido).
+- Boton de escucha ANCLADO en bottomBar (siempre accesible con scroll),
+  deshabilitado sin permiso o sin categorias activas (config.anyEnabled).
+- Temas y acentos: TODOS los colores salen de MaterialTheme.colorScheme
+  (primary/primaryContainer/surfaceContainer*/error*), asi claro/oscuro y
+  los 9 acentos aplican sin codigo adicional.
+- i18n: +2 claves (sa_card_expanded_cd/sa_card_collapsed_cd) EN+ES,
+  paridad 202/202. Strings antiguas de ListenCard/MicCard se conservan
+  (regla: no borrar sin confirmacion).
+- chore: retirado lumiai-0.2.0-roles-files.zip commiteado por accidente
+  en la raiz del repo. versionCode 3 / 0.2.1.
+
+Checklist memo: balances OK, paridad OK, R.string/R.drawable verificados,
+sin tests de UI que aserten texto de esta pantalla.
+---
+ app/build.gradle.kts                          |   4 +-
+ .../lumiai/ui/sound/SoundAlertScreen.kt       | 291 ++++++++++++++----
+ app/src/main/res/drawable/ic_chevron_down.xml |   6 +
+ app/src/main/res/drawable/ic_sound_alarm.xml  |  10 +
+ app/src/main/res/drawable/ic_sound_baby.xml   |  12 +
+ app/src/main/res/drawable/ic_sound_dog.xml    |  10 +
+ .../main/res/drawable/ic_sound_doorbell.xml   |   8 +
+ app/src/main/res/drawable/ic_sound_knock.xml  |   9 +
+ app/src/main/res/drawable/ic_sound_phone.xml  |   7 +
+ app/src/main/res/drawable/ic_sound_siren.xml  |  10 +
+ app/src/main/res/drawable/ic_sound_smoke.xml  |   6 +
+ app/src/main/res/values-es/strings.xml        |   2 +
+ app/src/main/res/values/strings.xml           |   2 +
+ lumiai-0.2.0-roles-files.zip                  | Bin 33335 -> 0 bytes
+ 14 files changed, 308 insertions(+), 69 deletions(-)
+ create mode 100644 app/src/main/res/drawable/ic_chevron_down.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_alarm.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_baby.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_dog.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_doorbell.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_knock.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_phone.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_siren.xml
+ create mode 100644 app/src/main/res/drawable/ic_sound_smoke.xml
+ delete mode 100644 lumiai-0.2.0-roles-files.zip
+
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 1c2926f..5c11cf7 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -15,8 +15,8 @@ android {
+         applicationId = "com.mejoresiagratis.lumiai"
+         minSdk = 24
+         targetSdk = 35
+-        versionCode = 2
+-        versionName = "0.2.0"
++        versionCode = 3
++        versionName = "0.2.1"
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+         vectorDrawables { useSupportLibrary = true }
+     }
+diff --git a/app/src/main/kotlin/com/mejoresiagratis/lumiai/ui/sound/SoundAlertScreen.kt b/app/src/main/kotlin/com/mejoresiagratis/lumiai/ui/sound/SoundAlertScreen.kt
+index b5469ae..59fb62a 100644
+--- a/app/src/main/kotlin/com/mejoresiagratis/lumiai/ui/sound/SoundAlertScreen.kt
++++ b/app/src/main/kotlin/com/mejoresiagratis/lumiai/ui/sound/SoundAlertScreen.kt
+@@ -4,20 +4,37 @@ import android.Manifest
+ import android.content.pm.PackageManager
+ import androidx.activity.compose.rememberLauncherForActivityResult
+ import androidx.activity.result.contract.ActivityResultContracts
++import androidx.annotation.DrawableRes
+ import androidx.annotation.StringRes
++import androidx.compose.animation.AnimatedVisibility
++import androidx.compose.animation.core.animateDpAsState
++import androidx.compose.animation.core.animateFloatAsState
++import androidx.compose.animation.expandVertically
++import androidx.compose.animation.fadeIn
++import androidx.compose.animation.fadeOut
++import androidx.compose.animation.shrinkVertically
++import androidx.compose.foundation.background
++import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.navigationBarsPadding
+ import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.shape.CircleShape
++import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.foundation.verticalScroll
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.Card
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+@@ -26,20 +43,29 @@ import androidx.compose.material3.Scaffold
+ import androidx.compose.material3.SegmentedButton
+ import androidx.compose.material3.SegmentedButtonDefaults
+ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
++import androidx.compose.material3.Surface
+ import androidx.compose.material3.Switch
+ import androidx.compose.material3.Text
+ import androidx.compose.material3.TopAppBar
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.draw.rotate
+ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.res.painterResource
+ import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.semantics.stateDescription
+ import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
+ import androidx.core.content.ContextCompat
+ import androidx.hilt.navigation.compose.hiltViewModel
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle
+@@ -50,14 +76,18 @@ import com.mejoresiagratis.lumiai.domain.sound.AlertChannel
+ import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
+ import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
+ import com.mejoresiagratis.lumiai.domain.sound.SoundReliability
++import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
+ import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+-import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ 
+ /**
+- * Pantalla del modo Alerta Sonora: divulgacion + permiso de microfono + ajuste por categoria
+- * (activacion, sensibilidad y canal de aviso) + control de escucha. El canal flash se oculta si
+- * el dispositivo no tiene flash.
++ * Pantalla del modo Alerta Sonora: divulgacion + permiso de microfono + tarjetas DESPLEGABLES
++ * por categoria (acordeon: solo una abierta; activar una categoria la despliega para configurar
++ * sensibilidad y canal) + control de escucha anclado abajo. El canal flash se oculta si el
++ * dispositivo no tiene flash.
++ *
++ * Solo capa de presentacion (re-skin sobre el mockup aprobado): dominio, codec, servicio y
++ * ViewModel intactos. Todos los colores salen de MaterialTheme.colorScheme, por lo que el
++ * tema claro/oscuro y los 9 acentos (azul, naranja, ambar...) aplican sin codigo extra.
+  */
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+@@ -80,6 +110,9 @@ fun SoundAlertScreen(
+     ) { granted -> micGranted = granted }
+     var listening by remember { mutableStateOf(false) }
+ 
++    // Acordeon: nombre de la categoria expandida (sobrevive a rotacion).
++    var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
++
+     Scaffold(
+         topBar = {
+             TopAppBar(
+@@ -93,6 +126,15 @@ fun SoundAlertScreen(
+                     }
+                 }
+             )
++        },
++        bottomBar = {
++            ListenBar(
++                listening = listening,
++                micGranted = micGranted,
++                anyEnabled = config.anyEnabled,
++                onStart = { SoundAlertService.start(context); listening = true },
++                onStop = { SoundAlertService.stop(context); listening = false }
++            )
+         }
+     ) { padding ->
+         Column(
+@@ -116,26 +158,29 @@ fun SoundAlertScreen(
+                     CategoryCard(
+                         category = category,
+                         enabled = config.isEnabled(category),
++                        expanded = expandedName == category.name,
+                         sensitivity = config.sensitivity(category),
+                         channel = config.channel(category),
+                         hasFlash = hasFlash,
+-                        onToggle = { viewModel.setEnabled(category, it) },
++                        onToggle = { on ->
++                            viewModel.setEnabled(category, on)
++                            // Activar despliega para configurar; desactivar pliega.
++                            expandedName = if (on) category.name
++                            else expandedName.takeIf { it != category.name }
++                        },
++                        onExpandToggle = {
++                            expandedName = if (expandedName == category.name) null else category.name
++                        },
+                         onSensitivity = { viewModel.setSensitivity(category, it) },
+                         onChannel = { viewModel.setChannel(category, it) }
+                     )
+                 }
+             }
+ 
+-            ListenCard(
+-                listening = listening,
+-                micGranted = micGranted,
+-                onStart = { SoundAlertService.start(context); listening = true },
+-                onStop = { SoundAlertService.stop(context); listening = false }
+-            )
+-
+             OutlinedButton(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
+                 Text(stringResource(R.string.sa_reset))
+             }
++            Spacer(Modifier.height(LumiSpacing.sm))
+         }
+     }
+ }
+@@ -165,11 +210,19 @@ private fun DisclosureCard() {
+         ) {
+             Text(stringResource(R.string.sa_what), style = MaterialTheme.typography.bodyMedium)
+             Text(stringResource(R.string.sa_privacy), style = MaterialTheme.typography.bodyMedium)
+-            Text(
+-                stringResource(R.string.sa_not_safety),
+-                style = MaterialTheme.typography.bodyMedium,
+-                color = MaterialTheme.colorScheme.error
+-            )
++            Surface(
++                shape = RoundedCornerShape(18.dp),
++                color = MaterialTheme.colorScheme.errorContainer,
++                modifier = Modifier.fillMaxWidth()
++            ) {
++                Text(
++                    stringResource(R.string.sa_not_safety),
++                    style = MaterialTheme.typography.bodyMedium,
++                    fontWeight = FontWeight.Medium,
++                    color = MaterialTheme.colorScheme.onErrorContainer,
++                    modifier = Modifier.padding(LumiSpacing.sm)
++                )
++            }
+             Text(
+                 stringResource(R.string.sa_battery),
+                 style = MaterialTheme.typography.bodySmall,
+@@ -181,6 +234,7 @@ private fun DisclosureCard() {
+ 
+ @Composable
+ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
++    if (micGranted) return
+     Card(
+         shape = RoundedCornerShape(28.dp),
+         modifier = Modifier.fillMaxWidth()
+@@ -194,49 +248,45 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
+                 style = MaterialTheme.typography.titleSmall,
+                 color = MaterialTheme.colorScheme.primary
+             )
+-            if (micGranted) {
+-                Text(stringResource(R.string.sa_mic_granted), style = MaterialTheme.typography.bodyMedium)
+-            } else {
+-                Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
+-                    Text(stringResource(R.string.sa_mic_grant))
+-                }
++            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
++                Text(stringResource(R.string.sa_mic_grant))
+             }
+         }
+     }
+ }
+ 
++/** Barra inferior con la accion principal, siempre visible sin importar el scroll. */
+ @Composable
+-private fun ListenCard(
++private fun ListenBar(
+     listening: Boolean,
+     micGranted: Boolean,
++    anyEnabled: Boolean,
+     onStart: () -> Unit,
+     onStop: () -> Unit
+ ) {
+-    Card(
+-        shape = RoundedCornerShape(28.dp),
+-        modifier = Modifier.fillMaxWidth()
+-    ) {
++    Surface(color = MaterialTheme.colorScheme.background) {
+         Column(
+-            modifier = Modifier.padding(LumiSpacing.md),
+-            verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
++            modifier = Modifier
++                .fillMaxWidth()
++                .navigationBarsPadding()
++                .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.sm)
+         ) {
+-            Text(
+-                stringResource(R.string.sa_listen),
+-                style = MaterialTheme.typography.titleSmall,
+-                color = MaterialTheme.colorScheme.primary
+-            )
+-            Text(
+-                stringResource(if (listening) R.string.sa_listening else R.string.sa_stopped),
+-                style = MaterialTheme.typography.bodyMedium
+-            )
+             if (listening) {
+                 OutlinedButton(onClick = onStop, modifier = Modifier.fillMaxWidth()) {
+                     Text(stringResource(R.string.sa_stop))
+                 }
++                Text(
++                    stringResource(R.string.sa_listening),
++                    style = MaterialTheme.typography.bodySmall,
++                    color = MaterialTheme.colorScheme.primary,
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .padding(top = LumiSpacing.xs),
++                )
+             } else {
+                 Button(
+                     onClick = onStart,
+-                    enabled = micGranted,
++                    enabled = micGranted && anyEnabled,
+                     modifier = Modifier.fillMaxWidth()
+                 ) { Text(stringResource(R.string.sa_start)) }
+             }
+@@ -248,59 +298,154 @@ private fun ListenCard(
+ private fun CategoryCard(
+     category: SoundCategory,
+     enabled: Boolean,
++    expanded: Boolean,
+     sensitivity: Sensitivity,
+     channel: AlertChannel,
+     hasFlash: Boolean,
+     onToggle: (Boolean) -> Unit,
++    onExpandToggle: () -> Unit,
+     onSensitivity: (Sensitivity) -> Unit,
+     onChannel: (AlertChannel) -> Unit
+ ) {
++    val expandedLabel = stringResource(R.string.sa_card_expanded_cd)
++    val collapsedLabel = stringResource(R.string.sa_card_collapsed_cd)
+     Card(
+         shape = RoundedCornerShape(28.dp),
++        colors = CardDefaults.cardColors(
++            containerColor = if (expanded) MaterialTheme.colorScheme.surfaceContainerHigh
++            else MaterialTheme.colorScheme.surfaceContainerLow
++        ),
+         modifier = Modifier.fillMaxWidth()
+     ) {
+-        Column(
+-            modifier = Modifier.padding(LumiSpacing.md),
+-            verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+-        ) {
++        Column {
+             Row(
+-                modifier = Modifier.fillMaxWidth(),
+-                horizontalArrangement = Arrangement.SpaceBetween,
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .clickable(role = Role.Button, onClick = onExpandToggle)
++                    .semantics {
++                        stateDescription = if (expanded) expandedLabel else collapsedLabel
++                    }
++                    .padding(LumiSpacing.md),
++                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm),
+                 verticalAlignment = Alignment.CenterVertically
+             ) {
++                CategoryIcon(iconRes = category.iconRes(), active = enabled)
+                 Column(modifier = Modifier.weight(1f)) {
+                     Text(
+                         stringResource(category.labelRes()),
+                         style = MaterialTheme.typography.titleMedium,
+                         fontWeight = FontWeight.Medium
+                     )
+-                    Text(
+-                        stringResource(category.reliabilityRes()),
+-                        style = MaterialTheme.typography.bodySmall,
+-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+-                    )
++                    ReliabilityRow(category.reliability)
+                 }
+                 Switch(checked = enabled, onCheckedChange = onToggle)
++                Chevron(expanded = expanded)
+             }
+ 
+-            if (enabled) {
+-                LabeledSegmented(
+-                    label = stringResource(R.string.sa_sensitivity),
+-                    options = Sensitivity.entries,
+-                    selected = sensitivity,
+-                    optionLabel = { stringResource(it.labelRes()) },
+-                    onSelect = onSensitivity
+-                )
+-                ChannelSelector(
+-                    hasFlash = hasFlash,
+-                    channel = channel,
+-                    onChannel = onChannel
+-                )
++            AnimatedVisibility(
++                visible = expanded,
++                enter = expandVertically(animationSpec = LumiMotion.emphasized()) + fadeIn(),
++                exit = shrinkVertically(animationSpec = LumiMotion.standard()) + fadeOut()
++            ) {
++                Column(
++                    modifier = Modifier.padding(
++                        start = LumiSpacing.md, end = LumiSpacing.md, bottom = LumiSpacing.md
++                    ),
++                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
++                ) {
++                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
++                    LabeledSegmented(
++                        label = stringResource(R.string.sa_sensitivity),
++                        options = Sensitivity.entries,
++                        selected = sensitivity,
++                        optionLabel = { stringResource(it.labelRes()) },
++                        onSelect = onSensitivity
++                    )
++                    ChannelSelector(
++                        hasFlash = hasFlash,
++                        channel = channel,
++                        onChannel = onChannel
++                    )
++                }
+             }
+         }
+     }
+ }
+ 
++/**
++ * Contenedor del icono de la categoria: squircle en reposo que muta a circulo al activarse
++ * (shape-morph con muelle, mismo lenguaje que el orbe de F1). El color usa primaryContainer,
++ * asi que sigue al acento elegido y al tema claro/oscuro sin nada extra.
++ */
++@Composable
++private fun CategoryIcon(@DrawableRes iconRes: Int, active: Boolean) {
++    val corner by animateDpAsState(
++        targetValue = if (active) 24.dp else 16.dp,
++        animationSpec = LumiMotion.emphasized(),
++        label = "iconCorner"
++    )
++    Box(
++        modifier = Modifier
++            .size(48.dp)
++            .clip(RoundedCornerShape(corner))
++            .background(
++                if (active) MaterialTheme.colorScheme.primaryContainer
++                else MaterialTheme.colorScheme.surfaceContainerHighest
++            ),
++        contentAlignment = Alignment.Center
++    ) {
++        Icon(
++            painter = painterResource(iconRes),
++            contentDescription = null,
++            tint = if (active) MaterialTheme.colorScheme.onPrimaryContainer
++            else MaterialTheme.colorScheme.onSurfaceVariant,
++            modifier = Modifier.size(24.dp)
++        )
++    }
++}
++
++/** Punto de color + texto de fiabilidad (alta -> primary, media -> onSurfaceVariant). */
++@Composable
++private fun ReliabilityRow(reliability: SoundReliability) {
++    Row(
++        verticalAlignment = Alignment.CenterVertically,
++        horizontalArrangement = Arrangement.spacedBy(6.dp)
++    ) {
++        Box(
++            modifier = Modifier
++                .size(6.dp)
++                .clip(CircleShape)
++                .background(
++                    if (reliability == SoundReliability.ALTA) MaterialTheme.colorScheme.primary
++                    else MaterialTheme.colorScheme.onSurfaceVariant
++                )
++        )
++        Text(
++            stringResource(reliability.labelRes()),
++            style = MaterialTheme.typography.bodySmall,
++            color = MaterialTheme.colorScheme.onSurfaceVariant
++        )
++    }
++}
++
++@Composable
++private fun Chevron(expanded: Boolean) {
++    val rotation by animateFloatAsState(
++        targetValue = if (expanded) 180f else 0f,
++        animationSpec = LumiMotion.emphasized(),
++        label = "chevron"
++    )
++    Icon(
++        painter = painterResource(R.drawable.ic_chevron_down),
++        contentDescription = null,
++        tint = if (expanded) MaterialTheme.colorScheme.primary
++        else MaterialTheme.colorScheme.onSurfaceVariant,
++        modifier = Modifier
++            .size(20.dp)
++            .rotate(rotation)
++    )
++}
++
+ @Composable
+ private fun ChannelSelector(
+     hasFlash: Boolean,
+@@ -369,8 +514,20 @@ private fun <T> SegmentedRow(
+     }
+ }
+ 
++@DrawableRes
++private fun SoundCategory.iconRes(): Int = when (this) {
++    SoundCategory.TIMBRE -> R.drawable.ic_sound_doorbell
++    SoundCategory.GOLPES_PUERTA -> R.drawable.ic_sound_knock
++    SoundCategory.TELEFONO -> R.drawable.ic_sound_phone
++    SoundCategory.PERRO -> R.drawable.ic_sound_dog
++    SoundCategory.BEBE -> R.drawable.ic_sound_baby
++    SoundCategory.DESPERTADOR -> R.drawable.ic_sound_alarm
++    SoundCategory.SIRENA -> R.drawable.ic_sound_siren
++    SoundCategory.ALARMA_HUMO -> R.drawable.ic_sound_smoke
++}
++
+ @StringRes
+-private fun SoundCategory.reliabilityRes(): Int = when (reliability) {
++private fun SoundReliability.labelRes(): Int = when (this) {
+     SoundReliability.ALTA -> R.string.sa_reliab_high
+     SoundReliability.MEDIA -> R.string.sa_reliab_med
+ }
+diff --git a/app/src/main/res/drawable/ic_chevron_down.xml b/app/src/main/res/drawable/ic_chevron_down.xml
+new file mode 100644
+index 0000000..67f70a9
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_chevron_down.xml
+@@ -0,0 +1,6 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M5.3,8.3a1,1 0,0 1,1.4 0L12,13.6l5.3,-5.3a1,1 0,1 1,1.4 1.4l-6,6a1,1 0,0 1,-1.4 0l-6,-6a1,1 0,0 1,0 -1.4z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_alarm.xml b/app/src/main/res/drawable/ic_sound_alarm.xml
+new file mode 100644
+index 0000000..046ec87
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_alarm.xml
+@@ -0,0 +1,10 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,6a7,7 0,1 0,0 14a7,7 0,0 0,0 -14zM12,8a5,5 0,1 1,0 10a5,5 0,0 1,0 -10z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,9.2a0.9,0.9 0,0 1,0.9 0.9v2.5l1.6,1.6a0.9,0.9 0,1 1,-1.27 1.27l-1.87,-1.86a0.9,0.9 0,0 1,-0.26 -0.64v-2.87a0.9,0.9 0,0 1,0.9 -0.9z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M4,4.6l2.4,-2a0.9,0.9 0,0 1,1.15 1.38l-2.4,2A0.9,0.9 0,0 1,4 4.6zM17.6,2.6l2.4,2a0.9,0.9 0,1 1,-1.15 1.38l-2.4,-2A0.9,0.9 0,0 1,17.6 2.6z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_baby.xml b/app/src/main/res/drawable/ic_sound_baby.xml
+new file mode 100644
+index 0000000..61b0767
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_baby.xml
+@@ -0,0 +1,12 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,3.5a7,7 0,1 0,0 14a7,7 0,0 0,0 -14zM12,5.5a5,5 0,1 1,0 10a5,5 0,0 1,0 -10z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M9.6,8.6a0.9,0.9 0,1 1,0 1.8a0.9,0.9 0,0 1,0 -1.8z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M14.4,8.6a0.9,0.9 0,1 1,0 1.8a0.9,0.9 0,0 1,0 -1.8z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M9.6,13.6a0.8,0.8 0,0 1,1.1 -0.2c0.4,0.3 0.85,0.45 1.3,0.45s0.9,-0.15 1.3,-0.45a0.8,0.8 0,1 1,0.9 1.3c-0.65,0.45 -1.4,0.75 -2.2,0.75s-1.55,-0.3 -2.2,-0.75a0.8,0.8 0,0 1,-0.2 -1.1z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M5.6,18.6a0.9,0.9 0,0 1,1.27 -0.1c1.4,1.2 3.15,1.9 5.13,1.9s3.73,-0.7 5.13,-1.9a0.9,0.9 0,0 1,1.17 1.37C16.6,21.3 14.4,22.2 12,22.2s-4.6,-0.9 -6.3,-2.33a0.9,0.9 0,0 1,-0.1 -1.27z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_dog.xml b/app/src/main/res/drawable/ic_sound_dog.xml
+new file mode 100644
+index 0000000..73683f3
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_dog.xml
+@@ -0,0 +1,10 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF" android:pathData="M8,5.5a2,2 0,1 1,0 4a2,2 0,0 1,0 -4z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M16,5.5a2,2 0,1 1,0 4a2,2 0,0 1,0 -4z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M4.6,10.5a1.8,1.8 0,1 1,0 3.6a1.8,1.8 0,0 1,0 -3.6z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M19.4,10.5a1.8,1.8 0,1 1,0 3.6a1.8,1.8 0,0 1,0 -3.6z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,11.5c3,0 5,2.3 5,4.7c0,2 -1.6,3.3 -3.1,2.7c-0.9,-0.35 -1.3,-0.55 -1.9,-0.55s-1,0.2 -1.9,0.55C8.6,19.5 7,18.2 7,16.2C7,13.8 9,11.5 12,11.5z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_doorbell.xml b/app/src/main/res/drawable/ic_sound_doorbell.xml
+new file mode 100644
+index 0000000..2e453ee
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_doorbell.xml
+@@ -0,0 +1,8 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,3a6,6 0,0 1,6 6v4l1.5,3h-15L6,13V9a6,6 0,0 1,6 -6zM12,5a4,4 0,0 0,-4 4v4.5L7.2,15h9.6L16,13.5V9a4,4 0,0 0,-4 -4z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M12,8.5a1.5,1.5 0,1 1,0 3a1.5,1.5 0,0 1,0 -3z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M9.8,18h4.4a2.2,2.2 0,0 1,-4.4 0z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_knock.xml b/app/src/main/res/drawable/ic_sound_knock.xml
+new file mode 100644
+index 0000000..20bc2c7
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_knock.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M6,4a2,2 0,0 1,2 -2h8a2,2 0,0 1,2 2v16a2,2 0,0 1,-2 2H8a2,2 0,0 1,-2 -2V4zM8,4v16h8V4H8z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M13.5,11a1.3,1.3 0,1 1,0 2.6a1.3,1.3 0,0 1,0 -2.6z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M2.5,8.2l1.8,1a0.9,0.9 0,0 1,-0.9 1.6l-1.8,-1a0.9,0.9 0,0 1,0.9 -1.6zM2.5,14.2a0.9,0.9 0,0 1,0.9 -1.6l1.8,1a0.9,0.9 0,0 1,-0.9 1.6l-1.8,-1z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_phone.xml b/app/src/main/res/drawable/ic_sound_phone.xml
+new file mode 100644
+index 0000000..0385326
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_phone.xml
+@@ -0,0 +1,7 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M9,2a2.5,2.5 0,0 0,-2.5 2.5v15A2.5,2.5 0,0 0,9 22h6a2.5,2.5 0,0 0,2.5 -2.5v-15A2.5,2.5 0,0 0,15 2H9zM8.5,4.5h7v13h-7v-13z"/>
++    <path android:fillColor="#FFFFFFFF" android:pathData="M10.8,19.2h2.4a0.9,0.9 0,0 1,0 1.8h-2.4a0.9,0.9 0,0 1,0 -1.8z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_siren.xml b/app/src/main/res/drawable/ic_sound_siren.xml
+new file mode 100644
+index 0000000..af554bd
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_siren.xml
+@@ -0,0 +1,10 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,7a5,5 0,0 1,5 5v4H7v-4a5,5 0,0 1,5 -5zM12,9a3,3 0,0 0,-3 3v2h6v-2a3,3 0,0 0,-3 -3z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M6.5,17h11a1.5,1.5 0,0 1,1.5 1.5v0.5a1.5,1.5 0,0 1,-1.5 1.5h-11A1.5,1.5 0,0 1,5 19v-0.5A1.5,1.5 0,0 1,6.5 17z"/>
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M12,2.2a0.9,0.9 0,0 1,0.9 0.9v1.6a0.9,0.9 0,0 1,-1.8 0V3.1a0.9,0.9 0,0 1,0.9 -0.9zM5.2,5.1a0.9,0.9 0,0 1,1.27 0l1.13,1.13A0.9,0.9 0,1 1,6.33 7.5L5.2,6.37a0.9,0.9 0,0 1,0 -1.27zM18.8,5.1a0.9,0.9 0,0 1,0 1.27L17.67,7.5a0.9,0.9 0,1 1,-1.27 -1.27l1.13,-1.13a0.9,0.9 0,0 1,1.27 0z"/>
++</vector>
+diff --git a/app/src/main/res/drawable/ic_sound_smoke.xml b/app/src/main/res/drawable/ic_sound_smoke.xml
+new file mode 100644
+index 0000000..65ef184
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_sound_smoke.xml
+@@ -0,0 +1,6 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp" android:height="24dp"
++    android:viewportWidth="24" android:viewportHeight="24">
++    <path android:fillColor="#FFFFFFFF"
++        android:pathData="M10.2,2.8c0.5,2 1.4,3.1 2.5,4.1c0.9,-0.9 1.6,-2 1.8,-3.4c2.2,2.7 3.5,5.9 3.5,8.4c0,4.4 -2.7,8.1 -6,8.1s-6,-2.6 -6,-6.1C6,10.6 8.6,7.9 10.2,2.8zM12,17.9c1,0 1.8,-0.8 1.8,-1.8c0,-0.9 -0.75,-1.7 -1.8,-2.8c-1.05,1.1 -1.8,1.9 -1.8,2.8c0,1 0.8,1.8 1.8,1.8z"/>
++</vector>
+diff --git a/app/src/main/res/values-es/strings.xml b/app/src/main/res/values-es/strings.xml
+index fca801a..dece620 100644
+--- a/app/src/main/res/values-es/strings.xml
++++ b/app/src/main/res/values-es/strings.xml
+@@ -195,6 +195,8 @@
+     <string name="sa_chan_flash">Flash</string>
+     <string name="sa_chan_screen">Pantalla</string>
+     <string name="sa_chan_both">Ambas</string>
++    <string name="sa_card_expanded_cd">Ajustes visibles</string>
++    <string name="sa_card_collapsed_cd">Ajustes ocultos</string>
+     <string name="sa_reliab_high">fiabilidad alta</string>
+     <string name="sa_reliab_med">fiabilidad media</string>
+     <!-- Alerta sonora: notificaciones -->
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 7573a8b..2cd603c 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -195,6 +195,8 @@
+     <string name="sa_chan_flash">Flash</string>
+     <string name="sa_chan_screen">Screen</string>
+     <string name="sa_chan_both">Both</string>
++    <string name="sa_card_expanded_cd">Settings visible</string>
++    <string name="sa_card_collapsed_cd">Settings hidden</string>
+     <string name="sa_reliab_high">high reliability</string>
+     <string name="sa_reliab_med">medium reliability</string>
+     <!-- Sound alert: notifications -->
+diff --git a/lumiai-0.2.0-roles-files.zip b/lumiai-0.2.0-roles-files.zip
+deleted file mode 100644
+index 2bf28f0a8845d35475e93b1352da5b1c7ab7cf71..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 33335
+zcmb@uW0Wmnk~Uhl?W$9@ZQHhO+ji9{+qTV9wr%T_?R$D=zPbHPPtWb?zWc{sd#(LO
+zL}p~h6A>BDoAOe?AW#5*`D}#0X#d-f|M-FcfCQj5vv4+dF{D#b1_c1D%`~!<|GUeP
+z{%X0KouiehwVj*O-wHzfo1HfH#r;)a0D!7LriuPrK?7T3M>`8+8e<bf7c*K98|(i(
+zgiBQ!J8Th*o_DpbCUMuS=vGAWpQ@3<7K9)%2;_&s^30t~R&v~2joI+nl@DYN`@<}L
+z(PpMADF;m?1>wkK*FCv2?~m@Vb|w;ZG4`sE9q}qz3o8m13|JaUvEd!3=x3>Aj+=|n
+zXHswJnl&(=2}8K>&@+ph>ST$Q)Yg|#XU^V&2WL%b)0#i=YI}TKUOyj?*u7j7F0{yY
+zgwF<g@w{!e8s=PmsFK3`U|$N?GdMZPWV$6@kEe%gie`3tirb;0)TdfxAFgmWkh#|Q
+zf#R@kicH7rrq|jN@x+6o9GN>BljRsH7n^%9&|}QZ@rNig5YmqULrhiVtD6|=RMRmO
+z+x5Ce9r2A%yzB@?N#l-|1ec}M;SCE;6QOH^8ivsy^S&$}k52pUHNhfrecWy{WM_DH
+zuS~*mI}fOGfUIqn$-6eY5%VMZ%PC3mlc+aNlhzi<{8|#G%|2fqtUvIm{qJH91f?>H
+zUQS8t@NsuD%%b*xbm_h@_;a8+B|tZ6+u=#G#9TKzVI8cXL#MqE(yXvgIYZoL*}{<7
+zv5=XlqRlOS;+KJ7FO+#We{yYoTPROSh|8$^$5aIs%LHz!Lr~ZQ+;qk_+i+b4BBc~T
+z!g)^a4D21j*IN97)s-+jkWlZHvVtu-K~OneVD0A4xGd1MMAB|qMt~E$;T~0yj6-1+
+zlF|}R42vPQv50+eKkn4uSlh%v1+yOskFUW;aN8OpOl78e^S`i8qabYm3`XDIo<MW=
+z+Si{1*QEo_Acb$;Em=s3dOmb-OJc~ZU+e;F`0Otv0aPPmFeS}yv~BByrxDFfb;F&I
+zcxH}JX($;L)7lN~!0_(xH2G;GK<&PLFAvL<!Xha(gM}SKZZWm>h0Bgf55Cw3vQyM4
+z3+pbsf_7Q^qLU#v0b9cAF(@b2m!MYAGQIUZUC*>?nMQggL$^v&Q`|zvQN$lt7X>zv
+zY)5>F5BKTbRtLMr>8cTPi+MI0Buiye&%BvW6<A8+j@+(lu)tPjw-nbMPC9IR33vhG
+zZJl>Eqr!6Z)OH93x<jhQITFJ|Y4su3eq$8$l}q*=O9o${yV^XK+6tqY&R^QtxE4jW
+zqfF|*^R&jwDKn|3w`S8P0+A-J0HXzXPQ^J&@<k*xw}B#SIa~M;f-#GNIh?l*-)ml-
+zcc2%x8#V+(LB^|-%oyWxsq2-aJZUX1IWzz1rH1~>Wr&#*(3ADM3i#n(w$v`3xUZ*T
+ziHLQ>mtMz*GmEA@rB8{}SnhaUTNM7a*Ki>z0k_C|va~yZ4$KPQ<;I#b)0Z&+3-s?p
+z3&<aYFtE4(dtj2`$gQ~u3IJe<2mpZcA4?5gEUb-b%^VGktxagHoSps?J*w3=9I@Ci
+zdQK>qy@py0rWj~#)-esU;5a<%5?xEq+y~Fie$Gj1NkqwTPIo>4dM=5LMm?@v0YPKH
+z$h0$v@A&bKM~D;A!oD^N-Uxw~mQcQof=Kux%8xbeQ|Cz#x{K4O&F_R{Q&P2Q$8&>0
+zt7MS_a~UAh{<g&<UGqSvK!t>WImLwUe@T9qES@c|Q<}$+78D}jLxO*VFl<x6f+_te
+ziY!AgpQdzWqF+jeZa-EMZtFt1_9KWvCWJ@Hak4Pbs$_ax2G|wC?Kz@-vYl;Xf=S8+
+z#FfI?fg9K+{yE)H_WAhuRf~C2q8fZEuLnuLe>H$vwUj|T(}GR9804}p#Oewt49eLR
+z@8NDB^_rxWW07hMs(Ri>#_miU;22H<R=Y%^pvh-SEaRNxPQ-x!imBjz(=1dhVS@ZQ
+zoq_`v)`!=vLX8KkkooRo-b6IwZWj~`@HO^UZfQbCePXvC<rwqVeQP;w8AGdNV?yyZ
+z7F2{6ZJ4BgG*ylr;4`CEqf3%wf6Xyu(&glfZQAe@HtnmsFKspx?g;}b*fKpCnei-}
+zxGZhx^-S*bW@~OEF&TkV%?@(<czgjBgR(Lb9vSUHk}xQ<Jd9G^Fk=Zh%7M?1Iw(>}
+z`pMiK?r}qwbCNNCk6yDeDXX;EW@6kW%`MmNH4n{e*Un4R(ygye%Vs&Qm|=^;=Btv)
+zJMLjRb_mr++UnstFS+oQi(ZfC4^Q_mDZ5p^YrS4SuC@-mhpnj*p9WdZDbvm+3peai
+z{BFhg>(m`)h&(X7$7-qZFzw9F(N`6Dq>>u(%{V--LeZ-UE9utlT`HYbTesN^+fog&
+z#*XUYlLgh*ucoCd)^9&_+i^|{7kTMcmG7&w4CpPgIZDZL)0#eMm&<XVI?i{G)=qN3
+z%I&}^Rb@dLl9Z7TWRRz6&#y!pQ7WkHj^M%E3s*bQma^gkz+Nfs9m<tNg>tw(nA-Z{
+zn6}+zmYh^)QNF`V`WJiNE}SkeuPyd1^C~d}RLw&rE3Jr34e#W7=Q-OfPc5BYQ2EUB
+zW>NX*o~dB!p>A&#dZ$YdE$>L!Hz>PF)hl>oaz!u^GJL@+nnnueJ<FuPp?EXzM&wPz
+zMY?Bh)!>9f6;nP7Fd4;|enruG(G1(^7eEd+G;O@8E%QDHel>d>kr=XAm$d1nKq4h9
+zE847Cxg_fJA-ylg)nR>6U`IgC<22cE1i(B6@Ssg;&VA4RbxKh)y{{5J_G3{<kyDHz
+zB|#lT=#Px^sz@<y#i^f4DulxleG=gn-mhV|;;+WBN*k~?g6QR<JtVcXbb*n@rj~(P
+zwq!NQd`g^9wtf4-RMiaZ3z)Xp9L#E$)NJ!1=TLFEKKBc9D)`U1=<1WfPFS*$=BRfM
+zuG%A5yH#zMXAtNNp+0#}mFagyE%qAK81K#YKzmK(7t~2GNbxYnqp1;LL;`(|Uuww8
+z_EpYV*Rm5NdE!(0MTR@I+`?@UD+tn;*?t6zdD=`2KQhSR^YZhLn5gF-Z5-$#`f6~d
+zg`y#^7}Es9Dq0IN9ok|X29WefTqL~0%^XWhKM2@p`)HpNAmOJRlvOFD=ONzd*rnnK
+zV#`6N%FQoJH2CYdgXcRP)ZfC|ROT_`8lr$d&U9feYT>;}lWNeGT>Up;{E}`+%Bd!;
+zAD!Xwf`$o$c@W1p#8q)An{m)vk|E<(F4L?q=1jV;kQ##L7G-1SL5HTK<jO~sM1Wgx
+zqcH7>-{d7;FKkoYBE$3}kXfgBHgAp!ZhcH)Vj2?2v$W{lfD!LO%_0>P_n6BW>kvZ4
+zufU-397CNzQ|%Fg9fBwVg{(^K3E}qQl8kP~vWAhY^+(z)jNdtXe)OSTyab_wL@xxB
+zMWqWW4JY@m1A@WNZnm-X?LbGUuxDR|?e-07K)wsWABG2Ak<D8cZ3-`QZ$fgL6I>$S
+z>DM~htxs~<^t!hlSe=od59M5|eE|n`Ep_+_d_e#G%<-2R_Ai;k$<gR<v&Y|-ys&?@
+z+{VDd_8*b?KN;sQCjL#v%FfyP9}~s+ujc+k)X2`}AF)jSKZx6ySlT(7I9V9{NrBE5
+z|4kkKw<k~czffoGVq;-o@sAuN^Z#C}v4OL}KcbrFpH%H+;_Pf;Yxdtb<=>l=sR4Bw
+zau5IjV0Zukqkq+g@Sl@Wa{hBIl+8_SOynI+Oidh3Y>iBu6iw{yoGkwQ<MF3H`Ooqs
+zTXo77n+>7of&z@A+TS=xJ7hJ+PjgW`5=8Y}N*<zc>!)z0l&wUKB^&*$k=Hf!p9<xi
+z=tbs^7}v2F)ug&u=Yqf@_1@=jl8uj=p|hVupd_j(&&p;LDhu2BS4jgUNF=jZSUJf_
+zaK=VIKT0txocxh!)CViI)<_@oz23<O`%|13jFb=)V-aHm%jv?g2tLNqugCgaOBzU(
+zrVX!-3nBgNJ%Xl#XAyaHa%IiaEMw0ElcLS^lyz=+PFJ^tH$gtSvb@|EJGZ=iMXmmT
+zw#vDm8>v(C8CRlQ6pPjHi8bs>?1oI`eo}tBwL+|*DOQPA+WR(?i!3Iz-4J}$Qbs8P
+z2@96=?yax65>03sFy3#AH#Nt{<mAgu<1Z$R0AER>)N_c`3W7bPST^iCqTVAxKce+#
+zX!XFkvZl41mirK!NR;jfF{Hc9=|Z{8VIb?^b+x1!b9LpAf?>}447+upqw>4P*)y|d
+zD@rV?sgFJGk8KsT8l|?oLTr8<M=@1r?NxA19#^k*uXn}3N|7;c1eCE_Ln|IVfM;(-
+zGYKvB3)u1fgh^ZV*B|eDePhX5fT21gAd81kPa(2bCNR%b5q*CM3iFGk$VlxWV2KZQ
+z7}Mwy2M*FrU?7ZB97(-_@K))zk$g*=Svj=as%bCUrAoRvXTN!gD__Lyu<m!fR|J+#
+z?<k0CEc$4ep3>XxR4}&pb$sPjQJ+P)!e;%JI636aNRAp~&5J$%)Zc*BT1!xdYm@|(
+zO9D$k>90Qa7%gtxHaSSQd-itTD@eo(2n#)^mUZi;dpW(=1pd;MQ0M*VL}?Edo}_}i
+zu0^%^#V2hrNis-4!3aX-ZXu(!1{E`#*QISpi}wYrLeXMas`>$WJu+o3A)iqHi}NQF
+zq{Cj__w>C&|A5JA0i*5kfaHm}KDXEz1fIo~a{_^@wbR?)$u-yLC&s+Q4Mfr++3Nax
+z{O`H^IMsmjD(-p+YICBFYxZcrGpb&G+vT0Fx5PMgh_P@xzYm=gaax!-$j>JE{A625
+z)NO9PGJqXK%dL8%X3K%fsLH7OX-APXJWo(%Lo2yLwXMT-oGm%*UcXA?oR!G(cx_6K
+zi6D|+6sddTfLw+QG^Vi|&NVc|3M?GdC4ot`x_VZddK(XsVat+r3mxUxsL<ndal<;Z
+z`l0jl`8PVEeZ=CNflE1IhOLb!h#-NNZ8jVjGjqOhycvC4xE~BaPtNvcGpgVm3^jv`
+z`e?!jUIb?SlWN3Oihvx*AX0k0hs2{Hu+Mb$ht#)HQgJiw?M;V+=Ww%3np3buAd$6k
+zVF$`WZ=vMtr{$+vH(Liw%9c608Ae2(?29*$$wIcqS|W|8J;5?7LDH$(!oKw_%njW;
+zHd~QzA=W3NOFToeEqOdds}0u&{M+zf;D0~mvHlZ?W%rLJJHdZixrwc_g|qb^2()$n
+zTWtS#-1V+!wW|jL0Fe08%PIW-Vo2owHR|-&C>x_JWs4<%ur)(r$w9y!TSX2n76F1G
+zB@Rdp-_j5jne)rGvlROooa#%QLzp(+1Wm&vm4<ChLUAiC&IZk3Kw7O^ZRt^W3TB8!
+z7Xd;Eoka&zN_Ia)gia@4kVXM5xm@8quqjnnVd`6h^di0fi%-6}TpV=-YU{`!ztOsP
+zEjT|bF)$J!gutwCUWR~*3V0Gq0Ju;ZaOyMKxlDk5y<a^c#Ot(a!nYOlvhe<?Zi8#T
+zl$V=y9VUaG-|lD&&4oDHI$n*qC^2e>Q`Br(S-^cEurhCVcdEa0*kJIQ=Jkh~qag<@
+zO`utuRluSksHwAJ5Ck`<HICrQjj}WS4XSK>T+%PYu|`XTI}^re0GC<84E0_@Hib|-
+zn?9v15=v7lF%xLdX)UI`Y0k1kT*mu8bup@S-a}e;gCpspi7fSj#m?9DNNP3Om}B6V
+z_e-uxk30G!1Eb%8S*7C8@yA(K$Z=?VFR1DS0n1=w6}NcW{?HE~{RT({yS&FydJv_~
+zQ7r}M(o{q>GbCGZ3Hut#cCk>)^XNGaVUXDlB5ee@Y`eglx{l48dXg*t?<f(yuvJ`G
+zvF`(oa~f;wh%}w0-P;IHytEsV=a-V$$$DUg3k|J_M&6v~zoVT!ZD@O`7_WTr=rC8B
+z)gnuO$B@X4F3)3vGn4EcW#zi_bC3C}HcZ47@<5>ZHK9l(bF4vC7C#qQP+9DeQu~TF
+zG*6pDza*8Z{_1SLJ50FD{e4WpCn|Q+0!VxLDr~v<6GosGjiE;TqMd=Dn$}Lf&XmF|
+z#Jc2&@re~5IJFd7teS4FIfP!|UFZ~}5P}7oTjZ#$Ia@hY!m%z@w0C?`l{M`yjDT3H
+z-TNSWn00rI>(+gO3!6;XrVI9gyGd6j)>bn#EG)IV+y5~apjHvDapX7t-w${0e>zZX
+z?2JvU|6VM<?1fea{E0=LKd~tJFPacAGWrwsLUz`6j(;75KFTt38~g~}?`o5CCH=}c
+zp5jZAfYgyF`;`0&A?(u2L5+3WES=l(nlB8WfIPRzcO#ruD}Vx6_=J94KKI*Q>5JsH
+zb;JlIl2je6DOrQ_hD16Q-XsboA?5PtO^l%B<m+qek^0b2F^p(XKqy7nz(r+AOd|YP
+zqAS}hhhTd-D2EF{)<{=&JOM;y-0i~!U?w<iT-JkG+F0W7r%>INK-GeM9eBTnwqK|_
+zgE9O(L8FdxL#QVKjL#IBy(j$?shsbL=|K{NmTRQKp^@gtjuPRVn^{88Vez|7bGDv4
+z@e>RH?4Cid_6T!hNyFBT5R$SSu=7NtX48JvA(w~TP5UQe1)GhexsH_n9twuCeJxVY
+z#11Uhq8n3;3szSb+~Dgr+9_Tf;|q*BXuLg}^W~i`)z0t@=5(A>@Fc6M%0z(jZU)<z
+z?|Cv#FFAfHe9{zOP`nf_@&OI>+S4Z%q_h!r0P%LPq;6hVf<_c|!qJH;N)a^d*KFP!
+zrlN@N20~M&@#{=3&Lfl%s^{<6g;}Soilf4+&HV8jvoL(%6GW{H2Uhi{k!4v}tE+if
+z0PWCp+`a+~t74VlzPIj7Kf&ob&{hDndc|SiOlP5J&Tdc`^21Utc#_LR=XC4y)SWJK
+zxEAMjZP-(ibM)DodwPb=2(DCvbqyxn6g(4fC-%<4wFA@X>*$nu1I8n#+Fd8e^Jc_6
+zc|HOp=k%o6btV({I7DfGM%_OABk@i;xvRYSM8;yJ_?QoJ;*0@QGo&)ShI=NBYhgSb
+zn{uC{2Qv-uW}^9wgwCle^Iq5GN2pbG<>gFm`}Xd;t;_7!+1_3+c*F=<o>1?4YTTUB
+z1Nz?&D#ri)9q;lFbwgbLl;Z!dhNY%PU8Ld9G{prP06^tmv!H0=X5eUSVyt3oZD(Yq
+zYGL9g^B0)->$oje-EiDsMesRM`%QGDfbjf-E^8UNMFw|jwOp(rQw$!YhIkdB4=B%A
+zX1{iv>~N%mc(C$tqRl&A{AvvvZkjgD$zdiH;#bug)^)T9+3UO`9j?-lrsEjY7>+01
+z<GjdE?UP~8UCu^P)94cpsgP9cGdJK3U?s-@Lo$>GKVn-tnb330$&%s8;IVozUM2Jy
+zoXq`{4VXse_W^Ue7)5ivy^M60)QtS6c`EINZ{GQ27O7vItwU`oc2mAF#ptb_*wxW(
+zem)3M?GE$UokqFq?hD74nS_t+FS-3-Qe4p~w?{}cS`tSZ)s?Dfxo3|7-d8bdihT42
+zRTSdsrx+TqSD5dD=`@+uZ6vre+^u+x=yN$<A5mAjKuGvbo}Q2`?jq!B$62RXt|M$8
+z0TMo8zZxYT(M2$yaf0`!1**UME@PsJ@~j3>ZyKl=0(N2)Mp-_<plfhqvHgb}OT%NN
+z%9ETSwK2MhSI<PE^3mSMyVVU+`h?%-*O_$ld0MsK*VobEq`tGZbbT_mbL1B2R&+)v
+z?yR4MZLZ~H2~dHu0f`Z3DPiIhOSc0hGW@Bs>KM`QPT*mapkRzokH<f>@&NG{Tl9Jj
+z?C*NUGPRK1DO2x_uh!^$MDAkD66uP(WX1uNM;K!<vKF=hIqiyXOjPVO$mv29hM%A`
+z9N4IiRj}w{c*#kzMCL|%ZsKg*j6&iBuuKAyy7PXslJ`Gn(gl!pG9c)CVW;&eB@*P-
+z^En`~a|QyjwmK@!BNw@`HzTuiPKd?xH%_~Q>=Xo<XH()Zu#;DCnQrAX+05`jMunGN
+z6`t1hwlK#c7!o3jWv?t%tjv!zW)s<_lUEh@tvJTy$L!CQf!7QxeoUO5orzevNB^=T
+z3Kt}umCn=)lkpKfx)hV%9K`rdT{(DJ3}q6Ht?egfv5m40U+puU?yTb1QbrqcxxugV
+zD2^ha(}y7#+h9j7e#Q+ZbJ)XWrM&?tB84rUFt4VEg3*dN)@^eAGFe$mYTbtU937PI
+zM*IrEP?nEhogKRb_81QP6e-5I&YOF*gefY}R8@wjqwOnF=gb&*y%R@kNYC@M9n=~l
+zwtHF6tG@qbwv6#6M)<CI?u&08tMRedl5q7B?}Frs>ZxG9n!;S9(TVK+EtAIo>9ShW
+ze~LgA;BK$`q2oT!!Lr%O)HXNo=3~o@8=`pIULZtcOVIq0qt>LAerf!388DVSl(LFt
+zfvQD|9`JnQN1l>S$T>H>8=+_P7x4c9x_>XTH<9yvw=n<!S|R`dr2jRvQ2LK2DN06;
+zCMLFj4HB0;m#!Nv3E!V6(K8lsONERM>&|xFnI#R?ZM@9~IAapBerJ8e#CsWpO&@i?
+zpN<WlFyA12>azj)k%$2k60&_ab-wB-9O(g$p@aGXw2{9<sml)TlUobE4;f@IGzN)H
+zBG65#MAK3k=<+Sb3q%@PM^vrwO5q{`(;EATE}Gfylw2p~-#>JqD+;4S`WfPmt>=I_
+zcd336#)(o$33UX1ZwK3o<8(#60_`SxT6yCYL%2kLU(d&`;2W9q#9YX0j0;|8(Vfq*
+zQLE1`cJ33G8};0aquipbPZQZ?4D(k&R<~Zkori%#J|1&N0YQ4h9_kIgbfPoI1(^nU
+z?EC1i@N?+;nFu2#c;ystlgCOlAt-MZEF$)90KKIFlNDA&OZ)VcXeD9o0Agc41qYw(
+z&zVoPkbjdNW<u^*D;RQ}azGD2JF=PdS}#zkoD)IMAE6DUB+;att+6WWB@zJq+$s>B
+zZ=_-vT{+JfR^mH0U<ZXgQ=!iP@z~7ei2Fp<N^EtG+qepUhI0Lmp0NuI)j|=Q*IsQR
+zF{s*52CpjhSwtXAj7!q}9*#Ep9<i<GL~ovI<-I&%xH->m!V5_vQB6`O!9cXPvP~Y0
+zL}tH1Z$WxmNG;Q@<1Wdsb4GhtYU8Pf#&hqr<geeInaH+h2}!sD{KY6Ggf^Gw2I>(&
+zwYz~WD%9CeJ0b1En0xP==N!<qSs>7iMCL5pK;JwOuZon!Q#2wq?X5X5Z@S71f}Qf#
+z9j#bCMxn=FT%A#+5<ld${~XX|8GFxKx1H3ze=+CjBm8^7A}c_y0Z56+x7C#roQF)~
+zkj{cWXC{C!dw18;o4{Z>#w{80p8WUpQ5Q0I>u5J%KVjey_?R7j^1Y#iT4#SIPKY&P
+zGbbK^b3ZVv84WCG8UZQx4E$OLGC5$>+B)eC_lndp*|tI!iR;|*kA4k{+cp44+yv+8
+z1621!`R+9e8`k9D3lfVUpc(W~Yp_+r8%7VbR`N(7Img^4WX^mlpse648F#KBN%14K
+z+}Xjnbd0gLWG%({b2nxGs7_XUhO!3p>|~*fC7-B8)u=8ai3ULQcVH<-42eEI*?6C#
+zN--djgzYfp)pRM0f)j(NA0dPqgNk(K$y$I382pA<yGh}}1c5`Jpb`35W(Z=qoKlKC
+zloL%rx${lIS+n2MWd`ew#s=pihbc6UVdAX#xqkZ2z>?CLOTjSGyF4%Epk44aFzO;l
+zygtTfcidrfClS!o1~9jG5pv;;IcWjjOmou@x&nP%=3gjPlN!OJvO^0Kk><8ha+_J8
+zY9FDZGDt0xhGd^+9aO~VlchfVy7jahsM!VNwmQsGsR!)aJ+gZaKMK82giQqOuW@|k
+zRt8rVd+q9>b<K>_%7eqG%VzIG3z@>sOTgI3iHA?RyYcy@rwLb%xAE}aexya@8)Z3H
+zv<7wKGtcPfh)gSk%J*57GCMxww9RMPhsg>I<hu_PmfvI!9te%l=)z~!_PA{a8N}Nc
+zB_#=oA!kyey#mdeBZvwM+BypFhe7@fbZpjRvChLymm|rA%O-*YhK!I@J}bK0Rsmok
+zmP#AmkH<_TX8G}2f43bPT;(uIpE9GT5t%@JL~pwz9-B@dZHa&;%-x~A0I>wkAAK$B
+zq3^{aqNX{yD~%vF*lWQHZYo$l{{<DRn!{e36&d0R&T&BBAsY0o0P#7GAU#Q!;r;|R
+zT?@2C1DQ>oU+?6zV;&zyw{Fe5JLXV#h$4npCZX^3I3CeJ@BH;hcl+KvlAthH_>MY*
+z<efge>v?RV(tVxYj#y=eyv&eFPJMV5H<n6E;4JzK!NV72^bqP)M<Q|OkLQ0J+eTQm
+ztAvJ&oE8uu;@~?~zn^5_nOo${QhZAzeYuGf(IC0aH%5cm^~C%@z!_;iO-Aj9S!q$k
+z1&;4Op5jM|m9mS%Z>8vBo9E&zR2wG*=EDgM&?Vq`*-VMVHI`r}+c#OHJQ#M6T;#s(
+zR?0b}a7nd}Mui;uMs9>#J@jp*%-{R9EfOK947Ac{Hl4(QQVdSe2CT|!ATbVf<qwbY
+z@s;U>>)1wg)2HJF_gQ-K0s@286`*)+7z^V->mNQz7sHTuBrAxUJIugOO0WI-rA5qd
+z;4bd_O*4oE1TbnZjtPVK!dkdT<07BrHzw%aNmwt(9Z=7i@7!FkpJp{BKThlDouPxi
+z{mPF_!s@n3rl}!MPO;5wpP$x%(>F*4I*rBZZdM~wTfz~2TKLn=`OBA^+@DWnkQR(J
+zkU{r&+oMza_cc6oKypyW!xkw}lr3%kkqLB2y?{kEw3#f4`>U{KuIEUwCOLS)Q$>Dt
+zOsmHhH(AM&Q*tF4b7%@omsOV=xT<sg!zxKnD3M+smOC-T_(}tzT1&AU$ykOMWJd6?
+zGzb}TACj6zDPTq_61gAuB(`NO2pP$*<I#>LiO71021yiy2&LQ`cDY=viQN#Bt_QqJ
+z?AgiRmtJaoz1TCdbaZkvBaMxTYfDFR2d#|<V=u-ZPv_Row!*rpXrB#BL>AAa$5eCZ
+zbOicH`l^Jx(W|@xw}7Inm4f{&sn*<|hXEC)c{vh5P$`Dld5o%-QvQN$Sj)N<wZG5F
+zp^AQ{7EfxU^DyKItms(YV*mO@T>>^Y*izX#>uPEB%%SIw?S_AXe42g<pY5~8Z(^Or
+zv6~0TU3$!Vwcf>ZPq%fr1jD6C8UI5m#z{W1SPMqSqiv05wghJ&4V5cQ4RO~Q8x}>X
+zTD`AdK2!@9ryUtpf)Xv*3<yv9v(x}s1rxnb+_w<%RVDOQ2QT30(GEcQt;MDyXeeW9
+zg$|Wy;I<r#CdgL52sR8h?v+V92$wmtR&NRdUB7t_>~`v-kDARreFx*A?yiWJw?Miq
+znM-H<2+1;;kqT8RL=@d%$<ySGvRJ_WUPMss(=I^$F75M|gKl)JEyvvRuc6to)LP40
+zRWQe;ln(6y!vd}{23op;YFi<hbvn8LEDL+*YgH{(RXudho6VlLb1Dp}S-OFZ@eM;m
+zx>OEH3i)$RsYB>Qa_Cw?PZd^)+?yDk(WvR;Tj$@FzSp=14YD5s{lU+!kaU<WBx};z
+zOh4s&MO*1phG?S!71^Hkt~XdjAn#+fyQQ#r%|DSuYfypcSS%VTyr<7Yc8xnp`lW&+
+z70@49q#k(M)V124Ydq}zWcNXBL`=vwPR`a~xL3t4wn1UlTh2vEOXOjV_s<s5pHC~p
+zmwv&604y@EyRKO*Gxt7~TDCRp&yUn|zZhLt^mC$X;9N!S$=^@$b?MtIH9zHd&<pEh
+zn8K8rg#Ij<@)9P?s_83M5J+3ed3p3()NM~dsf9<SVVvxX9I15igfIM=nt*+d2h#<k
+zG~u1lhj3K?svur~t&f7ib)r<-Zk4Q`*km2t)CPVJce%M0yY7=d!dz!l<Rjg<9%ChP
+zHSM4QFx!0^dTcoapZ5sLZ-*0Von3bbXo}+lB7r7#)2~Vn9~WCsZ;mP{887z!M$iwP
+zT}AByo@2lUA2r^ukpnTVvSnSj{3XLia}O;-D5lhC9EjJbwN&~=J{J|14q$^X*Jp5`
+zz`y@~fYap%tN-G)6p&x%Nz+YffsWS22@Lr5nD${Zm&Hfu)p+W}khV{GVrFvHrZ`~4
+z(1QBw%N2X1#K0!2R1UY1#ADt@qJqQq5=pf~dRSacu#jK%GAcaKDw_QiJw~3M!SSU?
+z9sG`!y9ZFgitd%(52kjTH~n`Sqe+9A=r;@<*U0$SS$GM3POC$ym+=(`$1GLIne7SA
+z-rO<xmQ#?+q^iCVK2Ah`Wl;k?K`oCxB*P%aNDBdxZg+XrEcAkdKw>a;8Fbq>XA?@d
+zFN)+-Gjug8U@4P-*%rdbPbI3HV%0601-bXfmUfJc+IipM9$#N6#Bf@dVa;z0iK?)D
+z8G&9Z3>fSme2;J|bjY-5-b#@cBJ?s>xVYLQT{Mj5rELYw89wdjlJ?Ik7xdN#P%S@(
+z=XihpnEP2CJDZ(Ionll~l?Tuc!1j{_7}}?EbGk)!w$p`Nn*`dnv5$N8iAT`7d~H{D
+zxf#*0nziK!`k7dqcYmINz5giDjhQzDv(qN+l2}T-#^NPxL4@>hG&@ieN}`^(ilkvu
+z1LZIiN+(gmhN(CMvl+a=SZlDX@`-kxzt}JNDcfg5F_?99NMV*|VqP4il}8Z%=j0U9
+z02qt_ubu`v&josdK{9m`he8NLFOQ@OlK2igpspuYLi}lkIdoH#iHdY@OUB@_4h0OV
+z=vf7}NcY^B^OG%idbX^nU2RsaqofDo7S6#eGr(<0UTon*RsyjL{9ALQSg%v^pJ!3h
+zVJ1XgNCoIgtBL2;qp+yUrK8n<$WcoZ_qQ7hmH1{0_;h4y!0?~YQo3TrPrP@}yo9av
+z41;T`mGh4l_TV%U^b_OjVDJ|k2Q|oP6e_ZU(A}z`gD`e?dk;Q&p}uR%O<NXL9f<wG
+z3A;T~dmCVM1_%CPG))(U%RUupAz5i^`B4><x>v5cc}qUX<r~#-I6x>~7uxNxvJiql
+zA9<*e_6IqCrrh$FTPa=n)Hsw19x^$W4PW>lQ$%f4DJ(pZSSBCRoXR3Ma$95*J>opP
+znaEN!1w2VGF{87_tGW(>`O+%lO|*QjOOyK?C216HpT4}@@xYLv4b33#|IWi+>l`Z<
+z(8r%^oy3f(*^_?p>*S2{i<GOjVWB@yYVqkWQ+ZPj;q3@v;&Po5M2qiph#Sjb7Ym|U
+zJm1~zktx3mR5O&S3dv7XQ-O~s(rs@C>VibHMb<Z!1!2DJL?lQGNo><CRHU2u#A0>e
+zOPL*!(w0;%s<nPN?LP*e1AUH~^ltuPjNYM)_>dpfBVt0;aq6YU%cf(GKLO+Os$;H*
+zb|n;do|0ZouDB(&5JY;~ZjOy<?JI>p-<%+KNnlB&iw$_c?|Qda9FY{<8njL<netvG
+zD;MbX(-ee_h=<(OWQt<xCKWNicY$4{W8p>3rm!xe<i|;K$AQ(V5$7ys%cYPt+|v3l
+zPnk7~`#moi&NpU>pVKwq-5~lMge~c4x^YQbEyce1@#ZJ`9%KiF&!wciywtA@8X6&m
+z=&4VoYZ=2D2?8_i2Vf7JS};%eeFz2u_>+ju1+80*;yLMAMZ~gR#&`!NzLpB>N_gCn
+zEmv_hMrd6AaP<mOrq<7zqK~qW`aW<8wfY4$XFr54`|>K1Zcc+qs8Wa%4V`{Em=Ym@
+zTOt=4>h+@?h)l^h4V#OQ=`NY60GINDCWL|(Iy#EC5~8Y3D{|`1G#JqjT2xS1D2SbJ
+z>V>nL^WqC*Qw7pU987@9m%EE%X?T{Ip4y1k<xi<Pe96%yqNftO;<;50QaU=~Tisml
+z6oNneKyWwp9YtR6J+qO9E7GAz>*A66h7~9D&{``^wd+Isjwg>91n3^xz_eA04OmsN
+zVcGgj_;E=1EqzvP6Qpi?>-sCAr8uHtLoscr-&)sZkwK8HLCH8sg?+9G{zjl@E$E&a
+zFTrT;?5d^GRj;OL%#7;xZ5%1W8w<;M=~#-zxn3F~iX0ZH{n5$I$9h~IPG~Xjo}fAD
+zU9)rX7CtBV!MbVDjVNQdKAL7j?navvae6Th*&Mn#Jn?rV|3vL$5QKh~<i@hNNM1L1
+zSY4D=$YNJAYcG<6Bhi(#Jfwl^tk%E}Q~9#X=*AWqG`6KgNkFB`--^$oT=p_vF?>;p
+zOPZ9c24~2%%Uf%H)!I`zqR(?kyw&b4V@tw9rMbuRMDWLR^PtI36HKc`i0&Z!&cOsX
+zo`W)BPpIcx4F{QI86R3j{TI=sUnw3p)n6m3y7~3LVyhwF;^pz|6nt#|a2CBPK)F-8
+zj>=bAA&9;gO2MvJO6R_>70-28XWlurtN4~0L3R}R*z9o|wFpX-IQZmg#>0{LP;#;C
+zZ^%^~`iAnIQph;Ugs9+fVap4%>#mc@exQ!D@KkiJpl~<Vp~lo&XI9^NKUXc|8jU*+
+z)ShFa_yOwF2tIJC7;Vftc}&xcR&o-wCID-pDG<pg|JrBv(hjxGGP~|USoYM~CvHeF
+zWW%n}ahvZyZeLoOXxVG03D+ysUm(1s?UK=!49n~4sN`pkqqb7m8yCG35<9n*jVJO|
+zQ_PpD8$3bR9@wRt{^i<yjlZays)y~s)ts;2CW<N&)bjc6<-)2J<4-)8qDfm)+iAfO
+zx4q=qk_=dLne^HJaF&YPjEhFouufXJW;CT;xmC+zM1$pWsvK+2Q^P|??Nake1ND9P
+zs;`bvQpRs4d(aljI@FkRkyurA^0rCR0_^F^4s3Yhg#Q2xb51(y9h>y|n|w&Ev$_lq
+z$z=L5q+a{DwAosSwO)|?tG^X?sP>DI%lo)qO`;&53w}c^Au4-$XiKJ)B1&w9G`Y)Y
+znI$=+@FHU}&m!wgYpjYP>qP5RSHy<1+C>UQ=$$e&GptnkA~fbjsX9Q2>^Oh%Bfdh;
+z(cF4dWe(4~EwV=6(%X)&v8d*!pf}BY1$)d$;S=wrk=v1cL1UC-(-A%oeV4o%ZWr<U
+z7UNIp!~)M>Y2iEOk}DT|_W>##R^?Yf4mp`tJZqcoWgbU2<|*^2p_oD`MXC1*Mj{M$
+zZ}$(D-g`w|+L5Xrulp#6`T3)-YiDt4p-4Z*3(EV(%<mEbc?oW(bjPBe;LkCJc5*NX
+zIj^QXxJke6V1^&K^iONy20HVDM)@B@E=A_5MwqOY*hqAwGHLDfBAgRTip~>HvRn#4
+zhy6vbBGr4O4-ICD%m_JyZk^W3xzBW6alzZyZ%iSHQI#<;9Cg>V9h7)IWbCU;ceP@B
+zu1UHy1+EXw6;Zb(6TU(RGe9nmc(Z)ix$4ooOj@a55{;RDV!p)DW=V{N$eu|Pt9`-k
+zzy6+}!<CNhMFsbpFd7=7$$_A4*)-4e++>M}0QS+Y!+^(vU%mcDz5~T~pH7{DIxA6V
+zaSZNXz9Y@^pmZ`k9jzuME!_D+gbsRBW(8eB70Vn<^76IBQ?nt9+rx%N^<na9D`;^T
+zdH5M@NEG{ZcMsCF7)IP#s;mO*Riq(HgwbGB`cS95#kK%%6NY_Tk7EKS?7h^~MG9wl
+zGEV0q=zW2Be+0kq<NopB2>bEW&?44NN{9mOhT7uD^xX)U&XdHhiVKgEt;jBg`Fs`a
+zRagZKNPCrYzxCP)RP*5WoVrBC5DF(m*V#G+RYO7((o0dw_fe;{{Cdc8`!R-q&5c>|
+z81}-S@*W!2sXoA3o=@1_?BokD)+Y`@S*a)DtwC<!FlD*TP_Y<-<)oWDSM-9sH=m#p
+z<1VY~JT}zVBi5IT?C_JHCY?C}$17=*>PQp^l)&hT=S3dnC-4<YFETkV`oc#=rE3+Z
+zEY*=49I647h9lf@!|P1<weF<UEjce1myVJi=-A;fdtA-3{zhLV#6vy-*?Z4&ozGP5
+z#t*}fI}s*BYToEmOP9s%s9MAh&g)z+I=u?sUx(eH)i2t$R`kUK<Na;>HCTgb@%|2H
+z$t(z|m4w6WnZ&8bkC#Z5Xt|jPbN8{c?`#{v+bT6_<^z@E5T3VRALqYc?miq9@y)0<
+zX*!7OE)={A^HKHc9ui=SFBUM!p_bNC{VteL7D%uzczeBoSLRk`7%H@R-;NLYVz;}>
+zxv}uO*gYK<e^x34`nf$^I=~L}_n&TD_tbDJs%SYp$-p;&%Epv0jfRpgkuWvSjJF2`
+zP>?IJ!0=#fnu#FNRdS*OTtW+grhVjfbqeq)S2^^6Bpqb{X3QBd*fkVjbGy#KyfwSb
+zNV=BG!Gzp^4EsNJQ(0p*9kxI3<KGKt>9y$K&}X^7lS6|xK;x&<18*7T?}{k#TN_$#
+zSG>3x9<9*vkx>m9i2LD@!Dm=?AA=?tt`+Wcu=12d&afj`5y_XQg&y)ICxpD2b<B!Y
+zd3mhlzn$m6d2?WP^RNUuF#y`2VCdk)kde9*@~Z2Ae|vcQ`o7MA_{j-<eAssPof&ic
+zS_SH%cul+9jJ*tk;4I_;zU}?K^Y%6g>@nG0DT)EY_v7wlOfU@!oCBcy1W`&?xh-#R
+zSqmaDQ}O0t{(iV1kdq=e7T`xIh#&AULu`|jez#W-gtd~fM@uu6M#EXWi6{)2DR_1)
+zSp$yaCdv?Lr2dvPi1<xJ!X^^y%IAztu2`bKa?@Q*QL_0cj4E-;nE;tQ*9ICz>L|J0
+zY6FecPdr>p<c+^2?2T*_1wu@m8i^u~F<=Z*e6Z^NfTs!R@!b(0?mU*DO`xs_pwD%q
+z@}>Rb0|NP&WvI&PB!hTSJBB<l40G^{tU7tM<9IHq@^F^pWUe4-)$v!xT~e?T!vqlf
+zNxIX`$Lsz58>HP$5qUt5oWgnf{bMVDUe}-xneFWp^s6g?{*EPoM44>RxZW`H)V?^L
+z+Mf5d{@5p7-~e4tZ@k|V&l-mthqLO-oR}YhMEwqk!gT=W_y0gRX8)%KD$al5hW<S&
+z#<rxJ9QB{+E<OYRfWW_?{@-aBe?6p$NuE;Nphp<F_Kmy@iJ)MC%ngBa{=Lg@inQr~
+zL|z(eNEH!DZ9>gOfB9hW2GjjG9_3;ZCd^<PMfZARr`GwtqcbJpELVa;n9dIQNvTwU
+zkzPV<G`{EY3&P3q*qA9pe!_4}y95&fu{2>Q4i0OoxFCZ+@ikgx+(L?WLG9;yHvwV6
+z%mbfcxQSqzJrbtURhxpaNQ=X)l?+!_nFfBZ=JFNoCPEDjKhNhrbqW*~1E{P&Q!*ky
+z9unr(iPJ{?F@;uq^shjB2t~q@rf8t)Jcyz>@87#lzgx7ufL#+AWUMsode=6MugOpD
+z^3i(OEmd)Lrqxxk2X#;K?tK$sEwqK+s(I{YHi&t0RycUt*q=DFWgZxdl^5&Y!7mR6
+z5@nu3C1e}1UIw`=)o|e{_E^j-kMOd8Z<K95v3e7p#sNgeVGSW26O;G{BHEDV=iWz)
+ztfOF&n-hopvK7zuwLGT82S(LAg;PLzvIcK)tCpZ`qOx>W6Z+;2QCV0mHDSkC9)RIN
+zxwd(+1>~g~w*X%mxOybVfZg3{Ujsn3orUxH)?~V<Q2VKWQ;Z)BtfxeUS~*J((-lZR
+zp&bzVb+Wg<)G>%Ud9MSbM-<w%9M^DaayMbo{|Z2@p<zE#<t|K~7k#KT&5{()Ovuk)
+z2a4u5euSaNsto5WNVI5KyaxnGBTX@<i7JFBCc)i_auR~I7F}+}BAxkF#`e1<NEcyw
+zaUG<4d-NL~DfsHq1TbA|7xegvhp$R$C-~|^m#%FoiQ|Q?ZsLTN0kvE(-|x0TM0&Rb
+z`{BdDCNXXGQpHWZ$gC>W>{Y13alBcyl7oua7}~?~{JSLyIZRfxLt$3ywP3TX{sSN~
+zAf9WYHx;&d9$T$p&}e)ByXb|TrEoJ~T;F#P4}s(4B842u2w6R2U~O$j)6lB&2Fxyn
+z)-u&UhU1`uJllpjp9Axhq%bah(}dG)*Li$6D=^`pDJ?ky<!F<-as|OTLo%NJ*d1O{
+z-udkT8-3x<(Aby<SP@0c`DT<scg;K{%01miX4%TrXNuLDJ*>ouy?(0ryybyKxx`GD
+z{jI*5@Bf~mrm0PO4S@pyuwelJ@c#=j`ER7~zYfW4jVap$QKX)C3MdYcMSh_vLN?&(
+z8fz*p(IR(!O1LMKrqPr|hr}u8#BuU|fH4}c9rQHtv;jkW0lNgUwF=t=LXnp0LH|8d
+zwI#J)ouwitG`@P+F!f@CaX<MC?0(h^)L+33(xAu&6u%57lzbh2%xj+ksi&BeB*>@V
+zbf7SDtoh*+s@K54Ymh1mD{3_Fvq@6&uqXsr)h=o#YwQmOM?976p6R$wJS@y>?jaL-
+z)1-Y6YAaVdy(an$D<URBS?QyEbM&{bT1Pn%yQHHM9__{Wm{NJrR_2*cs!SeoRl5@I
+zy@?0}F`(U+zkIG!g<DLMP%TTA<{xz{X!P%(H~Uw|k3W(*vU-mY(?Q{(z84bt(8eH2
+zsA=zX=)(@4rLRjVj|-!fQ0_5i4KvJW=Y40G@60m^_a;nQqqluD2DW@u?G7C-QMvC*
+zU_!%EkkX@?#{l&lJN$5k3e>)5$wNpgG1ep}7dWbC|DbE^6rH8eFGM(oB0j++@7_n2
+zzDb1KTRJoxAzm%gpeajcgj3tC1bP8omd1j^&vJ+}EY^@_)M`OeM4>kD-xi!G;%6+y
+z1_t7ofFj+JWKws^sj5rPbB~2uDzjSB>a;S&T=Kr_(g~p*s}gn9M1w+?Q>c=7_2B(1
+zbQxSW0dtz1QC^J(LHFkq$<C58zYAWS;_S-i_2y}*np~bHX&Q&;(30DG{MgXQTv^tj
+z(Z|OEd`IEk=GorjjG$qK=d{ScTy&^TI*jgWs$oal8ZQqEQNUICVg`M8I~<dwz?GWk
+z^utR^ljUw-hr$OTa{nap&WzYM1nE`h9hV8*LMrxKH<S$|&0qol#4*DBq|%&517Vt-
+z4Vv>G{J6@sOC{E?#@5e!K*+8bO5kHosZQH#HW9O0zZy8n4a(NuJNW&hqw||I+P3%W
+z>nfAP+hd8u+t105E9zIcGH$)4jKeJ+YICLuMyjR}1Xq<IEMSNg$Uq_~e->g6GxG+M
+z0<~Ds>)t5}380J>fQ(Rsy*Q^}I;E^k-hLsF^MK|Wlp<F$iXz#ieO%HQi0SbNQYJEW
+z4?u~MwTAnb!2nZ@MnRnqCbve{d}y3{Wy>pQXekiaD7keIjikh9kb2CjJ{dn(eKw`q
+z9wi7&)1K#uq6z=L-SC9qfnEz5<~fs1oqlzLu#9xNQ#V@uE^>u^F%t`+P+e}Z^a#w8
+zzC2N$yRP~!pYLZ}cRc|f?M8f&;=vpPjhv<4)EqKY?Ow~$UYfk)$kr{qb`VA@-0w2%
+z2|;lvtQHlVni_B}mQ<Ub6?+<uP={d{I^~l6YE_CHA9UEoh_|5P@w8}1mAobSn*qNN
+zUT?$Yn_MYKW)Ya>%5&3Q793wGHECc2HiT4t$udSTFE9*$b;A>UCCfPxX>1ehRw*o5
+zsAV8Aee~x5>~XK?5<FhT6j;%(H2V!R+jBG&H4oAcZ6n$Tysww%>t@&kR%X?AI5D(i
+ztU441KEARsS#qe|V04FYK@4GLbRARuv?9vv!&QfNSm3E;N;KTWFhdvts$uqH(`BEB
+ziDW9k4jjiZHo~)#%i|k`eO<B!1pPKrP|7|^?Y%tQn7!K@3$<Gnz<eq}I*3Bs{-f%5
+z^<KdFxJur(^Vr(!?QI&fqDr59=r~$<er3)MrOVE<fdcS_mo<U%PNlGBN0+>rpKjP(
+zAD^vbd4>LPdOQ^tJXfy9P8Y-IEVD}U%qmw2^BK{w)~Fk<Wt}(<EE6Z*Va>bimR`eg
+zyLNlnC*PSjGDPcVKno>^YmSbWkH@~Zw!B)~xh<;PagXT$KZhCyf1NcA`-<TV)RW9>
+z*47Vk?~}wSSXFot<H@@H*oEA3sb4NVzJW}6ZdFq37~rC?GBPUFric-Z>9@>Z$hPkw
+zaXc?b>u?!+oQV#uyb^WWsEAM<35hMFW{V~j!OpUP${GH2UEuR>%7!Y`$L7!!*U1Dz
+zUjRkJZtl$aI+Zn@oKKb~8)eoZeUz>MUbT=4H42w%IXFcKHJNy7i9i{L1DtT?4o}1N
+zE*^j0a;$>CMxE96=mUZduV2S=t8q7asapTGUaY1`?#3RrfZ!<#b&OOg&ubV|L#yE_
+zVR6olfel(wuZ`pl+wrc&8mJdf3`k=R#xoZ>%fxw|)hq%eBEmN;9LEm+vtZlI5VyO`
+zJp6=1t!w<|s0RV~N5!*O9!tL6<2<lS5sZ4<L*J5R7vd>{JB<(N>_lo4Oda<@uo`l=
+zj2*KN6qky9(Sv<lQP19rZXc^n-=Y<rISYp;$z{vC%kL-fNH>hqA27*h^r~(t9xzs<
+zTXjCDYgQ%TA4yki>xFrWy(qc^5r>T#<~)fLf`&Ga)Gix7z*{}wLnp3b=L6o`N5=@0
+zOLFdBPwsxdmf(edLzt0s2o2DGNUhQV!spQjUu&}{+TDJ=ATi#;<SjgL+?WM-8{U)G
+z2k^B|cR+VtBfHLi>!))ioRyjTg`aw_U+dO)=rL)^ktrGGR>qjVri98qYSgW9Ml7Tp
+znMWB#{TBMJvD+y<SDEp9L-CmI1-xNw7FzM|`7^&GPusTlM#Xzmw!1{FhrE=M%}zY-
+z+{U0=qoSqzLD@9QO4QZ>Ha8J|fD<6(W=9D8om1YV#(!Gy$pv+*Qgw*_{hymN{+(}i
+zy_)pU@P|sR{)e3@@vqhj|1Bf4T17_bPaWU=hmkpFz!)e+m)<g<hRJwT7!-iVCAhr`
+zq~S=y(MSLBJnpzZ>VgC@oN9dd{M5a*R0BPZXCB$7EbG{%h6P(%UXp@MIG&{>D=BLo
+z$^i$)O_$WdZ&H9NmlM9LWIQ8H(0=sdUW0^!P2UJgYFg0;Y9C}@;5be)Mg_;A4^zye
+zD0mj9VDwJiqRNA~Xq<dz6S1N))IwxQowTQVcB0AJvbe9}^pelNJxmv)v`CJbVcQm5
+zLSdQUU@+EYAuuDm<xtuRKMqBk3!$W$oFc_+Ou0xD!Bo*Moo#2s;DM}D?6&{a4a$sa
+zPsr8>LPIiv=I_N>C>K28Wt<}YF{59%GacLxgnhGQ0cX$))(ItL<T9q6UI5ruI_rJR
+z-4_j27ReR*=z{Ap++?wfp~~t6VPu|E_@fJkyH>F-s*)+RL{u;H{Q<Yf!}w8IR~%Rm
+zh0+p!9b(<*N3TvT1MM};!UtU9=|paKclRCy7Nn!M{i9PGvv6u5x+WB9gArxkLo@1V
+z{6J$SKCY2(UFYz}Etb*O)(J+X(3Y$%*+>9WjKr8W1C1JElWSQLKP6X-ptqi$5+w|n
+zE@O_Vn53pmj89xD!uOf3xd8{$b%TP?JEwgR4pv^VidiJjpfpiWC5z3l8Je-18MrpY
+z(N+Bs6H8#AC6u2ONYzzKr#95I)Lw<WjxRlT@vh=16_jKe2V6k*7Ac#mWoyju@5;j0
+z(2#N(^rUb7N14hw0<l!|mBgsbiA?vLqoySN+0IBuyJ`*QrFAU~OXwLj&aOos`;XAW
+zAeg-+COs{zM`6*&=(vHY`WQw2%&_&M;}br{M>we17Bv{cYP2q>6yZZGUCyD`>MhY~
+zY}4jVi#l-6QI~<LpOq)waf%oQGBcV3n?hD9dBukpyZ^&}2E_jwA%AwU{%vRcx4T!d
+z{yRBiM*}wlL+iiWT0aw~E06wp-Ax=I0KngDRQ-$L|5RXMq-Sm5Vryh>;;3i(XE&#r
+zqn(SbF|GSwy_Y8D=LFO*dIXVYUy<+)bEN8w6xEx6Hit{jra8zG(xUuGz3a*segQKU
+zr|WEvC<&`%@Qb;6=6A}U@4vKkj4=f5A&XVuDw0%M=Q`VI%AL8+RYb61TW5<iesG);
+z@`rLDhj_X1pV0)@s#Y)cYv3=(9bJFjc>u-PMJ$d1v|h3F&J9mi)$<Nqn)7DRqP-9~
+z>10h1Fm*+G7SZLQr_1Kv{BUk#HxT{?l^%@#1cDhQ0HU>|HI_CUgb>QoW)I(zpy>89
+z*yQ{#Y*C_tvgegQF1q;RBC`L{$A4VpWN&TYWd477C0Sv@a)2J8>x3%UGr3R<r2>O1
+z9{fjYjuTqTI%+b}59rc|i+e^3Nnn?!y8oxOtANUCYuYbJcOwld-Cfe%A>AF)-O@<6
+zbT=Xm(n^<HTDm(0>Gp?@&x>MwH~zz7!Gg8tnVG%Md1vPA{mj;<o~;tofq1f0|96;G
+z7B&sVnN@ZH1li%wCKR+Vr$f(AtM_0(&PNFj4ZiRbT0?P*!ZS@yYfZ{$yAW&~gBONR
+z?@i#_rQJ4P=r}nt1WnO=D9{f{^^xPtG+WhPZwJ!*&cjXX@+Nl{!+8~A^#x|qP9M*3
+zszih${KXBd$85t|=?Yt1-lP#w)f+zj^mKf|G_74-;H8F1U`ceZe4rg9!w(fv4$kIJ
+z*C4*8gFh}rte-i_Ufa}8--hyMOZoOg;t$I;%?3CC0F@a4Ao{%o8(Zs})63s^xlr{F
+zbL<+#cRSB4eHrnA%CKD`@OLLvI?EbN8db2~j*f!WCDQW+NgPFP4fGk?h<##R&JhDV
+z-X+*2;I>w3+$TDJl22CV;;ff1Vy4rWG7=|GfmZPD%!K3Qs6xh+^i7l?*HmrYaUCU*
+zt^V`;Rro44uDZ*PLW|?~j#|F-$%Q_XU%Z-9!FyGeniwovTPSDVf^wQ|bM0U{?QS(C
+z@6IX~9=0n4HQTGSIB?@vqAS?6lT*jK2A0uQl8|LK3@5Koja+HFN+Q*CL#0<8X<BdB
+z$gZm=0UZ@<)=N?!j6_?0B0iuY6;V>DfL;tio)BRvJ}_*9tl~kHLNTc^bE1SPF9=c?
+z@vBVE11)e|t=12bX?E(up?_00DAK`VGQSb*x5G^@ULhMWBGPMcNtKP{VtUBj@hY9L
+z5Vf%=vLMXa;>>ZxvqFI)n}w8Y#+fF(@Um*qsdvq!m-8}+wTWVD15^o?yiOGI;%y|V
+z>G7uKRgd}fWj8HzWyCQ3Gr7Z&tAUMX+KVoxq@~1+1&5s!R6Q{hEYTwHfd-P@hf=nL
+zwv?Nu3FD?FU(%LsQg{ZfDN!JpQ^{#U9zP(TJ7P0<E$QUAu*0_6mL)6b+Dhs=0*qpd
+zur?+;Sh+%%2NUPI*^VuY6lE~Sk6Lt@20R*@EtgitCSo8kEuUcogM_Z(JlsNlA)A3p
+zt^e5fC~C$UG*zV<>d9x`;wxC9G16UG`}XP>BWgkDs*ai6oalmMwy|sz(1!)mGK+8g
+zgmy8hF*%LTD^7WP(LtDF*k|z;0K@HP)NQa%J`d`V$|c8aB2DI6`#*%x;nQR1GoXza
+z`1@-p*JxB%l~u&23_Syj@DI20?SwZcpa8%K=~jtb<<#z1kks$zNawJ9@^#AUkxB-@
+znSrSLi6wjl-GbI*<8v`d`Me<?jD%(feqy2&w&pmiKZeMI5)C~TSR_aVZQooVIs%NI
+z8IKKwp#q7CC=@4vH1?#dWPLvdt!Tvi51uqfy=>rWZ*o(5V3>%<I@%B{lN0V}xJ|{K
+zoT*$+NdjiEYM?r<8Phzlgo=Al8!pAIz#C7igN}IFTTUB1ytDEP0hH@dKJHKhAb5nt
+zXpeBf9u!po&#x7FOyWqs@If@B^OAiy>(K@@XuZ~0<3lZphEUkg$(qH=jKBESGg{XU
+z2*L3I9l0Y85{`$gv;$|h;DgDDFHLemB8AepvQQcXl3b#*Tm)w%5KxKbuKw;(1(lFF
+zppCg4`T`!NgOz?|I4u?0xM`X+Dt4(nD*N%|QfD(IJpA#avfvtVFZ{(O^^*#0Hn(<#
+zdP+mvGsHDwcEeqJrzc)Pw~3{<!zBy2XERU32MisrDpPRU<ZeqYuELe(D@QHjF334|
+zx6H%^YGLv5?zMwsoB`tJLpelVt-d3C3Bhf`k<}I@cFD`2lU!Nv$(>qy0YeX5LD&s5
+z2tww#lD=R+*xtO6Fu7QGiC(mkqsZsuby9(Lg)ju<W2ZqFm7O97M61$l;@X@9;iXEG
+z4YLPk%_|}T@uaYYe$qUI5PrIA4ro0Vu=g=F!Fs}c;fx-Jh1jwZHWxp^M$|orf5*gw
+zCekal)-%DMhbhHEnljyhPfFEIX(d8mD6x8G;jn>j$9g2@HD4I}j$HeK6QHIFSoTBk
+zvKVArPRB3;7c!zRN$|2W+};JCF@1JfTI)ISb89o+I!*U0lhjuIb*8}<shlCcz$-`L
+zMI~=keenW|-eLwutvv#M%Ms&Vg!uG?IMq+-yE9DEuSI)Yuu%lVdAC7Yvv{Ym#93cq
+zFlpA&+7yHtS%v#7wDFYT9k!(fzFgpEK)8zc@_8x`FzuXD8A^3usx2vHDU@5KIeORQ
+zm5TV@@`|{@u#}d_mJK@ucCMrb!ywbrb(F_4qL3KJ1HjA@5oH5g%BbeCUFlBzeER5l
+zs*aMFaPX=CXrzY*oNwh&oSv<5b(?LWWk(t4!)2vn!$>2m4O;&m_W0N4?O07<aiole
+zEPXRjk98zjf+LbeNe;^To|lR1REHX=@ilxrUx!ulNurT=Ufyp(cBAV1qBIr1XYM|N
+z*R(D_o024=@p@ehw0n-OPi|CL0<?12vZ+xgOgl%VkO~t;P|S3a5ee&|tceUHH>`0E
+z&P?>NA8)Ec)U3n|S0q15P~qS-LDjVW^<x<9Bp_ML<8e<bOVp<IK``ZcFdf18C?999
+zm{{6mAr-?KuI%1N0aNlPwPu}!5Lj#mut^A3idfW!Wr4nAcA*pw!*OfW#9K(t59Vv<
+zGx8mvp!wjSKj=yw?#aBXcT2=MTH|%2YI&P#O*}TrzIC*15+3-dl}+*S8Avr^SN#L+
+zQo+V6e!A{Lk&I)tP{CNUMCsTqug`>|t7GTFp5`o2jg%+R!=N1_4uDaJw~VHSm{Cze
+zaP<(isYV;FGupZ^eJfgQvzhjA6Z^gJ`UD!fuS?pNiFup4_@$0=HV+e0bP+hBp=Hw@
+zl*t>%XfNO5=ZI%H3r|?DN(L8tTX+csedNlu^OlR1OH{LH!!E$A!w`(pv(e3Sz|npH
+zNx*&@`c48#_cEN5YpS5MP0dJK-`5PzbiPtOWcy=IThh>{Qbiq79OBHPnwRdN3&<XI
+zVU*O<0s4;$lq`r2BgvKFj~Q*PWeyvwn~TX)_u?4&YF`}0_YS~7xKy{E26u3FOvoRP
+zm4~>}I)ouNg$cFqC0Rg7<m<O2w{j~M&&0}>ZW|o(i0zJY(U2?wp@QmZve%p&&uix{
+z_N#anwvviK4}Jk_=nGE9;zIf|L`{t%Cpo-#G<`xcYcNLlwk?Sp+x787lu;uDK$fGu
+zsIbT}NI=PmZetNhWr@(aUb=Sm7-8Iscwl9d5A|#DDL8SqOAIXVgl*;QK)nSY;!(SS
+zA)mN?(f;x6MzZPCu&s9249-kF%W|wK=R*Th*g#93$|8c!UZHbtf1Ako3JLi3)E5E4
+zu3_CnMAnSuO08N3-j4xnQJGsoCgMW`U5KKxwM<(NW>1TRus^~0aZ`*r2RBDhv`&Ez
+z3j~NX5yrDD@jRqjqd(s0u-c|c3e?NC612vy>LM~)%x>~v+o6!%Dbpt&M%sAhqhQh;
+zZa&29E%j=iZP>$zd5i@ldg%%)dzxhBVishM&t}`t(`=Dw)9N*VsMNnqJy~r~?Sc9S
+zK3|rl7?=0&sp_))IEyHaz`{;<<9MvmN{A?@nziiWQ{Eg<j&rZ%M{{_wdAt|v!L@YC
+zRUds@f{dmQZBFW`mlL7E+gmu!1dQ8N5@jyvCnCrN;<@*r9swzEb=M;^<VmO5;35D`
+z76Nl>kA_96uLRtTUqdl?au0Je_T=DM6^r4A1w;|PBX`S@k8z*q_qus->R1#Jl_<?%
+zRE^XR=)k0xb+;016F<-`!Z5+O&&}Io=MwQUBKZUi1dUS|QZ`zw`eriWlkiJw(2Sqt
+zfpQ}!rkgpY&a(*ccH7tipx{_ju&H;{7hhs6wnH@b)$MD`r4Ho#Pam}OET_W1@(!7*
+zeZ{logcTjSkL9=XaCeJ9a*k%oEoo+5bitLzI{nBa#Oyu2f?qnbX5aC7z1!eBX;BNP
+z*>M{0C)zEooVu7bJRC`k`_U-<!DMJ!#Bzwfsq{HMfJ|bD5U;b<VTImoS=)Gi!UNkX
+zB70;ghFz_Z&5tIFAvl4tBit-T0K1wDB8pL*DfA~4idghaw#>6DBKAHJ{7G*E#X>gN
+zBGZ;#Hr;w@Y<W2*Anjv$k_faC2HZFLx2LnktLOj@QB0m#$~`eHE|!iA8_N$}U%|*$
+zq?SZP!C=Dy+p1fFax=4$UI{nYMa4CQ<q5syOglri@wwWD5NgSxv0>UoKN6&N2kcsI
+zx$#g!PAUL9bcAw6IjRrC*_uv%$f?kYwGsxwdiTLY+GT&U&wX}W*8(BUGOe)P<6TEe
+zhCMC4Xysr>E-huR8(gDilkkfmHsBH7DP9?dcTR#(>Cj-0TMeeFA1qt>0aYUDfPd5<
+z(Aniqy((pDkoqEm33`#NYMtgivoXhsPYz$=xH{5MO!R<tk7fRy3Q9ek<k$z^a3F)A
+z<Cu9c4&;6T*W|@))XoQC51pDnW{>qyYH-Fhq0d?v!B)TVJ*8^{TUuk#<h2VR{FH{>
+z1H3UGYTuEJB<+@Kh5O*tL$VU2BOxqrbccH)OoO#$URYS0%9uVP7P)ge3k_4~;zegA
+z;(<*7-{}B6gyN12qjrh|UKt$BqlS31SzUM`;tB284z~aYL+0aFEP567a)%wVQS+3U
+zf+2>*n!yp9fR`f+<(ovNnfMIt5$7gLbwm*ho1?@wpI;t7)IdPd7D1Fj89J#EkAvxd
+z2IOHDnT{Nd&!TLp!sR((7z_`@W4Bs|;*`wam-*I1*Wj?}wU2j`M&T>5(Bca<*uz<T
+zp_0%@0|8!YMZDe1E)^oJRP+h%gGG8z3$&|#MbOX5qalHFFHH4%b{A;Uy>W1|90wf?
+zm4bC?fwIj(Kce#=gO$B=Dzl#x=;DwQ)}C9c6{I=gRSLht>U5t0DhQlp%`ga*@s^l>
+ztUUg)17k|a`4Cf0dsB2+QQWyGd&8JU?8CHdx@0Nh&TF{9nKvI%SRVnc;Um)agV!6Y
+z1~ve94G9G<F0D0VOj-FPJbV&P4fnp-qq3owJkzPP(ZK~y5f2L)o7lMCE#ztasDt~K
+z)uztleDLtnH0B`O&+85{XKk>rPa(F5Oc;+)d7lxKVp`O44L`f+RCbS=Ra`d~U6jel
+zSsGHN1I~=B4;E^yv9A_wAIc5L$|^wAxAC1Qf<WFBp^}Ff1%p;`sQl0hGa`^ewax3P
+z>_O+u7^=mgGr3yRf~unk(6;f$w=e98rfjLrU}}$%CIXZ^dy(2(8nN*ZxcBqOm4jgA
+z37SO70i17VrUiPMG<IO#$MYw)A$o03(Q-MRHpMi&j=6H#K>0*SyFZ>kl_j&@6~KPF
+zqI=N*6I9zVV43H>H^yQ-K&i1PL?xmdO8U7`U3x=cG>)CFKAeW_#G5^H*7BVC*SYi$
+z1Zg)lncH0Y$C}V>B276@;#+)OuK>TUS3LT4B2BG(Lr3v_673e&bW_0L-+9r7N$o5=
+z>ESOtk+JqM2oIlj`Z?|Nt1QIB%~u(7JV~29iQ2YKCOB#XFa1c-$+|%Bm5VUhRvy_`
+zCIyu}Gz#;~ta=y-RG;-ywizufrRiw~Ju07XKc)q2umiebGvp^}`a{15hL6UP&qRR5
+zHfSicqRpaZ>G6Y;S3$B|nN{t#JjH`*Al!zow6;zeQS*`7NL2Mr7(W`Po;NYre^EY%
+z-Z<DCLjLNuTf38c#=Ko&0e}pKTSn!ttatxm_W8zbKdl~MNmyW49nNSrQRpZEKdG_r
+z&#*KFEkj}#+#d6feh35uQ%ygmuApYkXKmlWdO9}aVp@C&U9*~d5_{lgX<&$IEQ|`P
+zWo2;G(9zLxEV0t1h!-RH<`w+Jcy827V)rBneUnimc6T=8#jO+SsA9=4yR8LtDw+kB
+zXW&3zI3Nce_>@@Zr${b6m!BV6I*_j$Hl$8{I+tqU71BEz)Lk{wT-CL1^SGsX?er0p
+zVaIMvk&OJd>F`@Sv$&*`<38mIX_xG+r30__r_~Sk&@HI;JO=7W-<)~1(^~qyQGiBQ
+zmu6ba8)Y*u2ssdeqvNOL)5af^H5Z_qOykew+m4}M<>Ax-$#yr^Cii)(lRec<QaWHo
+zaI{92t}u}&KbGQ;$Ln>?Eo*<G=PJPo2-7I6oRF(jBWPbbpmaxge@PZ>Q{VxA_|~t6
+z>vC~tVWy?e`{6XOnPJiE#IALd)mM$o@1upCVMI7xs|$q{{n#SgAY=sP2}UjUmXLQ%
+z!TQUU(Od}&=^BSz%`N-T&AnC2`a`_j0@8x^WoTiH^5AKhp!lsL5ZYA0IT$n981SXp
+zb(hGtWB`H*R?8~_1qoG$Z@^6aL@I#<dNQ0oR#d)@fr}`}d)z(eaz=8ph$F&4Hr&{d
+zC?KtR{X!N{36|f;^~VOHWa~1pULC9qB|9QCtTYh|kV1)9cAkM;w($aJ9$XC^yx_>^
+zD@s?C=??Ztt(jC-bR7UD*we?QMF}+<#%Q~~XbLYwGw}|GW5)$vcDmBw3R{#*EAS&=
+zoDYpThrcP$%T8NzdeJCQ-Cce5dT|Z)DYShGuzRapem1R>-FSo!?ks`H)(g;D$tgj@
+zFrQH1bT5C&v_%;vDCJSDXH24eVk}@YJg6G1>|9{s+$Dtq6&H~?xB}Wh1^ZVz$D~1p
+zW=~RUL1kR`E7vrG5H3|PrI84E2>6c)f<y@LYn~2N_(IX{Z>*v<AH59{$oLZJ070HT
+z#>)35Ep~ugkaucdmmN>e3xYjQr&4(>PnuGz`a#Tr7`NB^WfqMtzeiig7t*1|GEzjj
+zv&+En*}%^xR?XiF`AS~J>I@U+IS_5Hr_l=2o;YTeg~~%bjR9SuM%OZeZMCo*g2wQ%
+zOVWFa7N-USV?7-0oY6(?8k?796Htc%H3C$AG(HA@jvZ_+E?bf;pdcuTIyU+NDRFB6
+z+<vd##kGgDr|Lb5jPQuHr#FjHVdzW#G{g@`hl+T%S!!#tMg3uIUX<Ibl7rM`Z{c#O
+z82a)-G(#Hu=Cm2yHS@A3^buoEQ~**u*h=ZN@D^i78q20(=~(N<M7f$RvsS2Y2wray
+zb0e6uyg(<w6lIZ4yJ&s=%%j#6mR~Zi(>rrJg}|6aiBziFU5T5YDi><E&yoZ%OQt(z
+zV10%hLbw^En#oot+MI6DR;_>K1g{TkC+*D&0|P3YZS~mGWvXze<FN{GasnCzm-l<n
+zMw=roYU^b^U`-Q4xmNiFC6BrK3LC9e*bq>NIM{qYn7I1!+^{bw7lqguGioO1AgAD>
+zrQGZdqD-<G>!U^z>JQ!>VS8E1@#-jK@SjOwYw;AU#$n^gN`ij|M2aCM4TOaAZTeim
+zJNQMK#sq}prZZb(`ENLqRd-Bw*O`a#skS!r)*ptyeEo=vF0H+wRYzZ#rf{xtT+$<h
+z*&#{7El&cgMB`=KVrzObZ(P6D%sku&9z<TXDG}CyV;<ruTG^18_CE?HssRfu9ojHc
+z<M~mzLwRIs>!^;rC#wEhAHjQa<}B7>WX}8{DPep`9=7cfP_*fgN%iZ1=}Qt|`Zqwg
+zCp9janc*dtmnS|?u*O80cscY1ULZ1&b4$S*jIeUR`Z)@*!?+*xLfOjuiW0>%Yai=J
+z_#AJ5n#JBcrF<d^h5<aSxq*;Zf=7IA6ubV$Gmsz(!;aHGN=;%G^{HqVVXy^Nr;Vkt
+z?W5j=_mu>nx>?U6km_J`HEn}0mnM#no8;A%tLDp8JC2X}h+>6+dzRVrDoWg+5D<hp
+zg9$L^JmD7cJ}C8?-3BOj&!M!9RN^asV110z8_pD%s;aITzis!9i=7kAumNvQGK|F$
+z8r1_y6FYEmQFRLHbW7XI2am4E-*Tl8Dy^T|lEhC+q5qU}vaU$OK?JQ#Sxl9$R^oa1
+zesDd=uB#TogaQ(@yK_qlsT?;bhN_g;)CQ=FO!(qEZ%U$tiMYJRArb|wbEM5jJ9Ut*
+znc~~{pfjX7=u<w_3&<jQ*~8(V-MsnG90~cxSm29R&78Y4)ME9}nhI+C=$bU)jg?z#
+zY=#phB=IZXY4(p&(5<YPKP@FPcG_`eR8(+MUz95}-a0>z%coEbpZ0WT)g+OgrZgAG
+zd?fq|D{;U(H(rcm#s^P4V_OBYCscD{!U^7h)Tp?>(EeOnGzeh;Uj^nM7J7Uj5{&(c
+z>IU4F_%46eA7t6@W%iz@VaGw+S*$f>*Z}ji0*RZV;M!j(Uv~^39G2n4j*--r2Z>Z1
+z_R34H+<Gn9s$XMj*xRR$y?d6#x%<LS^F5ig>=q)ZFYZ>dv%7mpE+D2e4O_W7;%s;W
+z^YbJ0b}X>Z@XZetX!TMuT&Q#VCpH=Im!<;XiW->$P($UE<mQEFFO+yqAX0sf7w4WK
+zVO>c-$r4O&<5`zlRDVjZt0U%~b6IAS8qmv>y#v8o1j+nta|1})^^btCis5mv0H;b@
+z6V#)XIh!y9wZf)p#*7G=6#rPn7LMAOd@si_ZX7G{bU8*aiQUarh8VL08sOx8oj952
+zovUoK=Xy#Iee1(z<{bEVO$%YD_RYuJK!5neuQ;Zv_2aDQbhs}@=R;un0Ux1!sZ!P#
+zjs1jecXU)B(p2{h@}T2c&-PFsbGBowv^b>sltb5aSE{+#PM!n~P-cdWMt>hJ`{eXY
+zx_o$*j(kkpCVO}=TK<^}tWzGgg%ORT316K`lep3<cbo^sr({1LED9j#K2#>nLfudB
+z`(`YkdL2UCIw|y9Ex!cfb<=)+Xj#a|#*sxox%JtY+MoZq1JeN=$1BG0;s^{}6jVfE
+z$0VE72z6oIU5EU{$AM6?!`(tqFpoOpy$1c+&odRQlIfqGXYL2mJF@gLR3TfAle&7T
+zd%Y4s&HD&ifZInR;tr0wZ}QY_>9_;94^W}l(z6OikCmcYgg33D;R3GP0G(YV^)^zn
+zI-kci#Y~v^WPX07{3`y{{7eHduuRe5^|oehE2Ld2zV&>Ns5NG;WaiHSXh;!i`tYG0
+z4i|ySCOx!K4?j{a(bPg=EFhQ9mv*ha+tIc+p-{uZnP-1SiBF$H=Q9i4TUGK}C~Q<6
+zp{YZbp(S_N-+(T6D4)Mrnov30p}%Ff1O%OofU*5k#u8Pdir83!We}P!b9wO>2PNHl
+z{J^skIs{o6g&n;&=nIH{cqVeb+&WHIN`tG$pr!LpfTO0xS;ndop464>jLnK8s9iXi
+zEOs?D95$V*Xv|3z#oRTi^HrY{;=vQM0w;gk0w3LIm9?7LZ@l@L31S6zJq74wq@dsK
+zW#h+Tb92TS>w#*@VVX<~FBYSu{b%|;h%|(kd&0vnpj}<hPEuQtt-!4M#ut|YUOvKh
+z`0(J<G*lS*OrvJXp1Fyk1thd4pS2_`uL?7bwa?}&`ku9FZEuha4Kmv4K-lNNZRnOo
+z!!J$`K5MckpB;Rj9dCH)ZX;!21*Y@JYkj!T$#Q34HFFty0a=hRQIgUVmgI{xUKCvn
+z5&$F11jM32MZ_x-c1tR>ajJzgcPTWGKL#0O3<o)N*}w6k@Ky4G%tP#=I%=W18DP5_
+zZZ4)cV0P&u9Sq_s(2A&}s1Qb1kP7N5@dWYS{CWUJ``RZx1N0m*TGn%^4h1c%HFey5
+zolY#Ar$|!ZVk{_i`?)=potLbZ>`9F86HPQ%E#hdnpvgO6pQ{EsxfGj)_ijCHT<lez
+zjvVTIhoij4sJE&|Zf^z|75dnb*kJLLNjgm~ksYR{iwRmJysA!Nyp+RoEIJG)J$qP*
+zKKmUT+62Nbhl2M9t3I+OqXU%%#z>CU3&NS=2(wI_k;}EuZV&AF4~=pvKoYbDQ4OcZ
+zW|~c(F3-6-EzoXY9DOkye(P<=C<&^Ar4|`cIq_i@iv-hz#N4`EQXk~FA$yZW+G=ky
+zR@!Kuk1e7R$`nqCRYh#e|J_KXLxFGk;xYlx&eS6G3z9fbD<m+zFTUj%rlhL%vR;|J
+zY9O0)UCYNL817*ccsOXej?YElYYwARtcV81nN2(|FRh>QZfepQLDy64Q9emcGccu9
+zcH0i@-#Js&?;7sxDJhT*Umy-8uYI%k{31sbye<nX==H$%i9{nvs6PAX7KV}Z!DV+X
+z$h(U#RBJRjR8+fHmOTTj$m6YCR}zL5r#XCKVi_utd4l2Y=;(f{kyWVBTjd8^f~x60
+z+To^t^`B{I?bY=7e5M;#S-><tPB|5t>&MEf019etU98XSoV#<I{T=jiW~fid;dliH
+zEwkkPBs8FqI^UFI?y?G@b*Rh3bG#a&)Og{+;Pc@n9m8vuT`&l$Z5U1d<OctKUGQy@
+zV=IzYrCRbH5=#X5R`DT$lm>QPDO{K<hs-a)U$eL$UnGA^MsBNb^Ap<CAIE%4M*g2M
+z|BQ_M+oAt}jQsxae@RCEzr_7@GV*V^asQ%Jy??}w`}c(Z1#VopF}`OR*Ch?NYd+3z
+zDgORB(6`*Ua@Wi2+g<2|&zd9`Z#I;XuZ)Ryx|a;*5DIhj3rlcMp^ehEX}QRTg|rr(
+z948w<RuCe9Yz7s6u4nF}?<<r$w$9{9N0yw`?$=u)>NFA_TMA~#;2{n{pAbSWw68ae
+zx1#hrfsAeuRJAf7oKD#<1=kt#uUnEpVU2*3=`<&QE24ra!nPPqo57al8LfhBqDbMF
+z=I92uy|7FC!DF<K%GjY+1h;53G8mX{qLPO%)7Z=^vBGrMnNI(D7uRT6l-o*|+!G6#
+z>7gtpHh*Oe%9SBwa2HGpl0@+JSLXO@W;zgIM6^*LAfj1b#;>lAcGYiw&^}ZZsgaFy
+z^}(|&uj2v=l{cQI6)@PK4)s~djXky2Na8fPTnhjfc%<nbv>`mnGHZziNm<4bKSk^#
+zWJGw}uL9XxF)jU4<)qKuC6mn)eKXLh<_-FXpuG&F2;@-BeS)_M#eq6CFI}V<fxv-_
+zA_P?SRm*H&dfMjJ9k<6FyyF9h>fRW2s(BqK^VxgNS-$rjSTZWB!zZ!++UnP{{x4Q1
+zAFc^qO}o?S)wH?O?<};vl^WOl^<(2(LfF5zI(|zCJJ<=Qe|5b8mB9c2$#3dv{{-S2
+zLfHE&uTpN(e3Ayn?O1Vl0EiCg+yhpOy%>6KggfTVbxBQMk5GmzsEBI1_R$wkQpMG`
+zAP_k(eR4wKx*kU`?h#`{&&idFig!VfTbcHYe26Z7BB~(kD_b5YnjXooz=#2^*KWE|
+zY5PXEkS28gg4*RMZws<N7Jx`h<F*LTeb!w2WS&ebt)-^_Qvyo-nqSou&l1i*Xa_Kz
+zV8c#2$Q?mLzz$J(y0r5UHg+LHMa%FR6=#r?@;%QR{lkpO!<($l21T$C$K^RY<0>8$
+z`f~-)C8xnoE>(KN(*%OPB{+F^n!YSJA{nV+R-uyH8KklLX@&P}oQIWy6r+HutxV}5
+zne!2FCcS8y5%vpBMP4hFd|;5ubTcyz>86LtBz&fXh2(<k&eTN)63LSVZ$@XVFFW_@
+zt7ng<56ZTR+@iB%-DcX|chH<huK(n|eN@iaCb;eN+LWJ&kJFQx8*Ycw-1m8X9}4S`
+z5@@ow)n|bnwIkLkD!>=y!+{Fj9<akLJnH<tZV}u=u+Qvo!(G!)-n>ag-V?4q)=D^I
+zve>c@Kdu`U&^VxqSrisaMx4i%hcn^HL2=f&ptf~IIx{fb8WvP&MquC%Qm{))eH07H
+zlh_5`BCPH3T&-uKA%9pyx+H>OB-^DMo2Bw0^9LLF9rqL~y~nF$YH?kgM&)`j7k{>Z
+zx-Dr+*V;MFUYBw$ub17;w!r^(bF#Fyu++D<HP*jt>SPwiBiX_YBXG>xCTyw|fyhfi
+zmPH|rAYYXyJY7pKxv?-7VJJJNhV2;?!9XV6)Vt?$G^%LgW`clmdDZV(nNP+%J^9Ds
+zc81L|AKzncNKBE54W~;bDyU0VNCbQ2PNumXH+Zm~PI^E<4$5Wt?h9PzRc^Tvut<_2
+zpw#Dn(FXGZ^ie0YxNhA$!LOKLL4m2L)HwVygVwx6`L?wX*7o^6VQ&q?VDB-<Clwj?
+zY)DVp<A-)(9L16HTE`wfmsMwRQ^Pe;J1sBDjTR?cmbn}{$Ll!GQEjJ^FV>QE1(Fs6
+zy52v0-74?;`dOF0|NH}haQowDJ^Ow={HAN)-EivbU%$5e`)LoquYztT=zbT!8$s7|
+zb$uCKfBz`x*FF7yXW>ovuiNX!!ocgs9QS&GeXrF0ZeTY<Z<VV2@6ccN2K${BH=Sf|
+zuNy5|uP5Vch5gUo9lslX6U^NW-~VR#ed_(M*8DitH^JSV4C3qU<X=_zMc<iUi@JHS
+zawkgX7ozTke!muX(~0IzT>5Xs{U#LrwfLLPG<V{6|AzP<L&IOA+-v~8LlK1exqEMX
+za^HymqTKIW^J}P^&NX*X>HiSwXSC2?F>i0s`<-lVFmLY#(Cb%4KU+Qj%e+4^|7KsC
+z-`yKGQTd%Ws;;~E{awv|h|#~g;m4ckrh~;D7z)xq1^Y$J{uTJv|Mxpu+yLMD-|hbe
+z_}du%+xY!=-oA+s?;MbW`cED3L$vt4>GvB5+?fuE_U|CSi5~x|%{P4RcQ&72lOO-h
+z74|*5`&UbUTwOQ(?sq_P82<$5&s*##A1t@a>OSB54dU&xdi(DX{{s8_-O{?%<vyGA
+zoi0l_|H}Gbb4%Z;@Z$vB@Gsn6Hy_iC*SqQe{!IVC#_)B%Z!Nyh$8cwH^uK`nk)7er
+z%v;?1XU^|%N!b6nnLnIBzYlx=_}U$;9N)i${pn%0JNzGK_a+Oty>4dLUhp3Ny`w^3
+zr|m~MH;0Ap<P`l(&YvfLet8$(KRk3J@b)g;`K`deaFpoI2e(sy{}9d{6q4{yeDJ64
+zKR=RlC;dmy+?-yyy>2|rEb<fSKRwIx)z`QB-apN9r?1oRCH`!8%J0<uK92QP`lY(x
+zZWsDq*ZUiW?sRSbjkup|AG*`?)(Q7_<lG6aRsOY}f7b)wCl(%tcar~8nfb};{c+O2
+zPb@0#%lNT|{MCa$iu!&+c77r1A0`%5*J<U~$NB%NJN+fYzfUaO{)YI!lURHo-wyqK
+zlpkx*zn*~a<69czzwWWGS<G!P{g>j~`&H??B_99(0{m@!d%se6cf0+#3crtWt4#i>
+z6aGhxd%q@nXFjIszk~cH#{IS3w~v|oRkAxJLd*fbshLTOfnJw#0RZajFZt_iB+CK-
+vAOSGa(b6-}=om0E>*^Zl)3Pwp>FTpEGPCH@u^7<l>#^vtuo}?O(QE%7IawA4
+
+-- 
+2.43.0
+
