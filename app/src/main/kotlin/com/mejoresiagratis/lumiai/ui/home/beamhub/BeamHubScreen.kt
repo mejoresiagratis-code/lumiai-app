@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -64,11 +66,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -223,7 +224,7 @@ fun BeamHubScreen(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            primary.copy(alpha = if (state.isOn) 0.32f else 0.12f),
+                            primary.copy(alpha = if (state.isOn) 0.30f else 0.06f),
                             background
                         )
                     )
@@ -362,16 +363,6 @@ fun BeamHubScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 if (state.mode.isAvailable(state.capabilities)) {
-                    MODE_CATALOG.firstOrNull { it.mode == state.mode }?.let { ui ->
-                        Text(
-                            text = stringResource(ui.labelRes).uppercase(),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 4.sp,
-                            modifier = Modifier.padding(bottom = LumiSpacing.md)
-                        )
-                    }
                     PowerOrb(
                         isOn = state.isOn,
                         onToggle = {
@@ -382,31 +373,14 @@ fun BeamHubScreen(
                         pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
                         pulseFlashMs = if (state.mode == FlashMode.BEACON) state.settings.beaconFlashMs else null
                     )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
-                        modifier = Modifier.padding(top = LumiSpacing.md)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (state.isOn) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                    }
-                                )
-                        )
-                        Text(
-                            text = stringResource(
-                                if (state.isOn) R.string.tap_to_turn_off else R.string.tap_to_turn_on
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    // Pildora de estado: fusiona el estado con el nombre del modo
+                    // ("Toca para encender · Continuo"), en lugar del antiguo rotulo
+                    // gigante que duplicaba el chip seleccionado del rail.
+                    StatusPill(
+                        isOn = state.isOn,
+                        modeLabelRes = MODE_CATALOG.firstOrNull { it.mode == state.mode }?.labelRes,
+                        modifier = Modifier.padding(top = LumiSpacing.lg)
+                    )
                 } else {
                     // Dispositivo sin flash y modo que lo necesita: ocultamos el orbe de
                     // LED (sería inútil) y guiamos de forma honesta al Modo Pantalla.
@@ -473,6 +447,51 @@ private fun infoTextFor(mode: FlashMode): Int? = when (mode) {
     else -> null
 }
 
+/** Pildora de estado bajo el orbe: punto vivo + "estado · modo" sobre superficie elevada. */
+@Composable
+private fun StatusPill(
+    isOn: Boolean,
+    modeLabelRes: Int?,
+    modifier: Modifier = Modifier
+) {
+    val dotColor by animateColorAsState(
+        targetValue = if (isOn) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+        animationSpec = LumiMotion.effects(),
+        label = "statusDot"
+    )
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 2.dp,
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs),
+            modifier = Modifier.padding(horizontal = LumiSpacing.md, vertical = 10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            val stateText = stringResource(
+                if (isOn) R.string.tap_to_turn_off else R.string.tap_to_turn_on
+            )
+            val modeText = modeLabelRes?.let { " · " + stringResource(it) }.orEmpty()
+            Text(
+                text = stateText + modeText,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (isOn) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (isOn) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
 @Composable
 private fun ModeRail(
     selected: FlashMode,
@@ -519,16 +538,21 @@ internal fun ModePill(
     locked: Boolean,
     onClick: () -> Unit
 ) {
-    // Shape-morph + muelle al seleccionar (estilo M3 Expressive, Via A).
+    // Seleccion con caracter: shape-morph + escala 1.07 elevandose con muelle y sombra del acento.
     val cornerDp by animateDpAsState(
         targetValue = if (selected) 28.dp else 18.dp,
         animationSpec = LumiMotion.emphasized(),
         label = "pillCorner"
     )
     val pillScale by animateFloatAsState(
-        targetValue = if (selected) 1.03f else 1f,
+        targetValue = if (selected) 1.07f else 1f,
         animationSpec = LumiMotion.emphasized(),
         label = "pillScale"
+    )
+    val pillLift by animateDpAsState(
+        targetValue = if (selected) (-2).dp else 0.dp,
+        animationSpec = LumiMotion.emphasized(),
+        label = "pillLift"
     )
     val shape = RoundedCornerShape(cornerDp)
     val container = if (selected) {
@@ -547,8 +571,15 @@ internal fun ModePill(
         modifier = Modifier
             .width(88.dp)
             .height(88.dp)
+            .offset(y = pillLift)
             .scale(pillScale)
-            .shadow(elevation = if (selected) 8.dp else 2.dp, shape = shape, clip = false)
+            .shadow(
+                elevation = if (selected) 12.dp else 3.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = if (selected) container else Color.Black,
+                spotColor = if (selected) container else Color.Black
+            )
             .clip(shape)
             .background(container)
             .then(
@@ -578,11 +609,12 @@ internal fun ModePill(
                 painter = painterResource(item.iconRes),
                 contentDescription = null,
                 tint = content,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(30.dp)
             )
             Text(
                 text = stringResource(item.shortLabelRes),
                 style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = content,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -614,6 +646,9 @@ internal fun PowerOrb(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val offContainer = MaterialTheme.colorScheme.surfaceContainerHighest
+    val offContent = MaterialTheme.colorScheme.onSurfaceVariant
+    val offBorder = MaterialTheme.colorScheme.outlineVariant
     val reduceMotion = LocalReduceMotion.current
 
     val innerSize = orbDiameter * (176f / 252f)
@@ -627,11 +662,22 @@ internal fun PowerOrb(
         animationSpec = LumiMotion.emphasized(),
         label = "orbScale"
     )
-    // Forma del orbe: cuadrado redondeado apagado -> circulo encendido (shape-morph Expressive).
-    val orbCorner by animateDpAsState(
-        targetValue = if (isOn) innerSize / 2 else innerSize * 0.34f,
+    // La corona SOLO existe encendida: fade + escala de muelle al aparecer.
+    val coronaAlpha by animateFloatAsState(
+        targetValue = if (isOn) 1f else 0f,
+        animationSpec = LumiMotion.effects(),
+        label = "coronaAlpha"
+    )
+    val coronaScale by animateFloatAsState(
+        targetValue = if (isOn) 1f else 0.88f,
         animationSpec = LumiMotion.emphasized(),
-        label = "orbCorner"
+        label = "coronaScale"
+    )
+    // Crossfade del icono: linterna en contorno (apagada) <-> linterna con haz (encendida).
+    val iconOn by animateFloatAsState(
+        targetValue = if (isOn) 1f else 0f,
+        animationSpec = LumiMotion.emphasized(),
+        label = "orbIcon"
     )
 
     val transition = rememberInfiniteTransition(label = "orbBeam")
@@ -640,6 +686,27 @@ internal fun PowerOrb(
         targetValue = 360f,
         animationSpec = infiniteRepeatable(animation = tween(durationMillis = 2600, easing = LinearEasing)),
         label = "orbSweep"
+    )
+    // Rotacion lenta de toda la corona (26 s), solo encendida y sin reduce-motion.
+    val coronaSpin by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 26_000, easing = LinearEasing)),
+        label = "coronaSpin"
+    )
+    // Respiracion sutil del orbe encendido (cede el sitio al pulso de Baliza).
+    val breathe by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 3200
+                1f at 0
+                1.025f at 1600
+                1f at 3200
+            }
+        ),
+        label = "orbBreathe"
     )
 
     // Pulso sincronizado con el destello de Baliza: brillo durante el flash, atenuado en la pausa.
@@ -666,6 +733,8 @@ internal fun PowerOrb(
         label = "orbPulse"
     )
     val haloAlpha = if (pulsing) pulse else glow
+    val breathing = isOn && !reduceMotion && !pulsing
+    val liveScale = scale * (if (breathing) breathe else 1f)
 
     val onLabel = stringResource(if (isOn) R.string.action_off else R.string.action_on)
     val torchLabel = stringResource(R.string.a11y_torch)
@@ -689,7 +758,16 @@ internal fun PowerOrb(
             },
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(orbDiameter * (224f / 252f))) {
+        Canvas(
+            modifier = Modifier
+                .size(orbDiameter * (224f / 252f))
+                .graphicsLayer {
+                    alpha = coronaAlpha
+                    scaleX = coronaScale
+                    scaleY = coronaScale
+                    rotationZ = if (isOn && !reduceMotion) coronaSpin else 0f
+                }
+        ) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val rOuter = size.minDimension / 2f - 2.dp.toPx()
             val rInner = rOuter - 12.dp.toPx()
@@ -700,9 +778,9 @@ internal fun PowerOrb(
                 val a = (angle - 90f) * (PI.toFloat() / 180f)
                 val cosA = cos(a)
                 val sinA = sin(a)
-                val lit = isOn && (reduceMotion || (((angle - sweep) % 360f + 360f) % 360f) < 60f)
+                val lit = reduceMotion || (((angle - sweep) % 360f + 360f) % 360f) < 60f
                 drawLine(
-                    color = if (lit) primary else primary.copy(alpha = if (isOn) 0.32f else 0.18f),
+                    color = if (lit) primary else primary.copy(alpha = 0.32f),
                     start = Offset(center.x + cosA * rInner, center.y + sinA * rInner),
                     end = Offset(center.x + cosA * rOuter, center.y + sinA * rOuter),
                     strokeWidth = tickWidth,
@@ -713,12 +791,25 @@ internal fun PowerOrb(
         Box(
             modifier = Modifier
                 .size(innerSize)
-                .scale(scale)
-                .clip(RoundedCornerShape(orbCorner))
+                .scale(liveScale)
+                .shadow(
+                    elevation = if (isOn) 18.dp else 8.dp,
+                    shape = CircleShape,
+                    clip = false,
+                    ambientColor = if (isOn) primary else Color.Black,
+                    spotColor = if (isOn) primary else Color.Black
+                )
+                .clip(CircleShape)
                 .background(
-                    Brush.radialGradient(
-                        listOf(primary, primary.copy(alpha = if (isOn) 0.92f else 0.55f))
-                    )
+                    if (isOn) {
+                        Brush.radialGradient(listOf(primary, primary.copy(alpha = 0.92f)))
+                    } else {
+                        Brush.radialGradient(listOf(offContainer, offContainer))
+                    }
+                )
+                .then(
+                    if (isOn) Modifier
+                    else Modifier.border(width = 1.5.dp, color = offBorder, shape = CircleShape)
                 )
                 .clickable(role = Role.Button, onClickLabel = onLabel, onClick = onToggle)
                 .semantics(mergeDescendants = true) {
@@ -728,27 +819,31 @@ internal fun PowerOrb(
                 },
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(orbDiameter * (56f / 252f))) {
-                val sw = 7.dp.toPx()
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val r = (size.minDimension / 2f) - sw
-                drawArc(
-                    color = onPrimary,
-                    startAngle = -60f,
-                    sweepAngle = 300f,
-                    useCenter = false,
-                    topLeft = Offset(center.x - r, center.y - r),
-                    size = Size(r * 2f, r * 2f),
-                    style = Stroke(width = sw, cap = StrokeCap.Round)
-                )
-                drawLine(
-                    color = onPrimary,
-                    start = Offset(center.x, center.y - r - sw * 0.4f),
-                    end = Offset(center.x, center.y - r * 0.15f),
-                    strokeWidth = sw,
-                    cap = StrokeCap.Round
-                )
-            }
+            val iconSize = orbDiameter * (72f / 252f)
+            Icon(
+                painter = painterResource(R.drawable.ic_torch_off),
+                contentDescription = null,
+                tint = offContent,
+                modifier = Modifier
+                    .size(iconSize)
+                    .graphicsLayer {
+                        alpha = 1f - iconOn
+                        scaleX = 1f - 0.3f * iconOn
+                        scaleY = 1f - 0.3f * iconOn
+                    }
+            )
+            Icon(
+                painter = painterResource(R.drawable.ic_torch_on),
+                contentDescription = null,
+                tint = onPrimary,
+                modifier = Modifier
+                    .size(iconSize)
+                    .graphicsLayer {
+                        alpha = iconOn
+                        scaleX = 0.7f + 0.3f * iconOn
+                        scaleY = 0.7f + 0.3f * iconOn
+                    }
+            )
         }
     }
 }
