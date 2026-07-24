@@ -211,4 +211,18 @@
     <string name="sound_cat_alarm_clock">Despertador / alarma</string>
     <string name="sound_cat_siren">Sirena</string>
     <string name="sound_cat_smoke">Alarma de humo/incendio</string>
+    <string name="music_section">Modo Música (Pro)</string>
+    <string name="music_title">Luz al ritmo de la música</string>
+    <string name="music_explainer">El flash sigue el ritmo de la música a tu alrededor: más brillante y más largo en los golpes fuertes.</string>
+    <string name="music_open">Abrir modo Música</string>
+    <string name="music_locked">Exclusivo de los suscriptores Pro.</string>
+    <string name="music_locked_title">Ventaja Pro</string>
+    <string name="music_what">La detección de ritmo usa procesamiento de señal (DSP) afinado a graves y bombo — sin IA y sin nube. Cada golpe detectado dispara el flash con brillo y duración según su fuerza.</string>
+    <string name="music_privacy">Todo ocurre en tu dispositivo. No se graba ni se sube nada.</string>
+    <string name="music_needs_flash">Este modo usa el flash de la cámara y este dispositivo no tiene.</string>
+    <string name="music_sensitivity_hint">Más sensibilidad reacciona a golpes suaves (y falsos); menos espera a golpes fuertes.</string>
+    <string name="music_start">Empezar el espectáculo</string>
+    <string name="music_stop">Parar</string>
+    <string name="music_listening">Escuchando: el flash sigue el ritmo.</string>
+    <string name="music_notif_listening">Destellando al ritmo de la música</string>
 </resources>

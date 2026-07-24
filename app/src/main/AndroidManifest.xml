@@ -56,6 +56,11 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
+        <service
+            android:name=".data.music.MusicFlashService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
         <activity
             android:name=".data.sound.ScreenFlashActivity"
             android:exported="false"

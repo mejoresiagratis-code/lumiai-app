@@ -211,4 +211,18 @@
     <string name="sound_cat_alarm_clock">Alarm clock</string>
     <string name="sound_cat_siren">Siren</string>
     <string name="sound_cat_smoke">Smoke / fire alarm</string>
+    <string name="music_section">Music mode (Pro)</string>
+    <string name="music_title">Music-reactive light</string>
+    <string name="music_explainer">The flash follows the beat of the music around you: brighter and longer on strong hits.</string>
+    <string name="music_open">Open Music mode</string>
+    <string name="music_locked">Exclusive to Pro subscribers.</string>
+    <string name="music_locked_title">A Pro perk</string>
+    <string name="music_what">Beat detection runs with plain signal processing (DSP) tuned to bass and kick drums — no AI, no cloud. Each detected hit fires the flash with brightness and duration matched to how strong the hit is.</string>
+    <string name="music_privacy">Everything happens on your device. Nothing is recorded or uploaded.</string>
+    <string name="music_needs_flash">This mode drives the camera flash, and this device doesn\'t have one.</string>
+    <string name="music_sensitivity_hint">Higher sensitivity reacts to softer hits (and false ones); lower waits for strong beats.</string>
+    <string name="music_start">Start the light show</string>
+    <string name="music_stop">Stop</string>
+    <string name="music_listening">Listening — the flash follows the beat.</string>
+    <string name="music_notif_listening">Flashing to the beat of the music</string>
 </resources>

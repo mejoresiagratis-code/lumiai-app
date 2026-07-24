@@ -111,6 +111,7 @@ fun SettingsScreen(
     onOpenAuth: () -> Unit,
     onOpenGod: () -> Unit,
     onOpenSoundAlert: () -> Unit,
+    onOpenMusic: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
@@ -401,6 +402,26 @@ fun SettingsScreen(
                 } else {
                     Text(
                         text = stringResource(R.string.sound_alert_locked),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            SettingsSection(R.string.music_section) {
+                Text(
+                    text = stringResource(R.string.music_explainer),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // Gate ESTRICTO: solo suscripcion (el Pro temporal por anuncios NO abre este modo).
+                if (proUi.hasSubscription) {
+                    Button(onClick = onOpenMusic, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.music_open))
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.music_locked),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
