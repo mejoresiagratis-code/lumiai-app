@@ -3,7 +3,14 @@ package com.mejoresiagratis.lumiai.domain.entitlement
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 
 /** Nivel de acceso requerido por un modo. */
-enum class Tier { BASIC, ADVANCED, AI }
+/**
+ * Niveles de acceso:
+ * - [BASIC]: libre para todos. [ADVANCED]: cuenta O desbloqueo temporal.
+ * - [AI]: suscripcion O desbloqueo temporal (Alerta Sonora).
+ * - [PRO]: SOLO suscripcion; el desbloqueo temporal por anuncios NO lo concede
+ *   (Musica, como el acento Multicolor).
+ */
+enum class Tier { BASIC, ADVANCED, AI, PRO }
 
 /**
  * Matriz de acceso por modo (decisión de producto, jul 2026):
@@ -20,6 +27,7 @@ val FlashMode.tier: Tier
         FlashMode.STROBE,
         FlashMode.BEACON,
         FlashMode.TEXT_MORSE -> Tier.ADVANCED
+        FlashMode.MUSIC -> Tier.PRO
     }
 
 /**
@@ -35,5 +43,6 @@ data class Entitlements(
         Tier.BASIC -> true
         Tier.ADVANCED -> hasAccount || hasSubscription
         Tier.AI -> hasSubscription
+        Tier.PRO -> hasSubscription
     }
 }

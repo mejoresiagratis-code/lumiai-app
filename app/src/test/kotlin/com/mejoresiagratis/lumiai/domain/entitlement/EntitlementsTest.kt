@@ -39,4 +39,10 @@ class EntitlementsTest {
         assertFalse(Entitlements(hasAccount = true).unlocks(Tier.AI))
         assertTrue(Entitlements(hasSubscription = true).unlocks(Tier.AI))
     }
+    @Test
+    fun `pro estricto solo con suscripcion y musica es pro`() {
+        assertFalse(Entitlements(hasAccount = true).unlocks(Tier.PRO))
+        assertTrue(Entitlements(hasSubscription = true).unlocks(Tier.PRO))
+        assertEquals(Tier.PRO, FlashMode.MUSIC.tier)
+    }
 }

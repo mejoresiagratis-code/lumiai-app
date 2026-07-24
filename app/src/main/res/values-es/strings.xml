@@ -225,4 +225,5 @@
     <string name="music_stop">Parar</string>
     <string name="music_listening">Escuchando: el flash sigue el ritmo.</string>
     <string name="music_notif_listening">Destellando al ritmo de la música</string>
+    <string name="mode_music">Música</string>
 </resources>

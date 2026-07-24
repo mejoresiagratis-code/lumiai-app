@@ -87,6 +87,7 @@ import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.components.LumiDialog
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.solidColor
 import kotlinx.coroutines.launch
@@ -111,7 +112,6 @@ fun SettingsScreen(
     onOpenAuth: () -> Unit,
     onOpenGod: () -> Unit,
     onOpenSoundAlert: () -> Unit,
-    onOpenMusic: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
@@ -408,26 +408,6 @@ fun SettingsScreen(
                 }
             }
 
-            SettingsSection(R.string.music_section) {
-                Text(
-                    text = stringResource(R.string.music_explainer),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                // Gate ESTRICTO: solo suscripcion (el Pro temporal por anuncios NO abre este modo).
-                if (proUi.hasSubscription) {
-                    Button(onClick = onOpenMusic, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.music_open))
-                    }
-                } else {
-                    Text(
-                        text = stringResource(R.string.music_locked),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
             if (BuildConfig.DEBUG) {
                 Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                     Text(
@@ -445,42 +425,20 @@ fun SettingsScreen(
     }
 
     accentLockDialog?.let { lock ->
-        AlertDialog(
-            onDismissRequest = { accentLockDialog = null },
-            title = {
-                Text(
-                    stringResource(
-                        if (lock == AccentLock.PRO) R.string.accent_locked_pro_title
-                        else R.string.accent_locked_account_title
-                    )
-                )
-            },
-            text = {
-                Text(
-                    stringResource(
-                        if (lock == AccentLock.PRO) R.string.accent_locked_pro_body
-                        else R.string.accent_locked_account_body
-                    )
-                )
-            },
-            confirmButton = {
-                if (lock == AccentLock.ACCOUNT) {
-                    TextButton(onClick = { accentLockDialog = null; onOpenAuth() }) {
-                        Text(stringResource(R.string.accent_locked_sign_in))
-                    }
-                } else {
-                    TextButton(onClick = { accentLockDialog = null }) {
-                        Text(stringResource(R.string.dialog_close))
-                    }
-                }
-            },
-            dismissButton = if (lock == AccentLock.ACCOUNT) {
-                {
-                    TextButton(onClick = { accentLockDialog = null }) {
-                        Text(stringResource(R.string.dialog_close))
-                    }
-                }
-            } else null
+        LumiDialog(
+            onDismiss = { accentLockDialog = null },
+            iconRes = R.drawable.ic_lock,
+            title = stringResource(
+                if (lock == AccentLock.PRO) R.string.accent_locked_pro_title
+                else R.string.accent_locked_account_title
+            ),
+            body = stringResource(
+                if (lock == AccentLock.PRO) R.string.accent_locked_pro_body
+                else R.string.accent_locked_account_body
+            ),
+            primaryLabel = if (lock == AccentLock.ACCOUNT) stringResource(R.string.accent_locked_sign_in) else null,
+            onPrimary = if (lock == AccentLock.ACCOUNT) ({ accentLockDialog = null; onOpenAuth() }) else null,
+            dismissLabel = stringResource(R.string.dialog_close)
         )
     }
 

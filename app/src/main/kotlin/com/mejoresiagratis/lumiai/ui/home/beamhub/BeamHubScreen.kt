@@ -1,6 +1,11 @@
 package com.mejoresiagratis.lumiai.ui.home.beamhub
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
@@ -48,6 +53,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -96,7 +104,12 @@ import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.entitlement.AccessState
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import com.mejoresiagratis.lumiai.domain.entitlement.Tier
+import com.mejoresiagratis.lumiai.data.music.MusicFlashService
+import com.mejoresiagratis.lumiai.domain.entitlement.Tier
 import com.mejoresiagratis.lumiai.domain.entitlement.tier
+import com.mejoresiagratis.lumiai.domain.music.MusicSensitivity
+import com.mejoresiagratis.lumiai.ui.components.LumiDialog
+import com.mejoresiagratis.lumiai.ui.music.MusicViewModel
 import com.mejoresiagratis.lumiai.ui.settings.RewardedUnlockViewModel
 import com.mejoresiagratis.lumiai.domain.flash.isAvailable
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
@@ -169,35 +182,77 @@ fun BeamHubScreen(
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     var lockedDialogMode by remember { mutableStateOf<FlashMode?>(null) }
+    var micGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val micLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        micGranted = granted
+        if (granted && state.mode == FlashMode.MUSIC && !state.isOn) {
+            viewModel.toggle()
+            MusicFlashService.start(context)
+        }
+    }
+
+    val safeSelectMode: (FlashMode) -> Unit = { newMode ->
+        val musicInvolved = state.mode == FlashMode.MUSIC || newMode == FlashMode.MUSIC
+        if (state.isOn && musicInvolved) {
+            viewModel.toggle()
+            MusicFlashService.stop(context)
+        }
+        viewModel.selectMode(newMode)
+    }
 
     lockedDialogMode?.let { mode ->
-        val canSignIn = mode.tier == Tier.ADVANCED && !state.access.entitlements.hasAccount
-        LockedModeDialog(
-            canSignIn = canSignIn,
-            onWatchAd = {
-                lockedDialogMode = null
-                val act = activity
-                if (act != null) {
-                    rewardedUnlockViewModel.watchAd(
-                        activity = act,
-                        onReward = { outcome ->
-                            if (outcome.grantsUnlock) {
-                                Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
-                                viewModel.selectMode(mode)
-                            } else {
-                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                Toast.makeText(context, context.getString(R.string.pro_progress_more, remaining), Toast.LENGTH_SHORT).show()
+        if (mode.tier == Tier.PRO) {
+            // Pro ESTRICTO (Musica): sin puerta por anuncio.
+            LumiDialog(
+                onDismiss = { lockedDialogMode = null },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.music_locked_title),
+                body = stringResource(R.string.music_locked),
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+        } else {
+            val canSignIn = mode.tier == Tier.ADVANCED && !state.access.entitlements.hasAccount
+            LumiDialog(
+                onDismiss = { lockedDialogMode = null },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(
+                    if (canSignIn) R.string.mode_locked_body else R.string.mode_locked_body_ad_only
+                ),
+                primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+                onPrimary = {
+                    lockedDialogMode = null
+                    val act = activity
+                    if (act != null) {
+                        rewardedUnlockViewModel.watchAd(
+                            activity = act,
+                            onReward = { outcome ->
+                                if (outcome.grantsUnlock) {
+                                    Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
+                                    viewModel.selectMode(mode)
+                                } else {
+                                    val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                    Toast.makeText(context, context.getString(R.string.pro_progress_more, remaining), Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onUnavailable = {
+                                Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
                             }
-                        },
-                        onUnavailable = {
-                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-            },
-            onSignIn = { lockedDialogMode = null; onOpenAuth() },
-            onDismiss = { lockedDialogMode = null }
-        )
+                        )
+                    }
+                },
+                secondaryLabel = if (canSignIn) stringResource(R.string.mode_unlock_sign_in) else null,
+                onSecondary = if (canSignIn) ({ lockedDialogMode = null; onOpenAuth() }) else null,
+                dismissLabel = stringResource(R.string.action_cancel)
+            )
+        }
     }
     val primary = MaterialTheme.colorScheme.primary
     val background = MaterialTheme.colorScheme.background
@@ -336,14 +391,18 @@ fun BeamHubScreen(
                             )
                         }
                     }
-                    ModeSettingsPanel(
-                        mode = state.mode,
-                        settings = state.settings,
-                        caps = state.capabilities,
-                        expanded = advancedExpanded,
-                        onChange = viewModel::updateSettings,
-                        modifier = Modifier.animateContentSize()
-                    )
+                    if (state.mode == FlashMode.MUSIC) {
+                        MusicControls(modifier = Modifier.animateContentSize())
+                    } else {
+                        ModeSettingsPanel(
+                            mode = state.mode,
+                            settings = state.settings,
+                            caps = state.capabilities,
+                            expanded = advancedExpanded,
+                            onChange = viewModel::updateSettings,
+                            modifier = Modifier.animateContentSize()
+                        )
+                    }
                 }
             }
         ) { padding ->
@@ -355,7 +414,7 @@ fun BeamHubScreen(
             ) {
                 ModeRail(
                     selected = state.mode,
-                    onSelect = viewModel::selectMode,
+                    onSelect = safeSelectMode,
                     onLocked = { lockedDialogMode = it },
                     caps = state.capabilities,
                     access = state.access,
@@ -367,7 +426,15 @@ fun BeamHubScreen(
                         isOn = state.isOn,
                         onToggle = {
                             if (hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.toggle()
+                            if (state.mode == FlashMode.MUSIC) {
+                                when {
+                                    state.isOn -> { viewModel.toggle(); MusicFlashService.stop(context) }
+                                    micGranted -> { viewModel.toggle(); MusicFlashService.start(context) }
+                                    else -> micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            } else {
+                                viewModel.toggle()
+                            }
                         },
                         orbDiameter = orbSize,
                         pulsePeriodMs = if (state.mode == FlashMode.BEACON) state.settings.beaconIntervalMs else null,
@@ -444,7 +511,51 @@ fun BeamHubScreen(
 private fun infoTextFor(mode: FlashMode): Int? = when (mode) {
     FlashMode.STROBE -> R.string.strobe_photosensitivity_warning
     FlashMode.BEACON -> R.string.beacon_hint
+    FlashMode.MUSIC -> R.string.music_what
     else -> null
+}
+
+/** Ajustes de Musica en la hoja de Control: sensibilidad del detector (persistida). */
+@Composable
+private fun MusicControls(
+    modifier: Modifier = Modifier,
+    musicViewModel: MusicViewModel = hiltViewModel()
+) {
+    val sensitivity by musicViewModel.sensitivity.collectAsStateWithLifecycle()
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
+        Text(
+            text = stringResource(R.string.sa_sensitivity),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = stringResource(R.string.music_sensitivity_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            val options = MusicSensitivity.entries
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = option == sensitivity,
+                    onClick = { musicViewModel.setSensitivity(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    icon = {}
+                ) {
+                    Text(
+                        stringResource(
+                            when (option) {
+                                MusicSensitivity.BAJA -> R.string.sa_sens_low
+                                MusicSensitivity.MEDIA -> R.string.sa_sens_med
+                                MusicSensitivity.ALTA -> R.string.sa_sens_high
+                            }
+                        ),
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** Pildora de estado bajo el orbe: punto vivo + "estado · modo" sobre superficie elevada. */
@@ -846,37 +957,6 @@ internal fun PowerOrb(
             )
         }
     }
-}
-
-@Composable
-private fun LockedModeDialog(
-    canSignIn: Boolean,
-    onWatchAd: () -> Unit,
-    onSignIn: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.mode_locked_title)) },
-        text = {
-            Text(
-                stringResource(
-                    if (canSignIn) R.string.mode_locked_body else R.string.mode_locked_body_ad_only
-                )
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onWatchAd) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
-        },
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
-                if (canSignIn) {
-                    TextButton(onClick = onSignIn) { Text(stringResource(R.string.mode_unlock_sign_in)) }
-                }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-            }
-        }
-    )
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

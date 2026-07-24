@@ -11,6 +11,12 @@ data class AccessState(
     val entitlements: Entitlements = Entitlements(),
     val temporaryProActive: Boolean = false
 ) {
-    /** Un tier está desbloqueado si lo conceden los permisos permanentes o el Pro temporal. */
-    fun unlocks(tier: Tier): Boolean = entitlements.unlocks(tier) || temporaryProActive
+    /**
+     * Un tier está desbloqueado si lo conceden los permisos permanentes o el Pro temporal.
+     * EXCEPCIÓN: [Tier.PRO] es estrictamente de suscripción (el temporal no lo abre).
+     */
+    fun unlocks(tier: Tier): Boolean = when (tier) {
+        Tier.PRO -> entitlements.unlocks(tier)
+        else -> entitlements.unlocks(tier) || temporaryProActive
+    }
 }

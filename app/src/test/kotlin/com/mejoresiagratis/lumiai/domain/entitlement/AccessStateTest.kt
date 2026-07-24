@@ -39,4 +39,10 @@ class AccessStateTest {
         assertTrue(s.unlocks(Tier.ADVANCED))
         assertTrue(s.unlocks(Tier.AI))
     }
+    @Test
+    fun `el pro temporal NO abre el tier PRO estricto`() {
+        val s = AccessState(temporaryProActive = true)
+        assertTrue(s.unlocks(Tier.AI))
+        assertFalse(s.unlocks(Tier.PRO))
+    }
 }

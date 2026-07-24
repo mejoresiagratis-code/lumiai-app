@@ -15,6 +15,7 @@ private val BlueAccent = Color(0xFF4D7BFF)
 private val GreenAccent = Color(0xFF34C759)
 private val VioletAccent = Color(0xFF9B6CFF)
 private val TealAccent = Color(0xFF11A693)
+private val MagentaAccent = Color(0xFFE84393)
 
 /** Paleta por modo para el acento Multicolor (la consumirá el Hub en la Fase 2). */
 fun modeAccentColor(mode: FlashMode): Color = when (mode) {
@@ -24,6 +25,7 @@ fun modeAccentColor(mode: FlashMode): Color = when (mode) {
     FlashMode.STROBE -> VioletAccent
     FlashMode.TEXT_MORSE -> TealAccent
     FlashMode.BEACON -> GreenAccent
+    FlashMode.MUSIC -> MagentaAccent
 }
 
 /** Color sólido de un acento. Multicolor cae al azul de marca a nivel global (su efecto por modo vive en el Hub). */

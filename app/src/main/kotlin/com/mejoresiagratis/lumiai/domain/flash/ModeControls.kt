@@ -9,8 +9,8 @@ enum class ModeControl { INTENSITY, STROBE_HZ, MORSE_SPEED, BEACON_INTERVAL, BEA
 /** Los modos de LED requieren flash; Pantalla y Baliza no (Baliza cae a la pantalla). */
 fun FlashMode.requiresFlash(): Boolean = this != FlashMode.SCREEN && this != FlashMode.BEACON
 
-/** Modos que necesitan microfono (IA de audio). Hoy ninguno; se activara con Alerta Sonora. */
-fun FlashMode.requiresMicrophone(): Boolean = false
+/** Modos que necesitan microfono. Musica escucha el ambiente para detectar el ritmo. */
+fun FlashMode.requiresMicrophone(): Boolean = this == FlashMode.MUSIC
 
 /** Que controles pide cada modo. */
 fun FlashMode.controls(): Set<ModeControl> = when (this) {
@@ -20,6 +20,8 @@ fun FlashMode.controls(): Set<ModeControl> = when (this) {
     FlashMode.TEXT_MORSE -> setOf(ModeControl.INTENSITY, ModeControl.MORSE_SPEED)
     FlashMode.BEACON -> setOf(ModeControl.INTENSITY, ModeControl.BEACON_INTERVAL, ModeControl.BEACON_FLASH)
     FlashMode.SCREEN -> emptySet()
+    // Musica: su unico ajuste (sensibilidad) se pinta aparte en la hoja de Control.
+    FlashMode.MUSIC -> emptySet()
 }
 
 /** Si la capacidad que exige un control esta disponible en el dispositivo. */

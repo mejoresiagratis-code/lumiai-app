@@ -29,6 +29,8 @@ class FlashEngine @Inject constructor(
                 FlashMode.SOS_MORSE -> settings.collectLatest { morse(it.coerced()) }
                 FlashMode.TEXT_MORSE -> settings.collectLatest { textMorse(it.coerced()) }
                 FlashMode.BEACON -> settings.collectLatest { beacon(it.coerced()) }
+                // Musica no usa este motor (MusicFlashService controla el LED); defensivo.
+                FlashMode.MUSIC -> { torch.turnOff(); awaitCancellation() }
             }
         } finally {
             torch.turnOff()
