@@ -49,6 +49,8 @@ for f in "${files[@]}"; do
   [ "$ob" -ne "$cb" ] && msg="$msg llaves($ob/$cb)"
   [ "$op" -ne "$cp" ] && msg="$msg parens($op/$cp)"
   grep -q '^package ' "$f" || msg="$msg sin-package"
+  dupimp=$(grep '^import ' "$f" | sort | uniq -d | head -1)
+  [ -n "$dupimp" ] && msg="$msg import-duplicado(${dupimp##* })"
   if [ -n "$msg" ]; then echo "  ✗ $f:$msg"; fail=1; else echo "  ✓ $f"; fi
 done
 

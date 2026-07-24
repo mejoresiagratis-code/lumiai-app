@@ -28,7 +28,11 @@
    algún test construye con la firma vieja.
 5. **Patrones de vibración/flash (`LongArray`)**: longitud **par** (pares on/off).
 6. **Codec / parsing**: una entrada inválida se descarta **entera** (no a medias).
-7. **Recordatorio**: el sandbox NO compila; estas comprobaciones estáticas no detectan
+7. **Imports duplicados**: al insertar imports por script, el fichero puede tenerlos
+   ya en OTRA posición (no adyacente) → `Conflicting import ... is ambiguous`.
+   `pre_push_audit.sh` ahora lo detecta (`sort | uniq -d` sobre las líneas import).
+   → Fallo #4.
+8. **Recordatorio**: el sandbox NO compila; estas comprobaciones estáticas no detectan
    errores de lógica/tipos finos. Leer los ficheros reales reduce el riesgo, pero el QA y el
    CI los confirma Pablo.
 
@@ -50,3 +54,13 @@
   `RuntimeEnvironment.getApplication()`, locale-independiente.
   **Lección:** cambiar el locale por defecto rompe cualquier test que assertee TEXTO;
   los asserts de UI deben ir contra recursos, no contra literales (→ checklist #3).
+
+### 2026-07-24
+- **#4** run `81619888724` · commit `4ad0ce9` · `compileDebugKotlin` FAILED ·
+  `BeamHubScreen.kt:106/108 Conflicting import: imported name 'Tier' is ambiguous`.
+  **Causa:** un script de edición insertó `import ...entitlement.Tier` sin ver que el
+  fichero ya lo importaba unas líneas más abajo (duplicados NO adyacentes; el dedup
+  del script solo cubría líneas consecutivas).
+  **Fix:** dedup real de imports + chequeo permanente en `pre_push_audit.sh`.
+  **Lección:** los chequeos de "ya existe este import" deben mirar el fichero entero,
+  no el vecindario de la inserción (→ checklist #7).
