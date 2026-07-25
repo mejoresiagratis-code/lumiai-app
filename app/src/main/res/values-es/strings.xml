@@ -226,4 +226,17 @@
     <string name="music_listening">Escuchando: el flash sigue el ritmo.</string>
     <string name="music_notif_listening">Destellando al ritmo de la música</string>
     <string name="mode_music">Música</string>
+    <string name="screen_intimate_toggle">Modo íntimo</string>
+    <string name="screen_intimate_animation">Animación</string>
+    <string name="screen_atmosphere_fire">Fuego</string>
+    <string name="screen_atmosphere_sunset">Atardecer</string>
+    <string name="screen_atmosphere_candle">Vela</string>
+    <string name="screen_atmosphere_nebula">Nebulosa</string>
+    <string name="screen_animation_static">Estático</string>
+    <string name="screen_animation_breathing">Respiración</string>
+    <string name="screen_animation_flicker">Llama</string>
+    <string name="screen_intimate_sleep_timer">Temporizador de apagado</string>
+    <string name="screen_intimate_sleep_infinite">Off</string>
+    <string name="screen_intimate_sleep_minutes">%1$d min</string>
+    <string name="screen_intimate_sleep_remaining">Se apaga en %1$d:%2$02d</string>
 </resources>

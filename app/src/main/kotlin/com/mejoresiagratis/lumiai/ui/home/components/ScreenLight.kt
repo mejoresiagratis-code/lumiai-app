@@ -22,10 +22,14 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -38,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -59,8 +65,11 @@ import androidx.compose.ui.unit.dp
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.ui.theme.LocalAutoLockScreen
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
+import com.mejoresiagratis.lumiai.domain.model.ScreenAnimation
+import com.mejoresiagratis.lumiai.domain.model.ScreenAtmosphere
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import kotlin.math.abs
+import kotlin.random.Random
 
 /** Presets de color para el Modo Pantalla (el LED es monocromo; el color solo es posible aquí). */
 val SCREEN_PRESETS: List<Int> = listOf(
@@ -83,13 +92,28 @@ val SCREEN_NAMED_PRESETS: List<ScreenPreset> = listOf(
     ScreenPreset(R.string.screen_preset_night, 0xFFFF3B30.toInt(), 0.22f)     // Rojo nocturno (visión nocturna)
 )
 
+/** Opciones del temporizador de apagado del Modo Íntimo, en minutos (0 = infinito). */
+val INTIMATE_SLEEP_OPTIONS: List<Int> = listOf(0, 15, 30, 60)
+
+/**
+ * Modo Pantalla, con el Modo Íntimo como extensión conmutable (mismo bloqueo, wakelock
+ * y control de brillo de ventana ya probados; solo cambia el fondo y el rango de brillo).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScreenLight(
     argb: Int,
     brightness: Float,
+    intimateEnabled: Boolean,
+    intimateAtmosphere: ScreenAtmosphere,
+    intimateAnimation: ScreenAnimation,
+    intimateSleepMinutes: Int,
     onColorChange: (Int) -> Unit,
     onBrightnessChange: (Float) -> Unit,
+    onIntimateToggle: (Boolean) -> Unit,
+    onAtmosphereChange: (ScreenAtmosphere) -> Unit,
+    onAnimationChange: (ScreenAnimation) -> Unit,
+    onSleepMinutesChange: (Int) -> Unit,
     onTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,11 +124,39 @@ fun ScreenLight(
     val lockedCd = stringResource(R.string.screen_locked_cd)
     val window = (LocalContext.current as? Activity)?.window
 
+    // Brillo efectivo: el Modo Íntimo capa un techo bajo para no deslumbrar a oscuras.
+    val effectiveBrightness = if (intimateEnabled) {
+        brightness.coerceIn(FlashSettings.MIN_INTIMATE_BRIGHTNESS, FlashSettings.MAX_INTIMATE_BRIGHTNESS)
+    } else {
+        brightness
+    }
+
+    // Fundido a negro del temporizador de sueño: en vez de un corte brusco, atenúa y sale.
+    var fadingOut by remember { mutableStateOf(false) }
+    val fadeAlpha by animateFloatAsState(
+        targetValue = if (fadingOut) 1f else 0f,
+        animationSpec = tween(durationMillis = 2200),
+        label = "intimateFadeOut",
+        finishedListener = { if (fadingOut) onTap() }
+    )
+    var remainingSec by remember(intimateEnabled, intimateSleepMinutes) {
+        mutableIntStateOf(if (intimateEnabled) intimateSleepMinutes * 60 else 0)
+    }
+    LaunchedEffect(intimateEnabled, intimateSleepMinutes) {
+        if (!intimateEnabled || intimateSleepMinutes <= 0) return@LaunchedEffect
+        remainingSec = intimateSleepMinutes * 60
+        while (remainingSec > 0) {
+            kotlinx.coroutines.delay(1000)
+            remainingSec--
+        }
+        fadingOut = true
+    }
+
     // Forzar el brillo de la ventana mientras dura el modo; restaurar al salir.
-    LaunchedEffect(brightness) {
+    LaunchedEffect(effectiveBrightness) {
         window?.let {
             val lp = it.attributes
-            lp.screenBrightness = brightness.coerceIn(
+            lp.screenBrightness = effectiveBrightness.coerceIn(
                 FlashSettings.MIN_SCREEN_BRIGHTNESS, FlashSettings.MAX_SCREEN_BRIGHTNESS
             )
             it.attributes = lp
@@ -123,17 +175,57 @@ fun ScreenLight(
     }
 
     val hue = remember(argb) { FloatArray(3).also { AndroidColor.colorToHSV(argb, it) }[0] }
-    val onColor = if (AndroidColor.luminance(argb) > 0.5f) Color.Black else Color.White
+    val onColor = if (intimateEnabled || AndroidColor.luminance(argb) > 0.5f) Color.White else Color.Black
     // Panel de ajustes ocultable: colapsado deja solo el asa superior para reabrirlo y
     // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
     var panelExpanded by remember { mutableStateOf(true) }
     val autoLockScreen = LocalAutoLockScreen.current
     var locked by rememberSaveable { mutableStateOf(autoLockScreen) }
 
+    // --- Animaciones del Modo Íntimo (independientes del brillo de ventana) ---
+    val transition = rememberInfiniteTransition(label = "intimateGlow")
+    val breathe by transition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "intimateBreathe"
+    )
+    var flicker by remember { mutableStateOf(1f) }
+    LaunchedEffect(intimateEnabled, intimateAnimation) {
+        if (!intimateEnabled || intimateAnimation != ScreenAnimation.LLAMA) {
+            flicker = 1f
+            return@LaunchedEffect
+        }
+        while (true) {
+            flicker = Random.nextInt(85, 101) / 100f
+            kotlinx.coroutines.delay(Random.nextLong(50, 150))
+        }
+    }
+    val glowAlpha = when {
+        !intimateEnabled -> 1f
+        intimateAnimation == ScreenAnimation.RESPIRACION -> breathe
+        intimateAnimation == ScreenAnimation.LLAMA -> flicker
+        else -> 1f
+    }
+
     Box(
         modifier
             .fillMaxSize()
-            .background(Color(argb))
+            .background(
+                if (intimateEnabled) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(intimateAtmosphere.top).copy(alpha = glowAlpha),
+                            Color(intimateAtmosphere.bottom).copy(alpha = glowAlpha)
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(listOf(Color(argb), Color(argb)))
+                }
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -237,87 +329,139 @@ fun ScreenLight(
                         style = MaterialTheme.typography.labelLarge,
                         color = Color.White
                     )
+
+                    // Chip "Modo Íntimo": alterna entre color sólido clásico y atmósferas animadas.
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
                             .padding(top = LumiSpacing.sm),
                         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
                     ) {
-                        SCREEN_NAMED_PRESETS.forEach { preset ->
-                            val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(
-                                        if (sel) Color.White.copy(alpha = 0.18f)
-                                        else Color.White.copy(alpha = 0.06f)
-                                    )
-                                    .border(
-                                        width = if (sel) 1.5.dp else 1.dp,
-                                        color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
-                                        shape = RoundedCornerShape(50)
-                                    )
-                                    .clickable {
-                                        onColorChange(preset.argb)
-                                        onBrightnessChange(preset.brightness)
-                                    }
-                                    .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
-                            ) {
-                                Text(
-                                    text = stringResource(preset.labelRes),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
+                        val intimateLabel = stringResource(R.string.screen_intimate_toggle)
+                        val intimateOnLabel = stringResource(R.string.a11y_state_on)
+                        val intimateOffLabel = stringResource(R.string.a11y_state_off)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (intimateEnabled) Color.White.copy(alpha = 0.20f)
+                                    else Color.White.copy(alpha = 0.06f)
                                 )
-                            }
-                        }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = LumiSpacing.md),
-                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
-                    ) {
-                        SCREEN_PRESETS.forEach { preset ->
-                            val selected = preset == argb
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(preset))
-                                    .border(
-                                        width = if (selected) 3.dp else 1.dp,
-                                        color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
-                                        shape = CircleShape
-                                    )
-                                    .clickable { onColorChange(preset) }
+                                .border(
+                                    width = if (intimateEnabled) 1.5.dp else 1.dp,
+                                    color = if (intimateEnabled) Color.White else Color.White.copy(alpha = 0.25f),
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .clickable { onIntimateToggle(!intimateEnabled) }
+                                .semantics {
+                                    role = Role.Checkbox
+                                    stateDescription = if (intimateEnabled) intimateOnLabel else intimateOffLabel
+                                }
+                                .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                        ) {
+                            Text(
+                                text = intimateLabel,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White
                             )
                         }
                     }
-                    val colorLabel = stringResource(R.string.screen_color)
-                    Text(
-                        text = colorLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
-                    )
-                    Slider(
-                        value = hue,
-                        onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
-                        valueRange = 0f..360f,
-                        modifier = Modifier.semantics { contentDescription = colorLabel }
-                    )
-                    val brightnessLabel = stringResource(R.string.a11y_brightness)
-                    Text(
-                        text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
-                    )
-                    Slider(
-                        value = brightness,
-                        onValueChange = onBrightnessChange,
-                        valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
-                        modifier = Modifier.semantics { contentDescription = brightnessLabel }
-                    )
+
+                    if (intimateEnabled) {
+                        IntimateControls(
+                            atmosphere = intimateAtmosphere,
+                            animation = intimateAnimation,
+                            sleepMinutes = intimateSleepMinutes,
+                            remainingSec = remainingSec,
+                            brightness = brightness,
+                            onAtmosphereChange = onAtmosphereChange,
+                            onAnimationChange = onAnimationChange,
+                            onSleepMinutesChange = onSleepMinutesChange,
+                            onBrightnessChange = onBrightnessChange
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(top = LumiSpacing.sm),
+                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                        ) {
+                            SCREEN_NAMED_PRESETS.forEach { preset ->
+                                val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .background(
+                                            if (sel) Color.White.copy(alpha = 0.18f)
+                                            else Color.White.copy(alpha = 0.06f)
+                                        )
+                                        .border(
+                                            width = if (sel) 1.5.dp else 1.dp,
+                                            color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                        .clickable {
+                                            onColorChange(preset.argb)
+                                            onBrightnessChange(preset.brightness)
+                                        }
+                                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                                ) {
+                                    Text(
+                                        text = stringResource(preset.labelRes),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = LumiSpacing.md),
+                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                        ) {
+                            SCREEN_PRESETS.forEach { preset ->
+                                val selected = preset == argb
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(preset))
+                                        .border(
+                                            width = if (selected) 3.dp else 1.dp,
+                                            color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
+                                            shape = CircleShape
+                                        )
+                                        .clickable { onColorChange(preset) }
+                                )
+                            }
+                        }
+                        val colorLabel = stringResource(R.string.screen_color)
+                        Text(
+                            text = colorLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                        Slider(
+                            value = hue,
+                            onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
+                            valueRange = 0f..360f,
+                            modifier = Modifier.semantics { contentDescription = colorLabel }
+                        )
+                        val brightnessLabel = stringResource(R.string.a11y_brightness)
+                        Text(
+                            text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                        Slider(
+                            value = brightness,
+                            onValueChange = onBrightnessChange,
+                            valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
+                            modifier = Modifier.semantics { contentDescription = brightnessLabel }
+                        )
+                    }
                 }
             }
         }
@@ -326,7 +470,7 @@ fun ScreenLight(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(Color(argb))
+                    .background(if (intimateEnabled) Color.Transparent else Color(argb))
                     .combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -359,7 +503,178 @@ fun ScreenLight(
                 }
             }
         }
+
+        // Fundido a negro del temporizador: por encima de todo, incluida la pantalla bloqueada.
+        if (fadeAlpha > 0f) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = fadeAlpha))
+            )
+        }
     }
+}
+
+/** Ajustes del Modo Íntimo: atmósfera, animación, brillo capado y temporizador de sueño. */
+@Composable
+private fun IntimateControls(
+    atmosphere: ScreenAtmosphere,
+    animation: ScreenAnimation,
+    sleepMinutes: Int,
+    remainingSec: Int,
+    brightness: Float,
+    onAtmosphereChange: (ScreenAtmosphere) -> Unit,
+    onAnimationChange: (ScreenAnimation) -> Unit,
+    onSleepMinutesChange: (Int) -> Unit,
+    onBrightnessChange: (Float) -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(top = LumiSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+        ) {
+            ScreenAtmosphere.entries.forEach { atm ->
+                val sel = atm == atmosphere
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            Brush.horizontalGradient(listOf(Color(atm.top), Color(atm.bottom)))
+                        )
+                        .border(
+                            width = if (sel) 2.5.dp else 1.dp,
+                            color = if (sel) Color.White else Color.White.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable { onAtmosphereChange(atm) }
+                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                ) {
+                    Text(
+                        text = stringResource(atm.labelRes()),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = stringResource(R.string.screen_intimate_animation),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = LumiSpacing.md)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = LumiSpacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+        ) {
+            ScreenAnimation.entries.forEach { anim ->
+                val sel = anim == animation
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (sel) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f)
+                        )
+                        .border(
+                            width = if (sel) 1.5.dp else 1.dp,
+                            color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable { onAnimationChange(anim) }
+                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                ) {
+                    Text(
+                        text = stringResource(anim.labelRes()),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        val brightnessLabel = stringResource(R.string.a11y_brightness)
+        Text(
+            text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = LumiSpacing.md)
+        )
+        Slider(
+            value = brightness,
+            onValueChange = onBrightnessChange,
+            valueRange = FlashSettings.MIN_INTIMATE_BRIGHTNESS..FlashSettings.MAX_INTIMATE_BRIGHTNESS,
+            modifier = Modifier.semantics { contentDescription = brightnessLabel }
+        )
+
+        Text(
+            text = stringResource(R.string.screen_intimate_sleep_timer),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = LumiSpacing.md)
+        )
+        if (sleepMinutes > 0) {
+            val mm = remainingSec / 60
+            val ss = remainingSec % 60
+            Text(
+                text = stringResource(R.string.screen_intimate_sleep_remaining, mm, ss),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.7f)
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = LumiSpacing.xs, bottom = LumiSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+        ) {
+            INTIMATE_SLEEP_OPTIONS.forEach { minutes ->
+                val sel = minutes == sleepMinutes
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (sel) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f)
+                        )
+                        .border(
+                            width = if (sel) 1.5.dp else 1.dp,
+                            color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable { onSleepMinutesChange(minutes) }
+                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                ) {
+                    Text(
+                        text = if (minutes == 0) {
+                            stringResource(R.string.screen_intimate_sleep_infinite)
+                        } else {
+                            stringResource(R.string.screen_intimate_sleep_minutes, minutes)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun ScreenAtmosphere.labelRes(): Int = when (this) {
+    ScreenAtmosphere.FUEGO -> R.string.screen_atmosphere_fire
+    ScreenAtmosphere.ATARDECER -> R.string.screen_atmosphere_sunset
+    ScreenAtmosphere.VELA -> R.string.screen_atmosphere_candle
+    ScreenAtmosphere.NEBULOSA -> R.string.screen_atmosphere_nebula
+}
+
+private fun ScreenAnimation.labelRes(): Int = when (this) {
+    ScreenAnimation.ESTATICO -> R.string.screen_animation_static
+    ScreenAnimation.RESPIRACION -> R.string.screen_animation_breathing
+    ScreenAnimation.LLAMA -> R.string.screen_animation_flicker
 }
 
 /**

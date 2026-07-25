@@ -156,8 +156,16 @@ fun BeamHubScreen(
         ScreenLight(
             argb = state.settings.screenArgb,
             brightness = state.settings.screenBrightness,
+            intimateEnabled = state.settings.intimateEnabled,
+            intimateAtmosphere = state.settings.intimateAtmosphere,
+            intimateAnimation = state.settings.intimateAnimation,
+            intimateSleepMinutes = state.settings.intimateSleepMinutes,
             onColorChange = { argb -> viewModel.updateSettings { it.copy(screenArgb = argb) } },
             onBrightnessChange = { b -> viewModel.updateSettings { it.copy(screenBrightness = b) } },
+            onIntimateToggle = { on -> viewModel.updateSettings { it.copy(intimateEnabled = on) } },
+            onAtmosphereChange = { a -> viewModel.updateSettings { it.copy(intimateAtmosphere = a) } },
+            onAnimationChange = { a -> viewModel.updateSettings { it.copy(intimateAnimation = a) } },
+            onSleepMinutesChange = { m -> viewModel.updateSettings { it.copy(intimateSleepMinutes = m) } },
             onTap = viewModel::toggle
         )
         return

@@ -9,7 +9,12 @@ data class FlashSettings(
     val screenBrightness: Float = 1f,
     val beaconIntervalMs: Long = 1500L,
     val beaconFlashMs: Long = 120L,
-    val beaconAutoOffMin: Int = 0
+    val beaconAutoOffMin: Int = 0,
+    val intimateEnabled: Boolean = false,
+    val intimateAtmosphere: ScreenAtmosphere = ScreenAtmosphere.VELA,
+    val intimateAnimation: ScreenAnimation = ScreenAnimation.RESPIRACION,
+    /** Minutos del temporizador de apagado del Modo Intimo; 0 = infinito (sin corte). */
+    val intimateSleepMinutes: Int = 0
 ) {
     fun coerced() = copy(
         intensityLevel = intensityLevel.coerceIn(MIN_INTENSITY, MAX_INTENSITY),
@@ -21,7 +26,8 @@ data class FlashSettings(
         beaconFlashMs = beaconFlashMs
             .coerceIn(MIN_BEACON_FLASH, MAX_BEACON_FLASH)
             .coerceAtMost(beaconIntervalMs.coerceIn(MIN_BEACON_INTERVAL, MAX_BEACON_INTERVAL) - 100L),
-        beaconAutoOffMin = beaconAutoOffMin.coerceAtLeast(0)
+        beaconAutoOffMin = beaconAutoOffMin.coerceAtLeast(0),
+        intimateSleepMinutes = intimateSleepMinutes.coerceAtLeast(0)
     )
 
     companion object {
@@ -38,5 +44,8 @@ data class FlashSettings(
         const val MAX_BEACON_INTERVAL = 5000L
         const val MIN_BEACON_FLASH = 40L
         const val MAX_BEACON_FLASH = 1000L
+        /** Brillo capado del Modo Intimo: evita deslumbrar en oscuridad total. */
+        const val MIN_INTIMATE_BRIGHTNESS = 0.05f
+        const val MAX_INTIMATE_BRIGHTNESS = 0.40f
     }
 }

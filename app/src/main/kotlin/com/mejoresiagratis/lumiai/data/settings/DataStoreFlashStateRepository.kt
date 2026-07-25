@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -34,6 +35,10 @@ class DataStoreFlashStateRepository @Inject constructor(
         val BEACON_INTERVAL = longPreferencesKey(FlashSettingsMapper.KEY_BEACON_INTERVAL)
         val BEACON_FLASH = longPreferencesKey(FlashSettingsMapper.KEY_BEACON_FLASH)
         val BEACON_AUTOOFF = intPreferencesKey(FlashSettingsMapper.KEY_BEACON_AUTOOFF)
+        val INTIMATE_ENABLED = booleanPreferencesKey(FlashSettingsMapper.KEY_INTIMATE_ENABLED)
+        val INTIMATE_ATMOSPHERE = stringPreferencesKey(FlashSettingsMapper.KEY_INTIMATE_ATMOSPHERE)
+        val INTIMATE_ANIMATION = stringPreferencesKey(FlashSettingsMapper.KEY_INTIMATE_ANIMATION)
+        val INTIMATE_SLEEP_MIN = intPreferencesKey(FlashSettingsMapper.KEY_INTIMATE_SLEEP_MIN)
     }
 
     private val _isOn = MutableStateFlow(false)
@@ -68,6 +73,10 @@ class DataStoreFlashStateRepository @Inject constructor(
             p[Keys.BEACON_INTERVAL] = next.beaconIntervalMs
             p[Keys.BEACON_FLASH] = next.beaconFlashMs
             p[Keys.BEACON_AUTOOFF] = next.beaconAutoOffMin
+            p[Keys.INTIMATE_ENABLED] = next.intimateEnabled
+            p[Keys.INTIMATE_ATMOSPHERE] = next.intimateAtmosphere.name
+            p[Keys.INTIMATE_ANIMATION] = next.intimateAnimation.name
+            p[Keys.INTIMATE_SLEEP_MIN] = next.intimateSleepMinutes
         }
     }
 
@@ -81,5 +90,9 @@ class DataStoreFlashStateRepository @Inject constructor(
         p[Keys.BEACON_INTERVAL]?.let { put(FlashSettingsMapper.KEY_BEACON_INTERVAL, it) }
         p[Keys.BEACON_FLASH]?.let { put(FlashSettingsMapper.KEY_BEACON_FLASH, it) }
         p[Keys.BEACON_AUTOOFF]?.let { put(FlashSettingsMapper.KEY_BEACON_AUTOOFF, it) }
+        p[Keys.INTIMATE_ENABLED]?.let { put(FlashSettingsMapper.KEY_INTIMATE_ENABLED, it) }
+        p[Keys.INTIMATE_ATMOSPHERE]?.let { put(FlashSettingsMapper.KEY_INTIMATE_ATMOSPHERE, it) }
+        p[Keys.INTIMATE_ANIMATION]?.let { put(FlashSettingsMapper.KEY_INTIMATE_ANIMATION, it) }
+        p[Keys.INTIMATE_SLEEP_MIN]?.let { put(FlashSettingsMapper.KEY_INTIMATE_SLEEP_MIN, it) }
     }
 }
