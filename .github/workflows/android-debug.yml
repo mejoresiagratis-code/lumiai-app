@@ -35,10 +35,17 @@ jobs:
       # Una sola invocación: configuración única del proyecto y grafo de tareas
       # compartido entre tests y APK (antes eran dos invocaciones = doble configure).
       # El daemon queda activo dentro del step (gradle/actions lo gestiona).
+      # NOTA: assembleDebug no depende de testDebugUnitTest, así que el APK se genera
+      # igual aunque fallen tests; pero si este step falla, GitHub Actions salta los
+      # siguientes por defecto. continue-on-error deja avanzar al step de subida SIN
+      # ocultar el fallo: el job entero sigue en rojo por el paso "Comprobar resultado".
       - name: Unit tests + debug APK
+        id: build
+        continue-on-error: true
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
 
       - name: Upload debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
@@ -46,6 +53,11 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
           retention-days: 3
+
+      # Refleja el resultado real del build/tests SIN haber bloqueado la subida de arriba.
+      - name: Comprobar resultado
+        if: steps.build.outcome == 'failure'
+        run: exit 1
 
   # Solo bajo demanda (workflow_dispatch): antes corría en cada push en paralelo,
   # duplicando setup de JDK+Gradle y ocupando runner sin bloquear nada.
