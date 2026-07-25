@@ -217,3 +217,21 @@
   ampliado: el chequeo de recursos es global, no por-fichero). Además: tras un `unzip -o`
   en el entorno de entrega, `git status` debe mostrar TODOS los ficheros del ZIP como
   modificados; si falta alguno, la entrega quedó parcial.
+
+### 2026-07-25 (feature nueva — modo Letrero LED)
+- **Letrero LED** (petición de Pablo, referencia: apps de letrero tipo "LED banner").
+  Marquesina de texto con estética de panel de puntos, emojis incluidos, fuera del
+  carrusel: sección propia en Ajustes + ruta LED_BANNER, gate idéntico a Alerta Sonora
+  (Pro O desbloqueo temporal por 2 anuncios, vía proUnlocked/RewardedUnlockViewModel).
+  **Arquitectura de renderizado (skill chrisbanes/compose-animations, 559 installs):**
+  · el texto se RASTERIZA UNA VEZ por config (Paint a 4x -> reescalado a rejilla de 26
+    filas -> IntArray de píxeles); nada se mide ni rasteriza por frame. Emojis gratis.
+  · scroll = acumulador withFrameNanos leído DENTRO del bloque draw del Canvas
+    (deferred read): 60fps invalidando solo la fase de dibujo, cero recomposiciones.
+  · dibujo acotado: filas x columnas visibles círculos por frame.
+  **Persistencia:** LedBannerConfig (texto/color/velocidad 1-10/dirección) en DataStore
+  (repo + @Binds en AppModule + HiltViewModel). TextField con estado LOCAL (checklist
+  #10 aplicado desde el diseño). Reglas del memo respetadas: collectAsState, sin imports
+  de DrawScope, literales Color con sufijo L en fichero con Canvas.
+  16 strings x2 idiomas (273/273). Display fullscreen: brillo máx + KEEP_SCREEN_ON con
+  restauración en onDispose, toca para salir, BackHandler.

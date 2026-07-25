@@ -11,6 +11,7 @@ import com.mejoresiagratis.lumiai.data.entitlement.DefaultEntitlementRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreThemePreferencesRepository
 import com.mejoresiagratis.lumiai.data.torch.Camera2TorchController
 import com.mejoresiagratis.lumiai.data.torch.ServiceEngineController
+import com.mejoresiagratis.lumiai.data.led.DataStoreLedBannerConfigRepository
 import com.mejoresiagratis.lumiai.data.music.DataStoreMusicConfigRepository
 import com.mejoresiagratis.lumiai.data.profile.DataStoreBillingProfileRepository
 import com.mejoresiagratis.lumiai.data.registry.FirestoreUserRegistryRepository
@@ -19,6 +20,7 @@ import com.mejoresiagratis.lumiai.data.system.AndroidDeviceFeatures
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
+import com.mejoresiagratis.lumiai.domain.repository.LedBannerConfigRepository
 import com.mejoresiagratis.lumiai.domain.repository.MusicConfigRepository
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
@@ -57,6 +59,10 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindMusicConfig(impl: DataStoreMusicConfigRepository): MusicConfigRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLedBannerConfig(impl: DataStoreLedBannerConfigRepository): LedBannerConfigRepository
 
     @Binds
     @Singleton

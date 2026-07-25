@@ -12,6 +12,7 @@ import com.mejoresiagratis.lumiai.ui.god.GodScreen
 import com.mejoresiagratis.lumiai.ui.home.beamhub.BeamHubScreen
 import com.mejoresiagratis.lumiai.ui.onboarding.OnboardingScreen
 import com.mejoresiagratis.lumiai.ui.settings.SettingsScreen
+import com.mejoresiagratis.lumiai.ui.led.LedBannerScreen
 import com.mejoresiagratis.lumiai.ui.sound.SoundAlertScreen
 
 object Routes {
@@ -21,6 +22,7 @@ object Routes {
     const val AUTH = "auth"
     const val GOD = "god"
     const val SOUND_ALERT = "sound_alert"
+    const val LED_BANNER = "led_banner"
 }
 
 @Composable
@@ -77,6 +79,7 @@ fun LumiAiNavHost(
                 onOpenAuth = { navController.navigate(Routes.AUTH) },
                 onOpenGod = { navController.navigate(Routes.GOD) },
                 onOpenSoundAlert = { navController.navigate(Routes.SOUND_ALERT) },
+                onOpenLedBanner = { navController.navigate(Routes.LED_BANNER) },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -91,6 +94,9 @@ fun LumiAiNavHost(
         }
         composable(Routes.SOUND_ALERT) {
             SoundAlertScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.LED_BANNER) {
+            LedBannerScreen(onBack = { navController.popBackStack() })
         }
     }
 }

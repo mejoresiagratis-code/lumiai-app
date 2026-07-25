@@ -120,6 +120,7 @@ fun SettingsScreen(
     onOpenAuth: () -> Unit,
     onOpenGod: () -> Unit,
     onOpenSoundAlert: () -> Unit,
+    onOpenLedBanner: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel(),
@@ -139,6 +140,7 @@ fun SettingsScreen(
     var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
     var showSubscribeGate by remember { mutableStateOf(false) }
     var showSoundAlertLocked by remember { mutableStateOf(false) }
+    var showLedLocked by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
     var showLicenses by remember { mutableStateOf(false) }
     val billingProfile by accountViewModel.billingProfile.collectAsStateWithLifecycle()
@@ -503,6 +505,24 @@ fun SettingsScreen(
                 }
             }
 
+            SettingsSection(R.string.led_section) {
+                Text(
+                    text = stringResource(R.string.led_explainer),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (proUi.proUnlocked) {
+                    Button(onClick = onOpenLedBanner, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.led_open))
+                    }
+                } else {
+                    Button(
+                        onClick = { showLedLocked = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
+                }
+            }
+
             SettingsSection(R.string.language_section) {
                 SettingsRow(
                     titleRes = R.string.language_row_title,
@@ -640,6 +660,44 @@ fun SettingsScreen(
             secondaryLabel = stringResource(R.string.pro_subscribe_cta),
             onSecondary = {
                 showSoundAlertLocked = false
+                if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
+            },
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showLedLocked) {
+        val ledActivity = remember(context) { context.findActivity() }
+        LumiDialog(
+            onDismiss = { showLedLocked = false },
+            iconRes = R.drawable.ic_lock,
+            title = stringResource(R.string.mode_locked_title),
+            body = stringResource(R.string.led_locked),
+            primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+            onPrimary = {
+                showLedLocked = false
+                val act = ledActivity
+                if (act != null) {
+                    rewardedUnlockViewModel.watchAd(
+                        activity = act,
+                        onReward = { outcome ->
+                            val msg = if (outcome.grantsUnlock) {
+                                context.getString(R.string.pro_granted)
+                            } else {
+                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                context.getString(R.string.pro_progress_more, remaining)
+                            }
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        },
+                        onUnavailable = {
+                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            },
+            secondaryLabel = stringResource(R.string.pro_subscribe_cta),
+            onSecondary = {
+                showLedLocked = false
                 if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
             },
             dismissLabel = stringResource(R.string.dialog_close)
