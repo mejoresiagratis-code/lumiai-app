@@ -45,4 +45,10 @@ class EntitlementsTest {
         assertTrue(Entitlements(hasSubscription = true).unlocks(Tier.PRO))
         assertEquals(Tier.PRO, FlashMode.MUSIC.tier)
     }
+
+    @Test
+    fun `suscribirse exige cuenta con sesion iniciada`() {
+        assertFalse(canStartSubscriptionPurchase(hasAccount = false))
+        assertTrue(canStartSubscriptionPurchase(hasAccount = true))
+    }
 }

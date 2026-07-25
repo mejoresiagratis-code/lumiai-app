@@ -13,6 +13,14 @@ import com.mejoresiagratis.lumiai.domain.model.FlashMode
 enum class Tier { BASIC, ADVANCED, AI, PRO }
 
 /**
+ * Regla de producto: para INICIAR una compra de suscripcion hace falta tener cuenta con
+ * sesion iniciada (a diferencia del desbloqueo temporal por anuncios, que no la exige).
+ * Punto de entrada unico para el flujo de Play Billing: la UI solo debe llamar a esto antes
+ * de lanzar el flujo de cobro, nunca duplicar la condicion inline.
+ */
+fun canStartSubscriptionPurchase(hasAccount: Boolean): Boolean = hasAccount
+
+/**
  * Matriz de acceso por modo (decisión de producto, jul 2026):
  * - BASIC (libre para todos, incluso sin cuenta): Continuo y Pantalla.
  * - ADVANCED (cuenta O anuncio de desbloqueo temporal): SOS, Estrobo, Baliza y Morse.

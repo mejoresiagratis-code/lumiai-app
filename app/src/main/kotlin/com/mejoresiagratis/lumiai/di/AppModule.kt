@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.di
 import com.mejoresiagratis.lumiai.data.settings.DataStoreFlashStateRepository
 import com.mejoresiagratis.lumiai.data.settings.DataStoreOnboardingPreferencesRepository
 import com.mejoresiagratis.lumiai.data.auth.FirebaseAuthRepository
+import com.mejoresiagratis.lumiai.data.billing.PlayBillingRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreEntitlementOverrideRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreRewardProgressRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreTemporaryUnlockRepository
@@ -12,6 +13,7 @@ import com.mejoresiagratis.lumiai.data.torch.Camera2TorchController
 import com.mejoresiagratis.lumiai.data.torch.ServiceEngineController
 import com.mejoresiagratis.lumiai.data.music.DataStoreMusicConfigRepository
 import com.mejoresiagratis.lumiai.data.profile.DataStoreBillingProfileRepository
+import com.mejoresiagratis.lumiai.data.registry.FirestoreUserRegistryRepository
 import com.mejoresiagratis.lumiai.data.sound.DataStoreSoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.data.system.AndroidDeviceFeatures
 import com.mejoresiagratis.lumiai.data.torch.TorchController
@@ -20,10 +22,12 @@ import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
 import com.mejoresiagratis.lumiai.domain.repository.MusicConfigRepository
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
+import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
 import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
+import com.mejoresiagratis.lumiai.domain.repository.UserRegistryRepository
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import com.mejoresiagratis.lumiai.domain.repository.OnboardingPreferencesRepository
 import com.mejoresiagratis.lumiai.domain.repository.RewardProgressRepository
@@ -57,6 +61,14 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindBillingProfile(impl: DataStoreBillingProfileRepository): BillingProfileRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSubscriptionRepository(impl: PlayBillingRepository): SubscriptionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRegistry(impl: FirestoreUserRegistryRepository): UserRegistryRepository
 
     @Binds
     @Singleton

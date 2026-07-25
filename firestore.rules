@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Registro de usuarios de LumiAI. Cada documento es propiedad exclusiva de su dueno:
+// nadie puede leer el registro de otro usuario ni escribir en un uid que no sea el suyo.
+//
+// NOTA DE SEGURIDAD: este documento es un ESPEJO administrativo (soporte, contacto, analitica
+// de negocio). El campo `isSubscribed` que aqui se guarda NO gatea ninguna funcion dentro de la
+// app -- el gating real se verifica en tiempo real contra Google Play (BillingClient), asi que
+// aunque un usuario editase este campo a mano desde fuera de la app, no ganaria acceso a nada.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Todo lo demas, denegado por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

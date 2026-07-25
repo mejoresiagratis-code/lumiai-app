@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.settings
 
 import android.app.Activity
 import com.mejoresiagratis.lumiai.BuildConfig
+import com.mejoresiagratis.lumiai.domain.entitlement.canStartSubscriptionPurchase
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import android.content.Context
 import android.content.ContextWrapper
@@ -117,7 +118,8 @@ fun SettingsScreen(
     onOpenSoundAlert: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
-    rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
+    rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel(),
+    subscriptionViewModel: SubscriptionViewModel = hiltViewModel()
 ) {
     val user by accountViewModel.user.collectAsStateWithLifecycle()
     val isGuest = user == null || user?.isAnonymous == true
@@ -132,11 +134,11 @@ fun SettingsScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
     var showSubscribeGate by remember { mutableStateOf(false) }
-    var showSubscribeComingSoon by remember { mutableStateOf(false) }
     var showSoundAlertLocked by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
     var showLicenses by remember { mutableStateOf(false) }
     val billingProfile by accountViewModel.billingProfile.collectAsStateWithLifecycle()
+    val subscriptionUi by subscriptionViewModel.ui.collectAsStateWithLifecycle()
 
     // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
     // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
@@ -173,6 +175,13 @@ fun SettingsScreen(
         }
     }
     LaunchedEffect(Unit) { accountViewModel.refresh() }
+
+    LaunchedEffect(subscriptionUi.lastMessage) {
+        subscriptionUi.lastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            subscriptionViewModel.consumeMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -389,14 +398,20 @@ fun SettingsScreen(
                     OutlinedButton(
                         onClick = {
                             // Regla de producto: SUSCRIBIRSE exige cuenta con sesión iniciada
-                            // (a diferencia del desbloqueo temporal por anuncios, que no la
-                            // exige). Play Billing (Fase 5) aún no está conectado.
-                            if (isGuest) showSubscribeGate = true else showSubscribeComingSoon = true
+                            // (a diferencia del desbloqueo temporal por anuncios, que no la exige).
+                            if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
                         },
+                        enabled = !subscriptionUi.purchasing,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = LumiSpacing.xs)
-                    ) { Text(stringResource(R.string.pro_subscribe_cta)) }
+                    ) {
+                        Text(
+                            subscriptionUi.product?.let {
+                                stringResource(R.string.pro_subscribe_cta_price, it.formattedPrice)
+                            } ?: stringResource(R.string.pro_subscribe_cta)
+                        )
+                    }
                 }
             }
 
@@ -575,16 +590,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showSubscribeComingSoon) {
-        LumiDialog(
-            onDismiss = { showSubscribeComingSoon = false },
-            iconRes = R.drawable.ic_info,
-            title = stringResource(R.string.pro_subscribe_soon_title),
-            body = stringResource(R.string.pro_subscribe_soon_body),
-            dismissLabel = stringResource(R.string.dialog_close)
-        )
-    }
-
     if (showSoundAlertLocked) {
         val soundActivity = remember(context) { context.findActivity() }
         LumiDialog(
@@ -617,7 +622,7 @@ fun SettingsScreen(
             secondaryLabel = stringResource(R.string.pro_subscribe_cta),
             onSecondary = {
                 showSoundAlertLocked = false
-                if (isGuest) showSubscribeGate = true else showSubscribeComingSoon = true
+                if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
             },
             dismissLabel = stringResource(R.string.dialog_close)
         )
