@@ -259,4 +259,7 @@
     <string name="billing_payment_method">Gestionar método de pago</string>
     <string name="billing_payment_hint">Abre Google Play, donde viven tus métodos de pago y suscripciones.</string>
     <string name="pro_subscribe_cta_price">Suscríbete a Pro — %1$s</string>
+    <string name="pro_subscribe_cta">Suscríbete a Pro</string>
+    <string name="pro_subscribe_gate_title">Inicia sesión primero</string>
+    <string name="pro_subscribe_gate_body">Para suscribirte hace falta una cuenta con sesión activa: protege tu compra entre dispositivos. El desbloqueo temporal por anuncios no lo exige.</string>
 </resources>

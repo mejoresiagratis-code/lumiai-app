@@ -259,4 +259,7 @@
     <string name="billing_payment_method">Manage payment method</string>
     <string name="billing_payment_hint">Opens Google Play, where your payment methods and subscriptions live.</string>
     <string name="pro_subscribe_cta_price">Subscribe to Pro — %1$s</string>
+    <string name="pro_subscribe_cta">Subscribe to Pro</string>
+    <string name="pro_subscribe_gate_title">Sign in first</string>
+    <string name="pro_subscribe_gate_body">To subscribe you need an account with an active session — it keeps your purchase safe across devices. Ad-based temporary unlock doesn\'t require this.</string>
 </resources>
