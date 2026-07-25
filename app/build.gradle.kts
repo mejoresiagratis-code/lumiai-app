@@ -70,9 +70,23 @@ android {
     }
 }
 
-// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0). Este proyecto usa Kotlin 2.0.21,
-// cuyo compilador rechaza metadata más nueva. Permitimos leerla sin subir Kotlin todavía;
-// solo afecta a la lectura de binarios (no a nuestro código) y aplica a compile + KSP.
+// Los tests Robolectric (semántica de Compose) descargan el JAR de Android y arrancan un
+// entorno emulado en JVM: son, con diferencia, lo más lento de `testDebugUnitTest`. En CI
+// los excluimos del camino crítico con `-PexcludeSlowTests` para acelerar cada push,
+// manteniendo intactos los tests de dominio (baratos). En local, sin la flag, corre TODO.
+// Se marcan con el JUnit @Category(SlowTest::class); ver com.mejoresiagratis.lumiai.testing.
+tasks.withType<Test>().configureEach {
+    if (project.hasProperty("excludeSlowTests")) {
+        useJUnit {
+            excludeCategories("com.mejoresiagratis.lumiai.testing.SlowTest")
+        }
+    }
+}
+
+// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0), por delante de nuestro Kotlin 2.1.10.
+// Permitimos leer metadata más nueva sin bloquear el compilador; solo afecta a la lectura de
+// binarios de terceros (no a nuestro código) y aplica a compile + KSP. (El fallo de Hilt con
+// esta misma metadata se resolvió aparte subiendo Hilt a 2.57.1 — ver build-failures-memo #6.)
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xskip-metadata-version-check")

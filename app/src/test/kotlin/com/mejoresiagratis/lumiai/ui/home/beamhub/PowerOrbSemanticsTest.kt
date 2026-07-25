@@ -9,9 +9,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.testing.SlowTest
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -29,6 +31,7 @@ import org.robolectric.annotation.GraphicsMode
  * a11y_state_off), no de literales: así el test es independiente del idioma por defecto (la app es
  * bilingüe EN/ES) y de cambios de redacción.
  */
+@Category(SlowTest::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

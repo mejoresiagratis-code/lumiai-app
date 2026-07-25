@@ -39,10 +39,14 @@ jobs:
       # igual aunque fallen tests; pero si este step falla, GitHub Actions salta los
       # siguientes por defecto. continue-on-error deja avanzar al step de subida SIN
       # ocultar el fallo: el job entero sigue en rojo por el paso "Comprobar resultado".
+      # Tests de dominio (rápidos, milisegundos) + APK. Los tests Robolectric de
+      # semántica Compose van marcados @Category(SlowTest) y se excluyen aquí con
+      # -PexcludeSlowTests: descargan el JAR de Android y arrancan un entorno emulado,
+      # eran ~2-2.5 min del job. En local corren sin la flag. Ver app/build.gradle.kts.
       - name: Unit tests + debug APK
         id: build
         continue-on-error: true
-        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+        run: ./gradlew testDebugUnitTest assembleDebug -PexcludeSlowTests
 
       - name: Upload debug APK
         if: always()

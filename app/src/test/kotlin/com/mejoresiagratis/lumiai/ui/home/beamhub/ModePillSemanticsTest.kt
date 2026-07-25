@@ -10,9 +10,11 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.mejoresiagratis.lumiai.testing.SlowTest
 import com.mejoresiagratis.lumiai.ui.home.components.MODE_CATALOG
 import org.junit.Rule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -25,6 +27,7 @@ import org.robolectric.annotation.GraphicsMode
  * y el `stateDescription` de bloqueado). Corre en JVM con Robolectric (`testDebugUnitTest`).
  * Reutiliza `MODE_CATALOG.first()` como fixture, sin construir `FlashMode`/recursos a mano.
  */
+@Category(SlowTest::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

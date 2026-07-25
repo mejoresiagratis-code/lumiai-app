@@ -122,3 +122,15 @@
   grafo Hilt completo y sus efectos de onCreate (→ checklist #9, nuevo).
   Además: cuando un fallo de build tape la fase de tests durante varias
   versiones, esperar fallos latentes al destaparlo.
+
+### 2026-07-25 (mejora de CI, no es fallo)
+- **CI aligerado (Opción B):** `testDebugUnitTest assembleDebug` seguía corriendo los
+  2 tests Robolectric de semántica Compose en cada push (~2-2.5 min de los ~3 del job:
+  descargan el JAR de Android y arrancan entorno emulado en JVM). Se marcan con
+  `@Category(com.mejoresiagratis.lumiai.testing.SlowTest)` y se excluyen del camino
+  crítico con `-PexcludeSlowTests` (config en `app/build.gradle.kts`, `tasks.withType<Test>`).
+  Los tests de dominio (rápidos) siguen corriendo y protegiendo tiers/flash. En local,
+  sin la flag, corre TODO. Quitado también `--stacktrace` del paso feliz (solo ruido).
+  Comentario obsoleto de Kotlin 2.0.21 en build.gradle actualizado a 2.1.10.
+  **Nota:** los Robolectric siguen existiendo y son válidos; solo salen del gate de push.
+  Para correrlos en CI: lanzar `quality`/dispatch manual o quitar la flag puntualmente.
