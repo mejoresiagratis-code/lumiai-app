@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.domain.model.AuthException
 import com.mejoresiagratis.lumiai.domain.model.AuthUser
+import com.mejoresiagratis.lumiai.domain.model.BillingProfile
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
+import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,11 +26,19 @@ data class AccountUiState(
 
 @HiltViewModel
 class AccountViewModel @Inject constructor(
-    private val auth: AuthRepository
+    private val auth: AuthRepository,
+    private val billingProfileRepo: BillingProfileRepository
 ) : ViewModel() {
 
     val user: StateFlow<AuthUser?> =
         auth.currentUser.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Nombre + país de facturación (metadato propio; el cobro real lo procesa Google Play). */
+    val billingProfile: StateFlow<BillingProfile> = billingProfileRepo.profile
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BillingProfile())
+
+    fun setFullName(value: String) = viewModelScope.launch { billingProfileRepo.setFullName(value) }
+    fun setBillingCountry(value: String) = viewModelScope.launch { billingProfileRepo.setBillingCountry(value) }
 
     val webClientId: String? get() = auth.googleWebClientId
 

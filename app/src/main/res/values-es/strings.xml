@@ -239,4 +239,23 @@
     <string name="screen_intimate_sleep_infinite">Off</string>
     <string name="screen_intimate_sleep_minutes">%1$d min</string>
     <string name="screen_intimate_sleep_remaining">Se apaga en %1$d:%2$02d</string>
+    <string name="language_section">Idioma</string>
+    <string name="language_row_title">Idioma de la app</string>
+    <string name="language_row_subtitle">Abre los ajustes de idioma del sistema para esta app</string>
+    <string name="about_section">Acerca de</string>
+    <string name="about_version">Versión</string>
+    <string name="about_changelog">Novedades</string>
+    <string name="about_changelog_body">v0.4.1 — Suscribirse ya exige cuenta.\nv0.4.0 — Modo Íntimo (atmósferas, temporizador de sueño).\nv0.3.1 — Música al carrusel, diálogos rediseñados.\nv0.3.0 — Modo Música (Pro).\nv0.2.x — Roles de usuario, azul de marca, Alerta Sonora rediseñada.</string>
+    <string name="about_rate">Valóranos en Google Play</string>
+    <string name="about_licenses">Licencias de código abierto</string>
+    <string name="about_licenses_soon">Lista de licencias, próximamente.</string>
+    <string name="legal_section">Legal</string>
+    <string name="legal_privacy">Política de privacidad</string>
+    <string name="legal_terms">Términos de servicio</string>
+    <string name="billing_section">Datos de facturación</string>
+    <string name="billing_explainer">Google Play procesa el cobro y emite el recibo — la app nunca ve ni guarda datos de tarjeta. Esto es solo tu perfil para futuras facturas y soporte.</string>
+    <string name="billing_full_name">Nombre completo</string>
+    <string name="billing_country">País de facturación</string>
+    <string name="billing_payment_method">Gestionar método de pago</string>
+    <string name="billing_payment_hint">Abre Google Play, donde viven tus métodos de pago y suscripciones.</string>
 </resources>

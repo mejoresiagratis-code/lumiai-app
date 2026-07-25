@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -90,6 +91,8 @@ import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import com.mejoresiagratis.lumiai.ui.components.LumiDialog
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.solidColor
+import android.content.Intent
+import android.net.Uri
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -128,6 +131,12 @@ fun SettingsScreen(
     val webClientId = accountViewModel.webClientId
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
+    var showSubscribeGate by remember { mutableStateOf(false) }
+    var showSubscribeComingSoon by remember { mutableStateOf(false) }
+    var showSoundAlertLocked by remember { mutableStateOf(false) }
+    var showChangelog by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
+    val billingProfile by accountViewModel.billingProfile.collectAsStateWithLifecycle()
 
     // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
     // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
@@ -285,6 +294,47 @@ fun SettingsScreen(
                 }
             }
 
+            // --- Datos de facturación: listo para Play Billing (Fase 5). Google procesa el
+            // cobro y emite el recibo; la app nunca ve ni guarda datos de tarjeta. ---
+            if (!isGuest) {
+                SettingsSection(R.string.billing_section) {
+                    Text(
+                        text = stringResource(R.string.billing_explainer),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = billingProfile.fullName,
+                        onValueChange = { accountViewModel.setFullName(it) },
+                        label = { Text(stringResource(R.string.billing_full_name)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = billingProfile.billingCountry,
+                        onValueChange = { accountViewModel.setBillingCountry(it) },
+                        label = { Text(stringResource(R.string.billing_country)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val i = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://play.google.com/store/account/subscriptions")
+                            )
+                            runCatching { context.startActivity(i) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.billing_payment_method)) }
+                    Text(
+                        text = stringResource(R.string.billing_payment_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // --- Tema ---
             // --- Acceso Pro temporal ---
             SettingsSection(R.string.pro_section) {
@@ -334,6 +384,19 @@ fun SettingsScreen(
                             stringResource(R.string.pro_watch_ad_loading)
                         }
                     )
+                }
+                if (!proUi.hasSubscription) {
+                    OutlinedButton(
+                        onClick = {
+                            // Regla de producto: SUSCRIBIRSE exige cuenta con sesión iniciada
+                            // (a diferencia del desbloqueo temporal por anuncios, que no la
+                            // exige). Play Billing (Fase 5) aún no está conectado.
+                            if (isGuest) showSubscribeGate = true else showSubscribeComingSoon = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = LumiSpacing.xs)
+                    ) { Text(stringResource(R.string.pro_subscribe_cta)) }
                 }
             }
 
@@ -400,12 +463,70 @@ fun SettingsScreen(
                         Text(stringResource(R.string.sound_alert_open))
                     }
                 } else {
-                    Text(
-                        text = stringResource(R.string.sound_alert_locked),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Button(
+                        onClick = { showSoundAlertLocked = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
                 }
+            }
+
+            SettingsSection(R.string.language_section) {
+                SettingsRow(
+                    titleRes = R.string.language_row_title,
+                    subtitle = stringResource(R.string.language_row_subtitle),
+                    onClick = {
+                        val i = Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+                            data = Uri.parse("package:" + context.packageName)
+                        }
+                        runCatching { context.startActivity(i) }
+                    }
+                )
+            }
+
+            SettingsSection(R.string.about_section) {
+                SettingsRow(
+                    titleRes = R.string.about_version,
+                    subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    onClick = null
+                )
+                SettingsRow(
+                    titleRes = R.string.about_changelog,
+                    onClick = { showChangelog = true }
+                )
+                SettingsRow(
+                    titleRes = R.string.about_rate,
+                    onClick = {
+                        val uri = Uri.parse("market://details?id=" + context.packageName)
+                        val i = Intent(Intent.ACTION_VIEW, uri)
+                        val fallback = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://play.google.com/store/apps/details?id=" + context.packageName)
+                        )
+                        runCatching { context.startActivity(i) }
+                            .onFailure { runCatching { context.startActivity(fallback) } }
+                    }
+                )
+            }
+
+            SettingsSection(R.string.legal_section) {
+                SettingsRow(
+                    titleRes = R.string.legal_privacy,
+                    onClick = {
+                        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://mejoresiagratis.com/lumiai/privacy-policy.html"))
+                        runCatching { context.startActivity(i) }
+                    }
+                )
+                SettingsRow(
+                    titleRes = R.string.legal_terms,
+                    onClick = {
+                        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://mejoresiagratis.com/lumiai/terms.html"))
+                        runCatching { context.startActivity(i) }
+                    }
+                )
+                SettingsRow(
+                    titleRes = R.string.about_licenses,
+                    onClick = { showLicenses = true }
+                )
             }
 
             if (BuildConfig.DEBUG) {
@@ -438,6 +559,86 @@ fun SettingsScreen(
             ),
             primaryLabel = if (lock == AccentLock.ACCOUNT) stringResource(R.string.accent_locked_sign_in) else null,
             onPrimary = if (lock == AccentLock.ACCOUNT) ({ accentLockDialog = null; onOpenAuth() }) else null,
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showSubscribeGate) {
+        LumiDialog(
+            onDismiss = { showSubscribeGate = false },
+            iconRes = R.drawable.ic_lock,
+            title = stringResource(R.string.pro_subscribe_gate_title),
+            body = stringResource(R.string.pro_subscribe_gate_body),
+            primaryLabel = stringResource(R.string.accent_locked_sign_in),
+            onPrimary = { showSubscribeGate = false; onOpenAuth() },
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showSubscribeComingSoon) {
+        LumiDialog(
+            onDismiss = { showSubscribeComingSoon = false },
+            iconRes = R.drawable.ic_info,
+            title = stringResource(R.string.pro_subscribe_soon_title),
+            body = stringResource(R.string.pro_subscribe_soon_body),
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showSoundAlertLocked) {
+        val soundActivity = remember(context) { context.findActivity() }
+        LumiDialog(
+            onDismiss = { showSoundAlertLocked = false },
+            iconRes = R.drawable.ic_lock,
+            title = stringResource(R.string.mode_locked_title),
+            body = stringResource(R.string.sound_alert_locked),
+            primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+            onPrimary = {
+                showSoundAlertLocked = false
+                val act = soundActivity
+                if (act != null) {
+                    rewardedUnlockViewModel.watchAd(
+                        activity = act,
+                        onReward = { outcome ->
+                            val msg = if (outcome.grantsUnlock) {
+                                context.getString(R.string.pro_granted)
+                            } else {
+                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                context.getString(R.string.pro_progress_more, remaining)
+                            }
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        },
+                        onUnavailable = {
+                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            },
+            secondaryLabel = stringResource(R.string.pro_subscribe_cta),
+            onSecondary = {
+                showSoundAlertLocked = false
+                if (isGuest) showSubscribeGate = true else showSubscribeComingSoon = true
+            },
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showChangelog) {
+        LumiDialog(
+            onDismiss = { showChangelog = false },
+            iconRes = R.drawable.ic_info,
+            title = stringResource(R.string.about_changelog),
+            body = stringResource(R.string.about_changelog_body),
+            dismissLabel = stringResource(R.string.dialog_close)
+        )
+    }
+
+    if (showLicenses) {
+        LumiDialog(
+            onDismiss = { showLicenses = false },
+            iconRes = R.drawable.ic_info,
+            title = stringResource(R.string.about_licenses),
+            body = stringResource(R.string.about_licenses_soon),
             dismissLabel = stringResource(R.string.dialog_close)
         )
     }
@@ -566,6 +767,44 @@ private fun Avatar(letter: String) {
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer
         )
+    }
+}
+
+/** Fila de ajuste simple: icono opcional, título, subtítulo y chevron si es accionable. */
+@Composable
+private fun SettingsRow(
+    @StringRes titleRes: Int,
+    subtitle: String? = null,
+    onClick: (() -> Unit)?
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+            .padding(vertical = LumiSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
+            subtitle?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        if (onClick != null) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_down),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(18.dp)
+                    .rotate(-90f)
+            )
+        }
     }
 }
 
