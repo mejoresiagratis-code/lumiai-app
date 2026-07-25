@@ -100,3 +100,25 @@
   más nuevo que el que soporta nuestro annotation processor; al añadir libs de
   Google recientes, verificar la versión de Kotlin con la que están compiladas
   contra el máximo que soporta Hilt/kapt (→ checklist #8, nuevo).
+
+- **#7** run `81689652573` · commit v0.6.2 · `testDebugUnitTest` FAILED ·
+  6 tests de `ModePillSemanticsTest`/`PowerOrbSemanticsTest` con
+  `IllegalStateException at FirebaseApp.java:179` ("Default FirebaseApp is not
+  initialized").
+  **Causa:** fallo LATENTE de v0.6.0, destapado al arreglar #6. Robolectric
+  instancia la Application real del manifest (`LumiAiApplication`,
+  `@HiltAndroidApp`), que desde v0.6.0 inyecta `AuthRepository` y
+  `UserRegistryRepository`; sus constructores llaman `Firebase.auth` /
+  `Firebase.firestore` en la creación del grafo → `FirebaseApp.getInstance()`
+  truena porque `FirebaseInitProvider` no corre en Robolectric. Los builds
+  v0.6.0/v0.6.1 nunca llegaron a la fase de tests (rompían antes en #6), por
+  eso no se vio.
+  **Fix:** `@Config(sdk = [34], application = Application::class)` en ambos
+  tests de semántica: usan una Application plana de android.app, sin Hilt ni
+  Firebase, que es todo lo que necesitan para renderizar composables sueltos.
+  **Lección:** todo test Robolectric que renderice composables debe fijar
+  `application = Application::class` (o un TestApplication propio) en su
+  `@Config`; nunca depender de la Application del manifest, que arrastra el
+  grafo Hilt completo y sus efectos de onCreate (→ checklist #9, nuevo).
+  Además: cuando un fallo de build tape la fase de tests durante varias
+  versiones, esperar fallos latentes al destaparlo.

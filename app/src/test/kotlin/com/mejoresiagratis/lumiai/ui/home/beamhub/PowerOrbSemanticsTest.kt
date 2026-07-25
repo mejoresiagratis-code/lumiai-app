@@ -1,5 +1,6 @@
 package com.mejoresiagratis.lumiai.ui.home.beamhub
 
+import android.app.Application
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -29,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
  * bilingüe EN/ES) y de cambios de redacción.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PowerOrbSemanticsTest {
 
