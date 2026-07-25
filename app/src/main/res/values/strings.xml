@@ -151,18 +151,21 @@
 
     <!-- Temporary Pro access via ads -->
     <string name="pro_section">Pro access</string>
-    <string name="pro_explainer">Watch 2 ads and get 1 hour of Pro features, free.</string>
+    <string name="pro_explainer">Unlock 1 hour of every Pro mode — free. Just watch 2 short ads.</string>
     <string name="pro_remaining">Pro active · %1$s left</string>
     <string name="sound_alert_section">Sound alert</string>
     <string name="sound_alert_explainer">Alerts you with flash bursts or screen blinks when it recognises important sounds (doorbell, alarm, crying…). All on-device. Pro feature.</string>
     <string name="sound_alert_open">Open sound alert</string>
     <string name="sound_alert_locked">Available with Pro, or after unlocking time by watching an ad in “Pro access”.</string>
     <string name="pro_progress">Ads watched: %1$d/%2$d</string>
-    <string name="pro_watch_ad">Watch ad for 1 h of Pro</string>
-    <string name="pro_watch_ad_loading">Preparing ad…</string>
-    <string name="pro_granted">You\'ve unlocked 1 h of Pro!</string>
-    <string name="pro_ad_unavailable">Ad not available, try again in a few seconds.</string>
-    <string name="pro_progress_more">Ad watched · %1$d more for 1 h of Pro.</string>
+    <string name="pro_progress_start">Watch 2 ads → unlock 1 h of Pro. Progress: %1$d/%2$d.</string>
+    <string name="pro_progress_one_left">Almost there! 1 ad done, 1 to go for your free hour of Pro.</string>
+    <string name="pro_watch_ad">Watch ad 1 of 2 — unlock 1 h of Pro</string>
+    <string name="pro_watch_ad_last">Watch the last ad — unlock 1 h of Pro now</string>
+    <string name="pro_watch_ad_loading">Preparing your ad…</string>
+    <string name="pro_granted">Unlocked! Enjoy 1 hour of Pro 🎉</string>
+    <string name="pro_ad_unavailable">Ad not ready yet — try again in a few seconds.</string>
+    <string name="pro_progress_more">Nice! Just %1$d more ad for your free hour of Pro.</string>
     <string name="action_cancel">Cancel</string>
     <string name="mode_locked_title">Mode locked</string>
     <string name="mode_locked_body">Unlock it free: watch ads (2 = 1 h of Pro) or sign in.</string>

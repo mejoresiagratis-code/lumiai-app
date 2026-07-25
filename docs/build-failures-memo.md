@@ -195,3 +195,25 @@
   error del read (no solo `>0`), tener watchdog contra el giro en vacío, y ceder el flash
   al perder el foco de audio. La lógica DSP correcta no basta para producción sin la
   resiliencia del servicio que la aloja (→ checklist #13, nuevo).
+
+### 2026-07-25
+- **#8** run `81695364271` · commit `a46295b` · `compileDebugKotlin` FAILED ·
+  `Unresolved reference 'pro_progress_one_left' / 'pro_progress_start' /
+  'pro_watch_ad_last'` en SettingsScreen.kt (líneas 373/374/410).
+  **Causa:** entrega parcial en Codespaces. El ZIP `lumiai-pro-prefill-cta-progreso`
+  contenía SettingsScreen.kt (con los usos de las 3 strings nuevas) Y strings.xml/
+  strings-es (con sus definiciones), pero al aplicar el ZIP solo se actualizó el .kt;
+  ambos strings.xml quedaron en la versión ANTERIOR (ni las 3 defs nuevas ni el copy
+  CTA reescrito). El .kt referenciaba recursos inexistentes -> no compila. El fallo no
+  se vio en el push de ese commit porque el CI de ese momento no llegó / se solapó con
+  los commits siguientes (pantalla, intimo/musica), que sí se pushearon completos.
+  **Fix:** reaplicadas las 3 strings nuevas + el copy CTA (AIDA/PAS) en EN y ES sobre
+  el estado real del remoto. Verificado con `comm -23` sobre TODO app/src (no solo
+  Settings): 0 R.string usadas sin definir. i18n 258/258.
+  **Lección:** al aplicar un ZIP de entrega con `unzip -o`, si un fichero no se
+  sobreescribe (permiso, ruta, conflicto), se rompe la atomicidad del commit y quedan
+  usos sin sus recursos. El gate `comm -23` de R.string usadas-vs-definidas debe correr
+  sobre TODO el árbol y ANTES de push, no solo sobre el fichero editado (→ checklist #7
+  ampliado: el chequeo de recursos es global, no por-fichero). Además: tras un `unzip -o`
+  en el entorno de entrega, `git status` debe mostrar TODOS los ficheros del ZIP como
+  modificados; si falta alguno, la entrega quedó parcial.
