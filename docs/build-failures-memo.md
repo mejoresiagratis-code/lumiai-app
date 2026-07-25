@@ -79,3 +79,24 @@
   **Lección:** al anadir `requiresX()=true` a un modo nuevo, buscar tests
   que fijen el contrato "hoy ningun modo exige X" y actualizarlos en el
   mismo commit que el modo (→ checklist #4, ampliado).
+
+### 2026-07-25
+- **#6** run `81688341037` · commit `9ab190e` · `hiltJavaCompileDebug` FAILED ·
+  `IllegalArgumentException: Provided Metadata instance has version 2.2.0, while
+  maximum supported version is 2.1.0` (stack en `dagger.spi.internal.shaded...
+  kotlinx.metadata.jvm`).
+  **Causa:** Hilt 2.52 lleva shadeado `kotlinx-metadata-jvm` que solo lee metadata
+  Kotlin hasta 2.1.0. `billing-ktx:9.1.0` (añadida en v0.6.0) está compilada con
+  Kotlin 2.2.x → el procesador de Dagger truena al escanear el classpath, sin que
+  haya código nuestro implicado. El fallo no aparece al añadir la dependencia en
+  el catálogo sino en el primer build que la procesa.
+  **Fix (v0.6.2):** bump coordinado mínimo: `hilt 2.52 → 2.57.1` (kotlin-metadata-jvm
+  des-shadeado, soporta metadata nuevas), `kotlin 2.0.21 → 2.1.10` y
+  `ksp 2.0.21-1.0.28 → 2.1.10-1.0.31` (mínimo exigido por Hilt 2.56+). AGP 8.7.3,
+  Gradle 8.9 y Compose BOM 2024.09.03 se quedan como están (compatibles).
+  La rama parkeada `chore/toolchain-modernization-a1` NO es mergeable: base
+  pre-v0.6.0 (sin billing/firestore); solo sirvió de referencia de matriz.
+  **Lección:** cualquier dependencia nueva puede arrastrar metadata de un Kotlin
+  más nuevo que el que soporta nuestro annotation processor; al añadir libs de
+  Google recientes, verificar la versión de Kotlin con la que están compiladas
+  contra el máximo que soporta Hilt/kapt (→ checklist #8, nuevo).
