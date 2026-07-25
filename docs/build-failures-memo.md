@@ -150,22 +150,48 @@
   guardado a DataStore/red va con debounce o al perder foco, nunca por pulsación
   (→ checklist #10, nuevo).
 
-### 2026-07-25 (mejoras de producto — 3 peticiones de Pablo tras probar en dispositivo)
-- **(1) Autorrelleno de perfil de facturación tras login.** Al iniciar sesión con cuenta
-  real se siembra `fullName` con el `displayName` del proveedor (Google lo aporta) y el
-  país con `Locale.getDefault().displayCountry`, SOLO si están vacíos (nunca pisa lo
-  escrito a mano). Implementado como `prefillFullNameIfEmpty`/`prefillCountryIfEmpty`
-  atómicos en DataStore (`edit` con check `isNullOrBlank`), disparados desde un collector
-  nuevo en `LumiAiApplication` sobre `auth.currentUser` (separado del sync de registro
-  para no crear bucle de realimentación con `profile`). Añadido `displayName` a `AuthUser`.
-- **(2) CTAs de conversión.** Reescrito el copy de la sección Pro aplicando frameworks de
-  la skill `kostja94/marketing-skills` (AIDA/PAS + reglas: front-load del beneficio, verbo
-  de acción, sin clickbait). "Watch 2 ads and get..." -> "Unlock 1 hour of every Pro mode
-  — free. Just watch 2 short ads." Botón ahora indica "Ver anuncio 1 de 2" / "Ver el
-  último anuncio". EN y ES en paridad.
-- **(3) Feedback de progreso visible.** El "Anuncios vistos: 0/2" plano no comunicaba que
-  faltaba 1. Sustituido por `LinearProgressIndicator` persistente + mensaje dinámico
-  ("¡Ya casi! Llevas 1 anuncio, te falta 1...") que reacciona a `adsWatched`. Solo se
-  muestra si Pro NO está activo. 3 strings nuevas x2 idiomas (256/256).
-  **Lección:** el estado de progreso hacia una recompensa debe ser SIEMPRE visible y
-  persistente en la UI, no solo un Toast efímero tras la acción (→ checklist #11, nuevo).
+### 2026-07-25 (bug crítico de UI en dispositivo — modo Pantalla en blanco)
+- **Modo Pantalla abría en blanco sin controles** (captura de Pablo: pantalla blanca
+  total, sin panel de ajustes ni forma de tocar nada). **Causa raíz:** en `ScreenLight.kt`
+  el estado de bloqueo era `var locked by rememberSaveable { mutableStateOf(autoLockScreen) }`.
+  `rememberSaveable` PERSISTE en el Bundle de la Activity: una vez que `locked` valía `true`
+  (usuario tocó el candado, o auto-lock activo en una sesión), ese `true` se restauraba en
+  CADA reapertura del modo, incluso tras cerrar. El overlay `if (locked)` cubre toda la
+  pantalla (`matchParentSize`) con fondo opaco `Color(argb)` (blanco por defecto, screenArgb
+  = -0x1) tapando el panel de ajustes entero; el "mantén pulsado para desbloquear" no era
+  descubrible.
+  **Fix (2 partes):**
+  (1) `remember(autoLockScreen) { mutableStateOf(autoLockScreen) }` — el bloqueo se reinicia
+      según el ajuste REAL de auto-bloqueo cada vez que se entra al modo; nunca restaura un
+      `true` viejo. Quitado el import huérfano de `rememberSaveable`.
+  (2) overlay de bloqueo con velo `Color.Black.copy(alpha=0.55f)` (no opaco al color de
+      pantalla) + candado/textos en blanco → siempre legibles y con salida evidente.
+  **Lección:** `rememberSaveable` para estado de UI efímero (bloqueo, expandido, overlays)
+  es peligroso: persiste entre recreaciones y "atrapa" al usuario en un estado del que no
+  puede salir. Usar `remember` (con clave si depende de un ajuste) salvo que la persistencia
+  entre rotaciones sea deseada Y haya salida garantizada (→ checklist #12, nuevo).
+  Nota: BeamHubScreen usa `collectAsStateWithLifecycle` (el memo Set A prefiere
+  `collectAsState`); funciona aquí y no era la causa, se deja pero queda anotado.
+
+### 2026-07-25 (robustez de Música + latido de Íntimo — QA en dispositivo)
+- **Modo Íntimo: efecto "latido" poco visible.** La animación RESPIRACION iba de alpha
+  0.55→1.0 con LinearEasing y ciclo de 5 s: cambio por instante mínimo, se percibía
+  apenas. **Fix:** keyframes con envolvente orgánica (FastOutSlowInEasing), rango
+  ampliado 0.40→1.0 y un doble pulso (sístole/diástole) en el pico, ciclo de 4 s.
+  "Ambos, más marcado pero suave · claramente visible" (elección de Pablo). Quitado
+  import huérfano de LinearEasing.
+- **Modo Música: robustez operacional del FGS** (el DSP del BeatDetector ya era sólido;
+  el problema era resiliencia del servicio). Añadido en `MusicFlashService`:
+  · manejo de códigos de error negativos de `AudioRecord.read()` (DEAD_OBJECT, etc.) con
+    watchdog (MAX_READ_ERRORS=20 + backoff) → no gira en vacío para siempre; para limpio.
+  · `startRecording()` y constructor de AudioRecord protegidos (mic ocupado / args malos)
+    → notifica error y para en vez de crashear.
+  · gestión de FOCO DE AUDIO: al perderlo (llamada, otra grabadora, asistente) se pausan
+    los destellos y se apaga el LED; se reanuda al recuperarlo. AudioFocusRequest guardado
+    para API 26+ con fallback deprecated en 24-25 (minSdk 24).
+  · notificación FGS con estados (escuchando / en pausa / error) vía updateNotification.
+  · 2 strings nuevas x2 idiomas (255/255).
+  **Lección:** un bucle de captura de audio/sensor debe tratar SIEMPRE los códigos de
+  error del read (no solo `>0`), tener watchdog contra el giro en vacío, y ceder el flash
+  al perder el foco de audio. La lógica DSP correcta no basta para producción sin la
+  resiliencia del servicio que la aloja (→ checklist #13, nuevo).

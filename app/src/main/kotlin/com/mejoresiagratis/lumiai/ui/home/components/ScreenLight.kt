@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,7 +45,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -180,16 +179,31 @@ fun ScreenLight(
     // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
     var panelExpanded by remember { mutableStateOf(true) }
     val autoLockScreen = LocalAutoLockScreen.current
-    var locked by rememberSaveable { mutableStateOf(autoLockScreen) }
+    // El bloqueo arranca según el ajuste real de auto-bloqueo CADA vez que se entra al modo.
+    // (Antes: rememberSaveable persistía un `true` de una sesión previa en el Bundle de la
+    // Activity, dejando el modo bloqueado con un overlay blanco que tapaba el panel entero y
+    // sin forma evidente de salir. La clave `autoLockScreen` fuerza reevaluar al reentrar.)
+    var locked by remember(autoLockScreen) { mutableStateOf(autoLockScreen) }
 
     // --- Animaciones del Modo Íntimo (independientes del brillo de ventana) ---
     val transition = rememberInfiniteTransition(label = "intimateGlow")
+    // "Respiración con latido": envolvente suave (inhalar/exhalar) con un doble pulso marcado
+    // en el punto álgido, para que se note claramente sin ser agobiante. Rango 0.40→1.0 (antes
+    // 0.55→1.0, apenas perceptible) y easing orgánico en vez de lineal. Ciclo de 4 s.
     val breathe by transition.animateFloat(
-        initialValue = 0.55f,
-        targetValue = 1f,
+        initialValue = 0.40f,
+        targetValue = 0.40f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 5000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = keyframes {
+                durationMillis = 4000
+                0.40f at 0 using FastOutSlowInEasing        // valle (exhalado)
+                0.85f at 900 using FastOutSlowInEasing       // primer latido sube
+                0.70f at 1300 using FastOutSlowInEasing      // pequeño reflujo (sístole/diástole)
+                1.00f at 2000 using FastOutSlowInEasing      // pico (inhalado pleno)
+                0.75f at 3000 using FastOutSlowInEasing      // baja suave
+                0.40f at 4000 using FastOutSlowInEasing      // vuelve al valle
+            },
+            repeatMode = RepeatMode.Restart
         ),
         label = "intimateBreathe"
     )
@@ -467,10 +481,12 @@ fun ScreenLight(
         }
 
         if (locked) {
+            // Velo semitransparente oscuro (no opaco al color de pantalla) para que el candado y
+            // el texto "mantén pulsado para desbloquear" SIEMPRE se lean, sea cual sea el color.
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(if (intimateEnabled) Color.Transparent else Color(argb))
+                    .background(Color.Black.copy(alpha = 0.55f))
                     .combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -487,18 +503,18 @@ fun ScreenLight(
                     Icon(
                         painter = painterResource(R.drawable.ic_lock),
                         contentDescription = null,
-                        tint = onColor,
+                        tint = Color.White,
                         modifier = Modifier.size(40.dp)
                     )
                     Text(
                         text = lockedTitle,
                         style = MaterialTheme.typography.titleMedium,
-                        color = onColor
+                        color = Color.White
                     )
                     Text(
                         text = lockedHint,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = onColor.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
             }

@@ -151,21 +151,18 @@
 
     <!-- Acceso Pro temporal por anuncios -->
     <string name="pro_section">Acceso Pro</string>
-    <string name="pro_explainer">Desbloquea 1 hora de todos los modos Pro — gratis. Solo mira 2 anuncios cortos.</string>
+    <string name="pro_explainer">Mira 2 anuncios y consigue 1 hora de funciones Pro, sin coste.</string>
     <string name="pro_remaining">Pro activo · te queda %1$s</string>
     <string name="sound_alert_section">Alerta sonora</string>
     <string name="sound_alert_explainer">Avisa con destellos del flash o parpadeo de pantalla cuando reconoce sonidos importantes (timbre, alarma, llanto…). Todo en el dispositivo. Función Pro.</string>
     <string name="sound_alert_open">Abrir alerta sonora</string>
     <string name="sound_alert_locked">Disponible con Pro, o tras desbloquear tiempo viendo un anuncio en «Acceso Pro».</string>
     <string name="pro_progress">Anuncios vistos: %1$d/%2$d</string>
-    <string name="pro_progress_start">Mira 2 anuncios → desbloquea 1 h de Pro. Progreso: %1$d/%2$d.</string>
-    <string name="pro_progress_one_left">¡Ya casi! Llevas 1 anuncio, te falta 1 para tu hora de Pro gratis.</string>
-    <string name="pro_watch_ad">Ver anuncio 1 de 2 — desbloquea 1 h de Pro</string>
-    <string name="pro_watch_ad_last">Ver el último anuncio — desbloquea 1 h de Pro ya</string>
-    <string name="pro_watch_ad_loading">Preparando tu anuncio…</string>
-    <string name="pro_granted">¡Desbloqueado! Disfruta 1 hora de Pro 🎉</string>
-    <string name="pro_ad_unavailable">El anuncio aún no está listo — inténtalo en unos segundos.</string>
-    <string name="pro_progress_more">¡Bien! Solo te falta %1$d anuncio para tu hora de Pro gratis.</string>
+    <string name="pro_watch_ad">Ver anuncio para 1 h de Pro</string>
+    <string name="pro_watch_ad_loading">Preparando anuncio…</string>
+    <string name="pro_granted">¡Has desbloqueado 1 h de Pro!</string>
+    <string name="pro_ad_unavailable">Anuncio no disponible, inténtalo en unos segundos.</string>
+    <string name="pro_progress_more">Anuncio visto · te falta %1$d para 1 h de Pro.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="mode_locked_title">Modo bloqueado</string>
     <string name="mode_locked_body">Desbloquéalo gratis: mira anuncios (2 = 1 h de Pro) o inicia sesión.</string>
@@ -228,6 +225,8 @@
     <string name="music_stop">Parar</string>
     <string name="music_listening">Escuchando: el flash sigue el ritmo.</string>
     <string name="music_notif_listening">Destellando al ritmo de la música</string>
+    <string name="music_notif_paused">En pausa — otra app está usando el audio</string>
+    <string name="music_notif_error">No se pudo acceder al micrófono. Toca para reintentar.</string>
     <string name="mode_music">Música</string>
     <string name="screen_intimate_toggle">Modo íntimo</string>
     <string name="screen_intimate_animation">Animación</string>
