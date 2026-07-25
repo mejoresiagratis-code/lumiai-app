@@ -62,9 +62,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -313,19 +315,15 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
-                        value = billingProfile.fullName,
-                        onValueChange = { accountViewModel.setFullName(it) },
-                        label = { Text(stringResource(R.string.billing_full_name)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                    PersistedTextField(
+                        persistedValue = billingProfile.fullName,
+                        onPersist = accountViewModel::setFullName,
+                        label = stringResource(R.string.billing_full_name)
                     )
-                    OutlinedTextField(
-                        value = billingProfile.billingCountry,
-                        onValueChange = { accountViewModel.setBillingCountry(it) },
-                        label = { Text(stringResource(R.string.billing_country)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                    PersistedTextField(
+                        persistedValue = billingProfile.billingCountry,
+                        onPersist = accountViewModel::setBillingCountry,
+                        label = stringResource(R.string.billing_country)
                     )
                     OutlinedButton(
                         onClick = {
@@ -777,6 +775,51 @@ private fun Avatar(letter: String) {
 }
 
 /** Fila de ajuste simple: icono opcional, título, subtítulo y chevron si es accionable. */
+/**
+ * Campo de texto cuyo estado de edición es LOCAL y síncrono (un [TextFieldValue] que preserva
+ * cursor y selección), y que solo persiste al almacenamiento al perder el foco. Evita cablear el
+ * `value` del TextField directamente a un Flow/DataStore asíncrono: eso reordena las escrituras y
+ * pierde la posición del cursor, produciendo texto invertido ("Pablo" -> "abloP").
+ *
+ * - Mientras el usuario escribe: solo se actualiza el estado local -> tecleo instantáneo, cursor OK.
+ * - Al perder el foco: se llama a [onPersist] una sola vez, y solo si el texto cambió.
+ * - Si el valor persistido cambia desde fuera MIENTRAS el campo no tiene el foco (p. ej. otro
+ *   dispositivo, o la carga inicial de DataStore), se re-sincroniza el estado local. Nunca se
+ *   pisa lo que el usuario está escribiendo (solo se sincroniza sin foco).
+ */
+@Composable
+private fun PersistedTextField(
+    persistedValue: String,
+    onPersist: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    var fieldState by remember { mutableStateOf(TextFieldValue(persistedValue)) }
+    var hasFocus by remember { mutableStateOf(false) }
+
+    // Re-sincroniza SOLO cuando el campo no tiene foco, para no pisar la edición en curso.
+    LaunchedEffect(persistedValue, hasFocus) {
+        if (!hasFocus && persistedValue != fieldState.text) {
+            fieldState = TextFieldValue(persistedValue)
+        }
+    }
+
+    OutlinedTextField(
+        value = fieldState,
+        onValueChange = { fieldState = it },
+        label = { Text(label) },
+        singleLine = true,
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focus ->
+                if (hasFocus && !focus.isFocused && fieldState.text != persistedValue) {
+                    onPersist(fieldState.text)
+                }
+                hasFocus = focus.isFocused
+            }
+    )
+}
+
 @Composable
 private fun SettingsRow(
     @StringRes titleRes: Int,

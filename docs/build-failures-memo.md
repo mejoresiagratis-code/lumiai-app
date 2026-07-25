@@ -134,3 +134,18 @@
   Comentario obsoleto de Kotlin 2.0.21 en build.gradle actualizado a 2.1.10.
   **Nota:** los Robolectric siguen existiendo y son válidos; solo salen del gate de push.
   Para correrlos en CI: lanzar `quality`/dispatch manual o quitar la flag puntualmente.
+
+### 2026-07-25 (bug de UI en dispositivo, no de build)
+- **Texto invertido en campos de facturación** (captura de Pablo: "Pablo"->"abloP",
+  "España"->"spañaE"). **Causa:** los dos `OutlinedTextField` de Ajustes tenían
+  `value = billingProfile.fullName/billingCountry` (un String que viene de DataStore
+  vía Flow) y `onValueChange` disparaba `viewModelScope.launch { DataStore.edit }`.
+  Al ser la persistencia ASÍNCRONA, Compose recomponía con el value viejo en cada
+  tecla: se perdía la posición del cursor y las escrituras rápidas se reordenaban.
+  **Antipatrón:** cablear el `value` de un TextField a un flujo asíncrono/persistido.
+  **Fix (Opción A):** nuevo composable `PersistedTextField` con estado local
+  `TextFieldValue` (preserva cursor/selección) que solo persiste en `onFocusChanged`
+  al perder el foco, y re-sincroniza desde fuera solo cuando NO tiene el foco.
+  **Lección:** el estado de edición de un TextField debe ser local y síncrono; el
+  guardado a DataStore/red va con debounce o al perder foco, nunca por pulsación
+  (→ checklist #10, nuevo).
