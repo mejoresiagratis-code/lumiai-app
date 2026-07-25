@@ -14,6 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -28,7 +29,32 @@ class LumiAiApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        seedBillingProfileOnSignIn()
         syncUserRegistryOnChange()
+    }
+
+    /**
+     * Al iniciar sesion con una cuenta real, siembra el perfil de facturacion con datos ya
+     * conocidos, SOLO si los campos estan vacios (nunca pisa lo que el usuario escribio):
+     *  - nombre completo: el displayName del proveedor (Google lo aporta).
+     *  - pais: el del Locale del dispositivo como valor de partida razonable.
+     * Los repos hacen el "if empty" de forma atomica; aqui solo disparamos.
+     */
+    private fun seedBillingProfileOnSignIn() {
+        appScope.launch {
+            auth.currentUser
+                .distinctUntilChanged()
+                .collect { user ->
+                    if (user == null || user.isAnonymous) return@collect
+                    user.displayName?.let { name ->
+                        runCatching { billingProfileRepo.prefillFullNameIfEmpty(name) }
+                    }
+                    val country = Locale.getDefault().displayCountry
+                    if (country.isNotBlank()) {
+                        runCatching { billingProfileRepo.prefillCountryIfEmpty(country) }
+                    }
+                }
+        }
     }
 
     /**

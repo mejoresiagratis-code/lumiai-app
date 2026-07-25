@@ -149,3 +149,23 @@
   **Lección:** el estado de edición de un TextField debe ser local y síncrono; el
   guardado a DataStore/red va con debounce o al perder foco, nunca por pulsación
   (→ checklist #10, nuevo).
+
+### 2026-07-25 (mejoras de producto — 3 peticiones de Pablo tras probar en dispositivo)
+- **(1) Autorrelleno de perfil de facturación tras login.** Al iniciar sesión con cuenta
+  real se siembra `fullName` con el `displayName` del proveedor (Google lo aporta) y el
+  país con `Locale.getDefault().displayCountry`, SOLO si están vacíos (nunca pisa lo
+  escrito a mano). Implementado como `prefillFullNameIfEmpty`/`prefillCountryIfEmpty`
+  atómicos en DataStore (`edit` con check `isNullOrBlank`), disparados desde un collector
+  nuevo en `LumiAiApplication` sobre `auth.currentUser` (separado del sync de registro
+  para no crear bucle de realimentación con `profile`). Añadido `displayName` a `AuthUser`.
+- **(2) CTAs de conversión.** Reescrito el copy de la sección Pro aplicando frameworks de
+  la skill `kostja94/marketing-skills` (AIDA/PAS + reglas: front-load del beneficio, verbo
+  de acción, sin clickbait). "Watch 2 ads and get..." -> "Unlock 1 hour of every Pro mode
+  — free. Just watch 2 short ads." Botón ahora indica "Ver anuncio 1 de 2" / "Ver el
+  último anuncio". EN y ES en paridad.
+- **(3) Feedback de progreso visible.** El "Anuncios vistos: 0/2" plano no comunicaba que
+  faltaba 1. Sustituido por `LinearProgressIndicator` persistente + mensaje dinámico
+  ("¡Ya casi! Llevas 1 anuncio, te falta 1...") que reacciona a `adsWatched`. Solo se
+  muestra si Pro NO está activo. 3 strings nuevas x2 idiomas (256/256).
+  **Lección:** el estado de progreso hacia una recompensa debe ser SIEMPRE visible y
+  persistente en la UI, no solo un Toast efímero tras la acción (→ checklist #11, nuevo).

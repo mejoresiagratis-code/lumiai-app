@@ -33,4 +33,24 @@ class DataStoreBillingProfileRepository @Inject constructor(
     override suspend fun setBillingCountry(value: String) {
         dataStore.edit { it[countryKey] = value.take(BillingProfile.MAX_COUNTRY_LEN) }
     }
+
+    override suspend fun prefillFullNameIfEmpty(value: String) {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return
+        dataStore.edit { prefs ->
+            if (prefs[nameKey].isNullOrBlank()) {
+                prefs[nameKey] = trimmed.take(BillingProfile.MAX_NAME_LEN)
+            }
+        }
+    }
+
+    override suspend fun prefillCountryIfEmpty(value: String) {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return
+        dataStore.edit { prefs ->
+            if (prefs[countryKey].isNullOrBlank()) {
+                prefs[countryKey] = trimmed.take(BillingProfile.MAX_COUNTRY_LEN)
+            }
+        }
+    }
 }

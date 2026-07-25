@@ -45,7 +45,8 @@ class FirebaseAuthRepository @Inject constructor(
         uid = uid,
         email = email,
         isAnonymous = isAnonymous,
-        isEmailVerified = isEmailVerified
+        isEmailVerified = isEmailVerified,
+        displayName = displayName?.takeIf { it.isNotBlank() }
     )
 
     override val googleWebClientId: String?

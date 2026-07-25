@@ -37,6 +37,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -355,11 +356,28 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = stringResource(R.string.pro_progress, proUi.adsWatched, proUi.adsPerGrant),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Progreso persistente y visible hacia el desbloqueo: barra + mensaje dinámico.
+                // Solo se muestra cuando NO hay Pro activo (si ya está activo, el contador no aporta).
+                if (!proUi.active) {
+                    val watched = proUi.adsWatched.coerceIn(0, proUi.adsPerGrant)
+                    val total = proUi.adsPerGrant.coerceAtLeast(1)
+                    val oneLeft = watched == total - 1
+                    LinearProgressIndicator(
+                        progress = { watched.toFloat() / total.toFloat() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = LumiSpacing.xs)
+                    )
+                    Text(
+                        text = when {
+                            oneLeft -> stringResource(R.string.pro_progress_one_left)
+                            else -> stringResource(R.string.pro_progress_start, watched, total)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = LumiSpacing.xs)
+                    )
+                }
                 val activity = remember(context) { context.findActivity() }
                 Button(
                     onClick = {
@@ -386,10 +404,11 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = if (proUi.adReady) {
-                            stringResource(R.string.pro_watch_ad)
-                        } else {
-                            stringResource(R.string.pro_watch_ad_loading)
+                        text = when {
+                            !proUi.adReady -> stringResource(R.string.pro_watch_ad_loading)
+                            proUi.adsWatched >= proUi.adsPerGrant - 1 ->
+                                stringResource(R.string.pro_watch_ad_last)
+                            else -> stringResource(R.string.pro_watch_ad)
                         }
                     )
                 }
