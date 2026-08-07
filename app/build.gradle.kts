@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.mejoresiagratis.lumiai"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 35
-        versionCode = 12
-        versionName = "0.6.2"
+        versionCode = 13
+        versionName = "0.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -54,10 +54,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -67,6 +63,14 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+    }
+}
+
+// jvmTarget en el DSL moderno de Kotlin. Sustituye al bloque `kotlinOptions` de `android {}`,
+// deprecado en AGP 8.x y ELIMINADO en AGP 9: migrarlo ahora evita repetir el trabajo.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -83,10 +87,9 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0), por delante de nuestro Kotlin 2.1.10.
-// Permitimos leer metadata más nueva sin bloquear el compilador; solo afecta a la lectura de
-// binarios de terceros (no a nuestro código) y aplica a compile + KSP. (El fallo de Hilt con
-// esta misma metadata se resolvió aparte subiendo Hilt a 2.57.1 — ver build-failures-memo #6.)
+// AdMob 25.x se compila con Kotlin 2.2 (metadata 2.2.0). Con Kotlin 2.2.10 ya no debería hacer
+// falta, pero se mantiene como red: es inofensivo y solo afecta a la lectura de binarios de
+// terceros (no a nuestro código). Candidato a retirar cuando el build esté verde y estable.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xskip-metadata-version-check")

@@ -308,3 +308,29 @@
   **Lección:** antes de prometer un gesto en la UI (girar, deslizar), verificar que el
   manifest/plataforma lo permite; y al habilitar rotación, comprobar SIEMPRE si la Activity
   se recrea, porque cualquier estado en `remember` se pierde (→ checklist #16, nuevo).
+
+### 2026-08-07 (Fase 1a — toolchain de build)
+- **Bump de toolchain, primer empujón de la migración a API 36** (deadline Play: 31 ago 2026).
+  `agp 8.7.3 → 8.12.0` · `kotlin 2.1.10 → 2.2.10` · `ksp → 2.2.10-2.0.2` ·
+  `gradle 8.9 → 8.13` · `compileSdk 35 → 36`. v0.7.0 (versionCode 13).
+- **Decisión: AGP 8.12, NO 9.2.** La rama parkeada `chore/toolchain-modernization-a1` usó
+  exactamente esta combinación y está marcada como verificada compilando SOBRE ESTE CÓDIGO;
+  la rama que saltaba a AGP 9.2 (`restyle/android17-expressive`) lleva en su propio commit
+  el aviso "NO mergear" y caveats abiertos (`android.newDsl=false` temporal). Con 24 días de
+  plazo se prioriza la combinación verificada. AGP 9 queda para después de publicar.
+- **`targetSdk` se queda en 35 a propósito.** Subir `compileSdk` solo permite compilar contra
+  las APIs nuevas (sin cambio de comportamiento); subir `targetSdk` a 36 activa los cambios de
+  Android 16 (prohibición de bloquear orientación en pantallas ≥600dp, fin del opt-out de
+  edge-to-edge) y eso exige QA en apaisado de todas las pantallas → va en la Fase 3.
+- **`kotlinOptions` migrado a `kotlin { compilerOptions { jvmTarget } }`.** Estaba deprecado en
+  AGP 8.x y desaparece en AGP 9; migrarlo ahora evita repetirlo. Requiere el tipo
+  `org.jetbrains.kotlin.gradle.dsl.JvmTarget` (fully-qualified para no tocar imports).
+- **KSP, no kapt.** Comprobado: Hilt usa `ksp(libs.hilt.compiler)`. Esto elimina el obstáculo
+  mayor de AGP 9 (kapt es incompatible con el Kotlin integrado de AGP 9).
+- **Compose BOM deliberadamente SIN tocar** en este empujón (sigue en 2024.09.03). Va en la
+  Fase 1b para aislar fallos: el salto a 2026.06.00 (material3 1.3 → 1.4) traerá deprecaciones
+  de API en el código de UI, y mezclarlo con el cambio de compilador haría imposible saber
+  qué rompió qué.
+  **Lección:** en una migración de toolchain, separar el cambio de COMPILADOR del cambio de
+  LIBRERÍAS en pushes distintos; si van juntos, un fallo no dice cuál de los dos lo causó
+  (→ checklist #17, nuevo).
