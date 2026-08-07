@@ -164,7 +164,7 @@
     <string name="led_locked">Disponible con Pro, o desbloqueando tiempo al ver 2 anuncios.</string>
     <string name="led_input_label">Tu mensaje</string>
     <string name="led_start">Iniciar</string>
-    <string name="led_hint">Toca la pantalla para salir. Gira el móvil para un letrero más ancho.</string>
+    <string name="led_hint">Toca la pantalla para salir. Ya en marcha, gira el móvil para un letrero más ancho.</string>
     <string name="led_speed_label">Velocidad: %1$d/%2$d</string>
     <string name="led_dir_left_cd">Desplazar a la izquierda</string>
     <string name="led_dir_right_cd">Desplazar a la derecha</string>

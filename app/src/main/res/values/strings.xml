@@ -164,7 +164,7 @@
     <string name="led_locked">Available with Pro, or after unlocking time by watching 2 ads.</string>
     <string name="led_input_label">Your message</string>
     <string name="led_start">Start</string>
-    <string name="led_hint">Tap the screen to exit. Rotate your phone for a wider sign.</string>
+    <string name="led_hint">Tap the screen to exit. Once running, turn your phone sideways for a wider sign.</string>
     <string name="led_speed_label">Speed: %1$d/%2$d</string>
     <string name="led_dir_left_cd">Scroll left</string>
     <string name="led_dir_right_cd">Scroll right</string>

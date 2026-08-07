@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.ui.led
 
 import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Paint
@@ -287,22 +288,30 @@ private fun SpeedChip(label: String, cd: String, onClick: () -> Unit) {
 /** Display a pantalla completa: brillo al máximo, pantalla siempre encendida, toca para salir. */
 @Composable
 private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
-    val window = LocalContext.current.findActivity()?.window
+    val activity = LocalContext.current.findActivity()
+    val window = activity?.window
     DisposableEffect(Unit) {
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val prev = window?.attributes?.screenBrightness
+        val prevBrightness = window?.attributes?.screenBrightness
         window?.let {
             val lp = it.attributes
             lp.screenBrightness = 1f
             it.attributes = lp
         }
+        // La app está bloqueada en vertical (manifest), pero un letrero se lee mucho mejor
+        // apaisado: liberamos la orientación SOLO mientras dura el display y la restauramos
+        // al salir, para no exponer el resto de la UI (no diseñada para landscape).
+        val prevOrientation = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
         onDispose {
             window?.let {
                 it.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 val lp = it.attributes
-                lp.screenBrightness = prev ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                lp.screenBrightness = prevBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                 it.attributes = lp
             }
+            activity?.requestedOrientation =
+                prevOrientation ?: ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
     val exitCd = stringResource(R.string.led_exit_cd)

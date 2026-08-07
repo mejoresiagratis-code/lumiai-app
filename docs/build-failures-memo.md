@@ -283,3 +283,28 @@
   Nota: el memo (Set A) prefiere `collectAsState`, pero SettingsScreen y BeamHubScreen
   usan `collectAsStateWithLifecycle` de forma consistente y funcionan; la coherencia
   por fichero manda sobre la preferencia global mientras no se migre todo a la vez.
+
+### 2026-08-07 (rotación del Letrero LED — Opción A)
+- **Hallazgo:** `MainActivity` declara `android:screenOrientation="portrait"` (con
+  `tools:ignore="LockedOrientationActivity"` silenciando el aviso de lint), así que la app
+  entera está bloqueada en vertical: girar el móvil NO hacía nada y la pista del modo LED
+  ("gira el móvil para un letrero más ancho") prometía algo imposible.
+- **Fix (Opción A, decisión de Pablo — rotación solo en el letrero):**
+  · `LedBannerDisplay` pone `requestedOrientation = SCREEN_ORIENTATION_FULL_USER` mientras
+    el display está activo y RESTAURA el valor previo en `onDispose`. setRequestedOrientation
+    sobrescribe el manifest en runtime. El resto de la UI (no diseñada para landscape) sigue
+    en vertical. La Opción B (desbloquear toda la app) queda pendiente y exigiría QA de todas
+    las pantallas en apaisado; varias dimensionan con `screenHeightDp`.
+  · **Bug derivado que habría empeorado el fix:** la Activity no declaraba `configChanges`,
+    así que al girar Android la RECREABA; el estado `running` del display es un `remember`
+    normal -> el usuario habría sido EXPULSADO del letrero de vuelta al editor en cuanto
+    girase. Añadido
+    `configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"`:
+    Compose maneja el cambio de configuración sin recrear y el estado sobrevive.
+    (Se prefiere esto a `rememberSaveable` para `running`, que por checklist #12 podría
+    dejar al usuario reabriendo directamente en el display.)
+  · pista reformulada ("ya en marcha, gira el móvil…") porque se lee en el editor, que
+    sigue en vertical.
+  **Lección:** antes de prometer un gesto en la UI (girar, deslizar), verificar que el
+  manifest/plataforma lo permite; y al habilitar rotación, comprobar SIEMPRE si la Activity
+  se recrea, porque cualquier estado en `remember` se pierde (→ checklist #16, nuevo).
