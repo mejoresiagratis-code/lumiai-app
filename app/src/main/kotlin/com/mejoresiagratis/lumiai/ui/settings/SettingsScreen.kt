@@ -94,6 +94,7 @@ import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import com.mejoresiagratis.lumiai.ui.components.LumiDialog
+import com.mejoresiagratis.lumiai.ui.god.GodViewModel
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.solidColor
 import android.content.Intent
@@ -583,6 +584,11 @@ fun SettingsScreen(
             }
 
             if (BuildConfig.DEBUG) {
+                // BuildConfig.DEBUG es constante en compilación: en release este bloque entero
+                // (incluido el ViewModel) se elimina, no solo se oculta.
+                val godViewModel: GodViewModel = hiltViewModel()
+                val godUi by godViewModel.ui.collectAsState()
+                val overrideActive = godUi.forceAccount != null || godUi.forceSubscription != null
                 Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                     Text(
                         text = "Superusuario (debug)",
@@ -590,6 +596,34 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = LumiSpacing.md)
                     )
+                    // Aviso VISIBLE cuando hay permisos forzados: sin esto es fácil confundir
+                    // un override activo con un bug de gating (pasó el 25 jul, ver memo).
+                    if (overrideActive) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.errorContainer)
+                                .padding(LumiSpacing.md),
+                            verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+                        ) {
+                            Text(
+                                text = "Permisos forzados activos",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = "Los modos de pago están desbloqueados por God mode, no por " +
+                                    "tu cuenta real. Solo afecta a builds debug.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Button(
+                                onClick = { godViewModel.clearOverride() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Restaurar permisos reales") }
+                        }
+                    }
                     Button(onClick = onOpenGod, modifier = Modifier.fillMaxWidth()) {
                         Text("Abrir God mode")
                     }

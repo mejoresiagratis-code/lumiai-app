@@ -68,6 +68,9 @@ class GodViewModel @Inject constructor(
     fun setForceAccount(value: Boolean?) = viewModelScope.launch { overrideRepo.setForceAccount(value) }
     fun setForceSubscription(value: Boolean?) = viewModelScope.launch { overrideRepo.setForceSubscription(value) }
 
+    /** Devuelve los permisos a los reales (quita ambos forzados de God). */
+    fun clearOverride() = viewModelScope.launch { overrideRepo.clear() }
+
     fun resetAll() = viewModelScope.launch {
         temporaryUnlock.clear()
         rewardProgress.set(0)

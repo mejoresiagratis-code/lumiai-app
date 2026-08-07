@@ -5,6 +5,7 @@ import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
+import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistrySnapshot
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistryRepository
 import dagger.hilt.android.HiltAndroidApp
@@ -24,13 +25,26 @@ class LumiAiApplication : Application() {
     @Inject lateinit var billingProfileRepo: BillingProfileRepository
     @Inject lateinit var subscriptionRepo: SubscriptionRepository
     @Inject lateinit var userRegistry: UserRegistryRepository
+    @Inject lateinit var entitlementOverrideRepo: EntitlementOverrideRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
+        purgeGodOverrideOnRelease()
         seedBillingProfileOnSignIn()
         syncUserRegistryOnChange()
+    }
+
+    /**
+     * El override de superusuario (God) es EXCLUSIVO de debug. `DefaultEntitlementRepository` ya
+     * lo ignora en release, pero las claves podrían seguir escritas en DataStore de una instalación
+     * debug previa (mismo applicationId). Aquí las borramos al arrancar un build release para que
+     * no quede rastro de permisos forzados en el dispositivo del usuario.
+     */
+    private fun purgeGodOverrideOnRelease() {
+        if (BuildConfig.DEBUG) return
+        appScope.launch { runCatching { entitlementOverrideRepo.clear() } }
     }
 
     /**

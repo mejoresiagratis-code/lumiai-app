@@ -8,6 +8,7 @@ import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.AccentStyle
 import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.ui.auth.AuthScreen
+import com.mejoresiagratis.lumiai.BuildConfig
 import com.mejoresiagratis.lumiai.ui.god.GodScreen
 import com.mejoresiagratis.lumiai.ui.home.beamhub.BeamHubScreen
 import com.mejoresiagratis.lumiai.ui.onboarding.OnboardingScreen
@@ -77,7 +78,7 @@ fun LumiAiNavHost(
                 autoLockScreen = autoLockScreen,
                 onSetAutoLockScreen = onSetAutoLockScreen,
                 onOpenAuth = { navController.navigate(Routes.AUTH) },
-                onOpenGod = { navController.navigate(Routes.GOD) },
+                onOpenGod = { if (BuildConfig.DEBUG) navController.navigate(Routes.GOD) },
                 onOpenSoundAlert = { navController.navigate(Routes.SOUND_ALERT) },
                 onOpenLedBanner = { navController.navigate(Routes.LED_BANNER) },
                 onBack = { navController.popBackStack() }
@@ -89,8 +90,12 @@ fun LumiAiNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
-        composable(Routes.GOD) {
-            GodScreen(onBack = { navController.popBackStack() })
+        // God existe SOLO en debug: en release la ruta no se registra, así que ni siquiera
+        // es navegable (ni por deep link ni por un navigate() olvidado en el código).
+        if (BuildConfig.DEBUG) {
+            composable(Routes.GOD) {
+                GodScreen(onBack = { navController.popBackStack() })
+            }
         }
         composable(Routes.SOUND_ALERT) {
             SoundAlertScreen(onBack = { navController.popBackStack() })

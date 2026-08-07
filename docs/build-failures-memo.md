@@ -235,3 +235,28 @@
   de DrawScope, literales Color con sufijo L en fichero con Canvas.
   16 strings x2 idiomas (273/273). Display fullscreen: brillo máx + KEEP_SCREEN_ON con
   restauración en onDispose, toca para salir, BackHandler.
+
+### 2026-07-25 (falso positivo diagnosticado + endurecimiento de God mode)
+- **Síntoma reportado:** la app arrancaba en Música (no en Continuo) y TODOS los modos
+  aparecían desbloqueados sin login ni pago. **NO era una regresión de ninguna versión.**
+  **Causa única para ambos síntomas:** el override de superusuario (God) estaba activo en
+  DataStore (`dbg_force_account` / `dbg_force_subscription`). Fuerza hasAccount=true y
+  hasSubscription=true en builds debug (que es lo que produce el CI con assembleDebug):
+  (a) desbloquea todos los tiers; (b) el modo SIEMPRE se ha persistido, y el guard de
+  BeamHubScreen (`if (!access.unlocks(mode.tier)) selectMode(CONTINUOUS)`) es lo que antes
+  devolvía a Continuo; con todo desbloqueado ese guard ya no dispara y Música se queda.
+  El override existe desde v0.1.0 (`8dc97fa`) y siempre estuvo tras `BuildConfig.DEBUG`.
+- **Endurecimiento aplicado (decisión: God SOLO en debug, nunca en release):**
+  · la ruta `Routes.GOD` ya no se registra en el NavHost en release (antes el composable
+    se registraba siempre: navegable por deep link o por un navigate() olvidado) y el
+    callback onOpenGod también queda gateado.
+  · `LumiAiApplication.purgeGodOverrideOnRelease()`: al arrancar un build release se borran
+    las claves del override, por si quedaron de una instalación debug con el mismo
+    applicationId. Antes se ignoraban pero seguían escritas.
+  · aviso VISIBLE en Ajustes (solo debug) cuando hay permisos forzados, con botón
+    "Restaurar permisos reales" (nuevo `GodViewModel.clearOverride()`).
+  **Lección:** una herramienta de desarrollo que altera permisos debe ser imposible de
+  confundir con el comportamiento real: gatearla en compilación (no solo ocultarla),
+  purgar su estado al cambiar de variante, y avisar en pantalla mientras esté activa.
+  Un estado de debug persistido en DataStore sobrevive a reinstalaciones y parece un bug
+  de producto (→ checklist #14, nuevo).
