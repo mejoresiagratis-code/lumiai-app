@@ -260,3 +260,26 @@
   purgar su estado al cambiar de variante, y avisar en pantalla mientras esté activa.
   Un estado de debug persistido en DataStore sobrevive a reinstalaciones y parece un bug
   de producto (→ checklist #14, nuevo).
+
+### 2026-08-07
+- **#9** run `84484175476` · commit `11e006a` · `compileDebugKotlin` FAILED ·
+  `Unresolved reference 'collectAsState'` (SettingsScreen.kt:590) y, en cascada,
+  `Unresolved reference 'forceAccount' / 'forceSubscription'` (591).
+  **Causa:** al añadir el banner de God mode escribí `godViewModel.ui.collectAsState()`,
+  pero SettingsScreen importa `androidx.lifecycle.compose.collectAsStateWithLifecycle`
+  (y lo usa en sus otras 6 lecturas), no `androidx.compose.runtime.collectAsState`. Los
+  errores de forceAccount/forceSubscription eran consecuencia: sin resolver el delegate,
+  el tipo de godUi quedaba desconocido.
+  **Fallo de MI verificación previa:** comprobé con `grep -c "import.*collectAsState"`,
+  que hace match PARCIAL y cuenta `collectAsStateWithLifecycle` como si fuera el import
+  buscado -> falso positivo. El gate no detectó nada.
+  **Fix:** usar `collectAsStateWithLifecycle`, el patrón del propio fichero.
+  **Lección:** los chequeos de imports deben anclar el final de línea
+  (`^import .*\.SIMBOLO$`), nunca `grep "import.*SIMBOLO"`: los nombres de la API de
+  Compose son prefijos unos de otros (collectAsState / collectAsStateWithLifecycle,
+  animateFloat / animateFloatAsState) y el match parcial da verde en falso. Regla
+  general: al añadir código a un fichero, copiar el patrón que YA usa ese fichero en vez
+  de introducir una API equivalente distinta (→ checklist #15, nuevo).
+  Nota: el memo (Set A) prefiere `collectAsState`, pero SettingsScreen y BeamHubScreen
+  usan `collectAsStateWithLifecycle` de forma consistente y funcionan; la coherencia
+  por fichero manda sobre la preferencia global mientras no se migre todo a la vez.

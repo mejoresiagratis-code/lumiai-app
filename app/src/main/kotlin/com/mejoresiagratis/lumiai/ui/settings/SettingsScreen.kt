@@ -587,7 +587,7 @@ fun SettingsScreen(
                 // BuildConfig.DEBUG es constante en compilación: en release este bloque entero
                 // (incluido el ViewModel) se elimina, no solo se oculta.
                 val godViewModel: GodViewModel = hiltViewModel()
-                val godUi by godViewModel.ui.collectAsState()
+                val godUi by godViewModel.ui.collectAsStateWithLifecycle()
                 val overrideActive = godUi.forceAccount != null || godUi.forceSubscription != null
                 Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                     Text(
