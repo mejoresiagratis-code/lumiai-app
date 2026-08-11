@@ -521,3 +521,27 @@
   scroll interno desde el primer dia; sin ellos el fallo no aparece en vertical y se destapa
   entero al girar. Al auditar layouts para apaisado hay que revisar TODAS las hojas del
   proyecto, no solo la de la pantalla principal (→ checklist #26, nuevo).
+
+### 2026-08-11 (Fase 2i — CAUSA REAL de la píldora fuera de pantalla)
+- **Tres intentos fallidos antes de encontrarla** (2c reduciendo el orbe, 2g cambiando a
+  `Arrangement.Center`, 2h tocando otro fichero). En los tres se supuso la causa en vez de
+  leer el código. Pablo lo señaló: hay que CONFIRMAR, no suponer.
+- **Causa real:** `PowerOrb` se dimensiona con **`Modifier.requiredSize(orbDiameter)`**.
+  `requiredSize` IGNORA las restricciones del padre: el orbe mide siempre ese valor exacto
+  aunque el Column no tenga sitio. Por eso ninguna de las medidas anteriores funcionó:
+  · reducir el porcentaje del orbe achicaba el círculo pero no resolvía el desbordamiento
+    cuando la cuenta no salía;
+  · `Arrangement.Center` no ayuda porque no hay "sobrante que centrar", hay un hijo que se
+    NIEGA a comprimirse y empuja al siguiente (la píldora) fuera del viewport.
+- **Fix:** en apaisado el tamaño del orbe se calcula RESTANDO lo que ocupan la barra
+  superior, el carrusel y la píldora, en vez de ser un porcentaje del alto total:
+  `available = alto - rail(104) - pill(64) - topBar(64)`, acotado 72..132dp. Además el
+  padding superior de la píldora baja de `lg` a `sm` en apaisado.
+  Verificado con los números reales del dispositivo de Pablo (S26 Ultra apaisado, ~393dp):
+  64+104+132+48 = 348dp → 45dp de holgura.
+  **Lección:** `requiredSize` / `requiredWidth` / `requiredHeight` rompen el contrato de
+  restricciones de Compose. Ante un hijo que "no cabe y no se encoge", buscar `required*`
+  antes de tocar arrangements o porcentajes (→ checklist #27, nuevo).
+  **Lección 2 (proceso):** cuando un fix no funciona a la primera, NO reintentar con otra
+  suposición: leer el layout del componente implicado. Tres iteraciones perdidas por no
+  abrir `PowerOrb`.

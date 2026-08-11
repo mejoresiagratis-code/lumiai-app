@@ -277,10 +277,17 @@ fun BeamHubScreen(
     // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
     val wideLayout = screenHeightDp < 480
     val sheetMaxHeight = (screenHeightDp * 0.42f).dp
-    // En apaisado el alto util se reparte entre rail (~90dp), orbe y pildora de estado.
-    // Con 200dp el orbe desbordaba y recortaba la pildora: se acota mas bajo.
+    // OJO: `PowerOrb` se dimensiona con `requiredSize()`, que IGNORA las restricciones del
+    // padre. El orbe NUNCA se comprime aunque el Column no tenga sitio, asi que cualquier
+    // hijo posterior (la pildora de estado) se sale de pantalla sin recorte ni scroll.
+    // Por eso en apaisado el tamano se calcula RESTANDO lo que ocupan rail y pildora, en vez
+    // de ser un porcentaje del alto total.
     val orbSize = if (wideLayout) {
-        (screenHeightDp * 0.30f).dp.coerceIn(88.dp, 128.dp)
+        val railHeight = 104.dp          // tarjeta del carrusel + paddings vertical md
+        val pillHeight = 64.dp           // pildora + su padding superior lg
+        val topBarHeight = 64.dp
+        val available = (screenHeightDp.dp - railHeight - pillHeight - topBarHeight)
+        available.coerceIn(72.dp, 132.dp)
     } else {
         (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
     }
@@ -478,7 +485,9 @@ fun BeamHubScreen(
                     StatusPill(
                         isOn = state.isOn,
                         modeLabelRes = MODE_CATALOG.firstOrNull { it.mode == state.mode }?.labelRes,
-                        modifier = Modifier.padding(top = LumiSpacing.lg)
+                        modifier = Modifier.padding(
+                            top = if (wideLayout) LumiSpacing.sm else LumiSpacing.lg
+                        )
                     )
                 } else {
                     // Dispositivo sin flash y modo que lo necesita: ocultamos el orbe de
