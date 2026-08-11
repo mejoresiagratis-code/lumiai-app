@@ -37,13 +37,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 
 private data class OnboardingPage(
     @DrawableRes val icon: Int,
@@ -82,7 +82,7 @@ fun OnboardingScreen(
     // FUERA de pantalla: esta pantalla no tiene verticalScroll. En vez de añadir scroll —que
     // esconde el botón principal— reorganizamos a DOS PANELES y aprovechamos el ancho.
     // Es la MISMA composición reordenada: no hay dos layouts que mantener en paralelo.
-    val compactHeight = LocalConfiguration.current.screenHeightDp < 480
+    val compactHeight = isCompactHeight()
 
     Scaffold { padding ->
         Column(

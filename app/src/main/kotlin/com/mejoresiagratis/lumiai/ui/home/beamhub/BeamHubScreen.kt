@@ -129,6 +129,7 @@ import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LocalReduceMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
+import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -276,7 +277,7 @@ fun BeamHubScreen(
     val screenHeightDp = configuration.screenHeightDp
     // Apaisado en móvil: repartir por ALTURA deja la hoja en ~150dp y el orbe en su mínimo,
     // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
-    val wideLayout = screenHeightDp < 480
+    val wideLayout = isCompactHeight()
     val sheetMaxHeight = (screenHeightDp * 0.42f).dp
     // OJO: `PowerOrb` se dimensiona con `requiredSize()`, que IGNORA las restricciones del
     // padre. El orbe NUNCA se comprime aunque el Column no tenga sitio, asi que cualquier

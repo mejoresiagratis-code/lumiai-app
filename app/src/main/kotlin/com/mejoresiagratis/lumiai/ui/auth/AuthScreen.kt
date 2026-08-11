@@ -47,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -64,6 +63,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,7 +101,7 @@ fun AuthScreen(
             )
         }
     ) { padding ->
-        val compactHeight = LocalConfiguration.current.screenHeightDp < 480
+        val compactHeight = isCompactHeight()
         // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
         // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
         // centrado, igual que en Ajustes. En movil vertical no cambia nada.

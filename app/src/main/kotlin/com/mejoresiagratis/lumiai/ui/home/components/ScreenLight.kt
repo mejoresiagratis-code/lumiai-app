@@ -74,6 +74,7 @@ import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.model.ScreenAnimation
 import com.mejoresiagratis.lumiai.domain.model.ScreenAtmosphere
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
+import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -257,7 +258,7 @@ fun ScreenLight(
         // Apaisado (2k): con poca altura el panel pasa a LATERAL, y el aviso y el candado se
         // recolocan en el area de luz restante (62%) para no quedar bajo el panel.
         val cfg = LocalConfiguration.current
-        val compactHeight = cfg.screenHeightDp < 480
+        val compactHeight = isCompactHeight()
         val panelReserve = if (compactHeight) (cfg.screenWidthDp * 0.38f).dp else 0.dp
         Text(
             text = stringResource(R.string.screen_tap_off),

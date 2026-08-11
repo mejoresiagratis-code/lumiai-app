@@ -594,3 +594,21 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   **Lección:** cuando varios parches consecutivos mejoran un layout "un poco pero sigue mal",
   el patrón contenedor es el sospechoso, no las medidas: cambiar tope/scroll/porcentaje no
   arregla un contenedor anclado al eje equivocado (→ checklist #29, nuevo).
+
+### 2026-08-11 (limpieza pre-Cabina — umbral único de altura compacta)
+- **Auditoría de parches verticales con riesgo en apaisado** (petición de Pablo antes del
+  rediseño Cabina). Resultado: `rememberSaveable` restantes son legítimos (paso del
+  Onboarding y tarjeta expandida de Alerta Sonora DEBEN sobrevivir al giro); ningún
+  `Spacer(weight)` sin condicionar; `requiredSize` solo en PowerOrb (documentado en #27,
+  neutralizado por el dimensionado por resta).
+- **Hallazgo real:** el umbral `screenHeightDp < 480` estaba definido CUATRO veces
+  (BeamHub `wideLayout`, ScreenLight/Auth/Onboarding `compactHeight`). Hoy coinciden; el día
+  que alguien ajuste uno, las pantallas cambiarían de disposición a alturas DISTINTAS — el
+  clásico parche que diverge en silencio.
+- **Fix:** `ui/util/WindowSize.kt` con `COMPACT_HEIGHT_THRESHOLD_DP = 480` +
+  `isCompactHeight()` (@ReadOnlyComposable). Las cuatro pantallas leen la utilidad; imports
+  de `LocalConfiguration` retirados donde quedaron sin uso (Auth, Onboarding). Cero cambio
+  de comportamiento: mismo umbral, una sola fuente.
+  **Lección:** toda condición de layout repetida en más de un fichero es deuda: extraerla a
+  una fuente única ANTES de construir encima (la Cabina va a leer este mismo flag)
+  (→ checklist #30, nuevo).
