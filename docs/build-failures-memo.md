@@ -359,3 +359,32 @@
   se sabe que cambian, en vez de empujar y esperar al CI. Aquí salió limpio, pero el barrido
   cuesta un minuto y habría ahorrado un ciclo entero si hubiera encontrado algo
   (→ checklist #18, nuevo).
+
+### 2026-08-11 (Fase 2a — desbloqueo de orientación)
+- **Fase 1b VERDE** (run `85299782049`, `38fc2b9`): BUILD SUCCESSFUL en 2m41s con Compose BOM
+  2026.06.00 / Material3 1.4. Única deprecación nueva: `createComposeRule` → `junit4.v2` en los
+  dos tests Robolectric (excluidos del CI, no urgente). El barrido previo de APIs acertó: no
+  hubo ninguna sorpresa. **Fase 1 cerrada.**
+- **Fase 2a:** quitado `android:screenOrientation="portrait"` del manifest (y su
+  `tools:ignore="LockedOrientationActivity"`). Requisito de API 36: en pantallas ≥600dp el
+  bloqueo se ignora, así que había que diseñar para apaisado ANTES de subir targetSdk.
+- **Auditoría previa de qué se rompía al girar** (leyendo el código, no probando):
+  · `OnboardingScreen` — ÚNICA pantalla sin `verticalScroll`: en apaisado los botones quedaban
+    fuera de pantalla, sin forma de alcanzarlos. **Fallo real, no cosmético.**
+  · `BeamHubScreen` — `sheetMaxHeight = screenHeightDp * 0.42f` y `orbSize` derivado de la
+    altura: con ~360dp de alto la hoja quedaba en ~150dp y el orbe en su mínimo de 180dp,
+    solapándose. Inservible aunque no crashee.
+  · `SettingsScreen`, `AuthScreen`, `SoundAlertScreen` — sobreviven (ya tienen scroll); el
+    problema era de legibilidad: líneas de 90+ caracteres.
+- **Aplicado en este commit:**
+  · Onboarding reorganizado a DOS PANELES cuando `screenHeightDp < 480`: ilustración a la
+    izquierda, textos + indicador + botones a la derecha. Piezas extraídas a composables
+    (`ObIllustration`, `ObTexts`, `ObIndicator`, `ObPrimaryButton`, `ObBackRow`) y REUTILIZADAS
+    en ambas disposiciones: es la misma composición reordenada, no dos layouts paralelos.
+  · Ajustes: contenido acotado a `widthIn(max = 600.dp)` centrado. En vertical no cambia nada.
+  · `LedBannerScreen`: el fallback de restauración pasa de `SCREEN_ORIENTATION_PORTRAIT` a
+    `UNSPECIFIED`, porque ya no hay bloqueo al que volver.
+- **PENDIENTE (Fase 2b):** el Beam Hub a dos paneles. Su hoja vive en el `bottomBar` del
+  `Scaffold`, así que pasarla a panel lateral es reestructurar un fichero de ~900 líneas.
+  Se deja para un commit aislado (checklist #17: separar cambios para poder atribuir fallos).
+  `targetSdk` sigue en 35 hasta cerrar 2b y hacer el QA en dispositivo.

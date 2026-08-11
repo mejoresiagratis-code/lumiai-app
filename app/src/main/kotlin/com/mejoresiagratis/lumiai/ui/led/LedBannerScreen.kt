@@ -298,9 +298,9 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
             lp.screenBrightness = 1f
             it.attributes = lp
         }
-        // La app está bloqueada en vertical (manifest), pero un letrero se lee mucho mejor
-        // apaisado: liberamos la orientación SOLO mientras dura el display y la restauramos
-        // al salir, para no exponer el resto de la UI (no diseñada para landscape).
+        // Desde v0.7.2 la app ya NO se bloquea en vertical (API 36 lo prohíbe en pantallas
+        // grandes), así que aquí solo garantizamos que el letrero puede girar aunque el
+        // usuario tenga el giro del sistema desactivado. Se restaura el valor previo al salir.
         val prevOrientation = activity?.requestedOrientation
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
         onDispose {
@@ -311,7 +311,7 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
                 it.attributes = lp
             }
             activity?.requestedOrientation =
-                prevOrientation ?: ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                prevOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
     val exitCd = stringResource(R.string.led_exit_cd)

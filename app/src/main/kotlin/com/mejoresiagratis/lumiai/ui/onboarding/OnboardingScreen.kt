@@ -37,6 +37,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mejoresiagratis.lumiai.R
@@ -76,6 +78,12 @@ fun OnboardingScreen(
         onFinished()
     }
 
+    // Con poca altura (apaisado en móvil) el layout vertical no cabe y los botones quedan
+    // FUERA de pantalla: esta pantalla no tiene verticalScroll. En vez de añadir scroll —que
+    // esconde el botón principal— reorganizamos a DOS PANELES y aprovechamos el ancho.
+    // Es la MISMA composición reordenada: no hay dos layouts que mantener en paralelo.
+    val compactHeight = LocalConfiguration.current.screenHeightDp < 480
+
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -99,94 +107,140 @@ fun OnboardingScreen(
                 }
             }
 
-            // Contenido centrado
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box(
+            if (compactHeight) {
+                Row(
                     modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(36.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
                 ) {
-                    Icon(
-                        painter = painterResource(page.icon),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(60.dp)
-                    )
-                }
-                Text(
-                    text = stringResource(page.title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = LumiSpacing.xl)
-                )
-                Text(
-                    text = stringResource(page.body),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = LumiSpacing.md)
-                )
-            }
-
-            // Indicador de páginas (píldora activa)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = LumiSpacing.lg),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PAGES.indices.forEach { i ->
-                    val active = i == step
-                    val dotWidth by animateDpAsState(
-                        targetValue = if (active) 22.dp else 8.dp,
-                        animationSpec = LumiMotion.emphasized(),
-                        label = "obDot"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = LumiSpacing.xs)
-                            .height(8.dp)
-                            .width(dotWidth)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(
-                                if (active) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant
-                            )
-                    )
-                }
-            }
-
-            Button(
-                onClick = { if (isLast) finish() else step++ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(stringResource(if (isLast) R.string.onboarding_start else R.string.onboarding_next))
-            }
-
-            // Atrás (reservamos altura estable)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (step > 0) {
-                    TextButton(onClick = { step-- }) {
-                        Text(stringResource(R.string.onboarding_back))
+                    Box(modifier = Modifier.weight(0.4f), contentAlignment = Alignment.Center) {
+                        ObIllustration(page = page, size = 96.dp)
+                    }
+                    Column(
+                        modifier = Modifier.weight(0.6f),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        ObTexts(page = page, align = TextAlign.Start)
+                        ObIndicator(step = step, modifier = Modifier.padding(top = LumiSpacing.md))
+                        ObPrimaryButton(isLast = isLast, onClick = { if (isLast) finish() else step++ })
+                        ObBackRow(step = step, onBack = { step-- })
                     }
                 }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    ObIllustration(page = page, size = 120.dp)
+                    ObTexts(page = page, align = TextAlign.Center)
+                }
+                ObIndicator(
+                    step = step,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = LumiSpacing.lg)
+                )
+                ObPrimaryButton(isLast = isLast, onClick = { if (isLast) finish() else step++ })
+                ObBackRow(step = step, onBack = { step-- })
+            }
+        }
+    }
+}
+
+@Composable
+private fun ObIllustration(page: OnboardingPage, size: Dp) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(size / 3.33f))
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(page.icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(size / 2f)
+        )
+    }
+}
+
+@Composable
+private fun ObTexts(page: OnboardingPage, align: TextAlign) {
+    Text(
+        text = stringResource(page.title),
+        style = MaterialTheme.typography.headlineMedium,
+        textAlign = align,
+        modifier = Modifier.padding(top = LumiSpacing.xl)
+    )
+    Text(
+        text = stringResource(page.body),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = align,
+        modifier = Modifier.padding(top = LumiSpacing.md)
+    )
+}
+
+@Composable
+private fun ObIndicator(step: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PAGES.indices.forEach { i ->
+            val active = i == step
+            val dotWidth by animateDpAsState(
+                targetValue = if (active) 22.dp else 8.dp,
+                animationSpec = LumiMotion.emphasized(),
+                label = "obDot"
+            )
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = LumiSpacing.xs)
+                    .height(8.dp)
+                    .width(dotWidth)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        if (active) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outlineVariant
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun ObPrimaryButton(isLast: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+    ) {
+        Text(stringResource(if (isLast) R.string.onboarding_start else R.string.onboarding_next))
+    }
+}
+
+@Composable
+private fun ObBackRow(step: Int, onBack: () -> Unit) {
+    // Altura reservada para que el layout no salte entre páginas.
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (step > 0) {
+            TextButton(onClick = onBack) {
+                Text(stringResource(R.string.onboarding_back))
             }
         }
     }
