@@ -334,3 +334,28 @@
   **Lección:** en una migración de toolchain, separar el cambio de COMPILADOR del cambio de
   LIBRERÍAS en pushes distintos; si van juntos, un fallo no dice cuál de los dos lo causó
   (→ checklist #17, nuevo).
+
+### 2026-08-07 (Fase 1b — Compose BOM)
+- **Fase 1a VERDE** (run `84529648601`, `a3bbb0f`): BUILD SUCCESSFUL en 4m49s con AGP 8.12 /
+  Kotlin 2.2.10 / KSP 2.2.10-2.0.2 / Gradle 8.13 / compileSdk 36. Confirma que el salto de
+  COMPILADOR está limpio: cualquier fallo de 1b será de librerías, que era el objetivo de
+  separar las fases.
+  Avisos benignos observados: infraestructura del CI (Node 20 deprecado, `setup-java@v4`
+  deprecado → migrar a v5 en un commit aparte) y un aviso NUEVO de Kotlin 2.2 en ~10 ficheros
+  ("annotation applied to the value parameter only, but in the future also to field") por
+  anotaciones tipo `@StringRes`/`@DrawableRes` en parámetros. Hoy es warning; conviene fijar
+  el use-site target antes de que Kotlin lo convierta en error.
+- **Fase 1b:** `composeBom 2024.09.03 → 2026.06.00` (Material3 1.3 → 1.4). v0.7.1 (vc 14).
+  Cambio de UNA línea a propósito: `lifecycle 2.8.6`, `activityCompose 1.9.2` y
+  `navigation 2.8.0` se dejan intactos porque la rama parkeada verificada compilando usaba
+  EXACTAMENTE esas versiones junto a la BOM 2026.06.00.
+- **Comprobación previa de APIs que rompen entre M3 1.3 y 1.4** (hecha ANTES de empujar):
+  · `LinearProgressIndicator` ya usa la firma con lambda `progress = { }` (la de `Float` está
+    deprecada) — OK.
+  · sin `rememberRipple` (deprecado → `ripple()`) — OK.
+  · sin `Divider` antiguo; el código ya usa `HorizontalDivider` — OK.
+  · `SegmentedButtonDefaults.itemShape(index, count)` sin cambios de firma — OK.
+  **Lección:** antes de un salto grande de librería, hacer un barrido dirigido de las APIs que
+  se sabe que cambian, en vez de empujar y esperar al CI. Aquí salió limpio, pero el barrido
+  cuesta un minuto y habría ahorrado un ciclo entero si hubiera encontrado algo
+  (→ checklist #18, nuevo).
