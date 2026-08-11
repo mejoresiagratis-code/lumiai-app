@@ -487,3 +487,22 @@
   botón toma su ancho natural y baja de línea entero si no cabe. `maxLines = 1` como red.
   **Lección:** `weight(1f)` reparte espacio SIN mirar el contenido; para etiquetas de texto
   variable (i18n incluida) usar `FlowRow` o anchos naturales (→ checklist #24, nuevo).
+
+### 2026-08-11 (Fase 2g — píldora de estado fuera de pantalla en apaisado)
+- **Síntoma:** en el Beam Hub girado, la `StatusPill` ("Toca para encender · Continuo") no
+  aparecía nunca bajo el orbe (confirmado en 3 capturas de Pablo).
+- **Causa:** el Column de contenido centraba con dos `Spacer(Modifier.weight(1f))`, uno antes
+  del orbe y otro después de la píldora. Los pesos reparten el espacio SOBRANTE; si el
+  contenido intrínseco ya llena el alto, los pesos valen 0 y el ultimo hijo — la píldora —
+  simplemente queda fuera del viewport, SIN scroll y sin ningún aviso. Además `orbDiameter`
+  es el diámetro EXTERIOR (incluye la corona: el orbe visible es 176/252 del valor), así que
+  150dp reservaban más alto del que aparentaba el círculo.
+- **Fix:** en `wideLayout` se sustituye el centrado por pesos por
+  `verticalArrangement = Arrangement.Center` (centra el bloque completo y es estable ante
+  desbordes) y los dos Spacer flexibles se aplican solo en vertical. Orbe reajustado a
+  `alto * 0.30f` acotado 88..128dp.
+  **Lección:** centrar con `Spacer(weight)` es frágil en pantallas cortas: ante desborde el
+  contenido no se recorta de forma visible, se EXPULSA silenciosamente. Para bloques que
+  deben verse enteros, usar `Arrangement.Center` (→ checklist #25, nuevo).
+  **Lección 2:** comprobar si una medida es diámetro interior o exterior antes de usarla para
+  calcular espacio disponible.

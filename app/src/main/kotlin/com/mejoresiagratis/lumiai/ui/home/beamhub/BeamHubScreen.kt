@@ -280,7 +280,7 @@ fun BeamHubScreen(
     // En apaisado el alto util se reparte entre rail (~90dp), orbe y pildora de estado.
     // Con 200dp el orbe desbordaba y recortaba la pildora: se acota mas bajo.
     val orbSize = if (wideLayout) {
-        (screenHeightDp * 0.34f).dp.coerceIn(96.dp, 150.dp)
+        (screenHeightDp * 0.30f).dp.coerceIn(88.dp, 128.dp)
     } else {
         (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
     }
@@ -438,7 +438,11 @@ fun BeamHubScreen(
             Column(
                 modifier = Modifier
                     .then(if (wideLayout) Modifier.weight(0.58f).fillMaxHeight() else Modifier.fillMaxSize()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                // En apaisado NO usamos los Spacer(weight) para centrar: si el contenido se
+                // pasa de alto, los pesos van a cero y la pildora de estado se sale de
+                // pantalla sin aviso. Centrar el bloque entero es estable ante desbordes.
+                verticalArrangement = if (wideLayout) Arrangement.Center else Arrangement.Top
             ) {
                 ModeRail(
                     selected = state.mode,
@@ -448,7 +452,7 @@ fun BeamHubScreen(
                     access = state.access,
                     modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
                 )
-                Spacer(modifier = Modifier.weight(1f))
+                if (!wideLayout) Spacer(modifier = Modifier.weight(1f))
                 if (state.mode.isAvailable(state.capabilities)) {
                     PowerOrb(
                         isOn = state.isOn,
@@ -499,7 +503,7 @@ fun BeamHubScreen(
                         Text(stringResource(R.string.action_use_screen))
                     }
                 }
-                Spacer(modifier = Modifier.weight(1f))
+                if (!wideLayout) Spacer(modifier = Modifier.weight(1f))
             }
                 // Panel lateral en apaisado: la MISMA hoja de controles, con su propio scroll.
                 if (wideLayout) {
