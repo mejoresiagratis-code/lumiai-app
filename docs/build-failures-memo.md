@@ -506,3 +506,18 @@
   deben verse enteros, usar `Arrangement.Center` (→ checklist #25, nuevo).
   **Lección 2:** comprobar si una medida es diámetro interior o exterior antes de usarla para
   calcular espacio disponible.
+
+### 2026-08-11 (Fase 2h — modo Pantalla en apaisado)
+- **Confirmado OK:** el tope de 600dp ya funciona tras la Fase 2f (captura de Acceder en
+  apaisado con el contenido acotado y centrado). El bug de orden de modificadores queda cerrado.
+- **Nuevo problema, en un fichero que no se habia tocado:** el panel de ajustes de
+  `ScreenLight` (modo Pantalla / Modo Intimo) no tenia NI tope de altura NI scroll interno.
+  Crecia hasta caber todo su contenido (Luz de color + 4 atmosferas + Animacion + Brillo +
+  Temporizador), lo que en apaisado (~393dp de alto) significaba TAPAR la pantalla entera,
+  incluido el aviso "toca fuera para apagar" — que es la unica pista de como salir del modo.
+- **Fix:** `heightIn(max = alto * 0.72f)` + `verticalScroll` en el Column del panel, y
+  `widthIn(max = 640.dp)` en el Surface para no estirar los controles en superficies anchas.
+  **Leccion:** cualquier hoja/panel cuyo contenido pueda crecer necesita tope de altura Y
+  scroll interno desde el primer dia; sin ellos el fallo no aparece en vertical y se destapa
+  entero al girar. Al auditar layouts para apaisado hay que revisar TODAS las hojas del
+  proyecto, no solo la de la pantalla principal (→ checklist #26, nuevo).

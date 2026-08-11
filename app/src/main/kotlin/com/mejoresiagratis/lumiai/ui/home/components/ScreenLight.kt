@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -280,16 +283,24 @@ fun ScreenLight(
             }
         }
 
+        // El panel no tenia NI tope de altura NI scroll: crecia hasta caber su contenido, y en
+        // apaisado (~393dp de alto) eso significaba tapar la pantalla entera, incluido el
+        // "toca fuera para apagar". Se acota al 72% del alto con scroll interno, y se limita
+        // el ancho en superficies anchas para no estirar los controles.
+        val panelMaxHeight = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
         Surface(
             color = Color(0xF00B0E13),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .widthIn(max = 640.dp)
                 .fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = panelMaxHeight)
+                    .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     // Absorbe toques para no apagar al ajustar.
                     .clickable(
