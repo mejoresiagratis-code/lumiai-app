@@ -411,3 +411,23 @@
   **Lección:** cuando un layout deba existir en dos disposiciones, extraer el bloque a una
   lambda composable local y parametrizar SOLO lo que cambia; duplicar el bloque garantiza que
   las dos copias diverjan con el tiempo (→ checklist #19, nuevo).
+
+### 2026-08-11 (Fase 2c — correcciones del apaisado tras QA en dispositivo)
+- **Fase 2b verde en CI pero con 4 defectos visibles en dispositivo** (captura de Pablo).
+  El patrón de dos paneles funcionaba, pero:
+  · **Pesos mal calculados.** `Column(weight(1f))` + `Box(weight(0.44f))` NO reparte 56/44:
+    Compose normaliza sobre la SUMA (1.44), así que daba 69%/31%. El carrusel de modos, más
+    ancho que su panel, quedaba parcialmente OCULTO bajo la hoja. Corregido a 0.58f/0.42f.
+    **Trampa a recordar: los weight son proporciones sobre el total, no fracciones de 1.**
+  · **Orbe desbordado.** `alto * 0.46f` acotado a 120..200dp: con ~393dp de alto útil, entre
+    rail (~90dp), orbe (200dp) y píldora de estado (~36dp) no cabía, y el orbe se recortaba
+    por abajo llevándose la píldora. Reajustado a `alto * 0.34f` acotado 96..150dp.
+  · **`navigationBarsPadding` mal quitado del panel lateral.** Se retiró en 2b pensando que
+    "en panel lateral no aplica", pero en APAISADO la barra del sistema se coloca precisamente
+    en ese lateral. Restaurado siempre, y añadido `displayCutoutPadding()` en modo panel
+    porque el recorte de cámara también cae de lado.
+  **Lección:** los insets no dependen del sitio del componente sino de la ORIENTACIÓN del
+  dispositivo; razonar "esto va al lado, luego no necesita padding de barra" es exactamente al
+  revés en landscape (→ checklist #20, nuevo).
+  **Lección 2:** un build verde no valida un layout. Los cuatro defectos compilaban
+  perfectamente; solo la captura en dispositivo los reveló.

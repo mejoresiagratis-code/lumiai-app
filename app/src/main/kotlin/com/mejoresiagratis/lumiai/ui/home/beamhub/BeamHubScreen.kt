@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -276,8 +277,10 @@ fun BeamHubScreen(
     // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
     val wideLayout = screenHeightDp < 480
     val sheetMaxHeight = (screenHeightDp * 0.42f).dp
+    // En apaisado el alto util se reparte entre rail (~90dp), orbe y pildora de estado.
+    // Con 200dp el orbe desbordaba y recortaba la pildora: se acota mas bajo.
     val orbSize = if (wideLayout) {
-        (screenHeightDp * 0.46f).dp.coerceIn(120.dp, 200.dp)
+        (screenHeightDp * 0.34f).dp.coerceIn(96.dp, 150.dp)
     } else {
         (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
     }
@@ -324,7 +327,11 @@ fun BeamHubScreen(
                 style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
             )
             .border(width = 1.dp, color = sheetBorder, shape = sheetShape)
-            .then(if (side) Modifier else Modifier.navigationBarsPadding())
+            // navigationBarsPadding SIEMPRE: en apaisado la barra del sistema se coloca en el
+            // lateral, justo donde vive este panel. Ademas el recorte de pantalla (camara)
+            // tambien cae de lado, de ahi displayCutoutPadding en modo panel.
+            .navigationBarsPadding()
+            .then(if (side) Modifier.displayCutoutPadding() else Modifier)
             .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
@@ -430,7 +437,7 @@ fun BeamHubScreen(
             Row(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
                 modifier = Modifier
-                    .then(if (wideLayout) Modifier.weight(1f).fillMaxHeight() else Modifier.fillMaxSize()),
+                    .then(if (wideLayout) Modifier.weight(0.58f).fillMaxHeight() else Modifier.fillMaxSize()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ModeRail(
@@ -496,7 +503,7 @@ fun BeamHubScreen(
             }
                 // Panel lateral en apaisado: la MISMA hoja de controles, con su propio scroll.
                 if (wideLayout) {
-                    Box(modifier = Modifier.weight(0.44f).fillMaxHeight()) {
+                    Box(modifier = Modifier.weight(0.42f).fillMaxHeight()) {
                         controlSheet(true)
                     }
                 }
