@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -137,10 +138,19 @@ fun SoundAlertScreen(
             )
         }
     ) { padding ->
+        // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
+        // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
+        // centrado, igual que en Ajustes. En movil vertical no cambia nada.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .widthIn(max = 600.dp)
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
@@ -181,6 +191,7 @@ fun SoundAlertScreen(
                 Text(stringResource(R.string.sa_reset))
             }
             Spacer(Modifier.height(LumiSpacing.sm))
+        }
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -98,10 +99,19 @@ fun AuthScreen(
             )
         }
     ) { padding ->
+        // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
+        // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
+        // centrado, igual que en Ajustes. En movil vertical no cambia nada.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .widthIn(max = 600.dp)
                 .padding(horizontal = LumiSpacing.lg)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -273,6 +283,7 @@ fun AuthScreen(
             }
 
             Spacer(modifier = Modifier.height(LumiSpacing.md))
+        }
         }
     }
 }

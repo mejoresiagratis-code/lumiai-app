@@ -431,3 +431,21 @@
   revés en landscape (→ checklist #20, nuevo).
   **Lección 2:** un build verde no valida un layout. Los cuatro defectos compilaban
   perfectamente; solo la captura en dispositivo los reveló.
+
+### 2026-08-11 (Fase 2d — ancho máximo en el resto de pantallas)
+- **QA de Pablo en pantalla grande VERTICAL** (tablet/plegable, capturas de Alerta Sonora,
+  Ajustes, Letrero LED y Acceder en v0.7.3). Descubre un problema DISTINTO al del apaisado:
+  en superficies anchas las tarjetas y campos se estiran a todo el ancho, separando cada
+  etiqueta de su control (los switches de Alerta Sonora quedaban a un palmo de su texto) y
+  dejando campos de correo/contraseña larguísimos para su contenido.
+- **Causa:** el tope `widthIn(max = 600.dp)` de la Fase 2a se aplicó SOLO a `SettingsScreen`.
+  El resto de pantallas con scroll (`SoundAlertScreen`, `AuthScreen`, `LedBannerScreen`)
+  seguían a ancho completo.
+- **Fix:** mismo patrón —`Box(fillMaxSize, TopCenter)` envolviendo un `Column` con
+  `widthIn(max = 600.dp)`— aplicado a las tres. En móvil vertical no cambia nada: `widthIn`
+  solo actúa cuando sobra ancho.
+  **Lección:** al introducir una regla de layout adaptativo, aplicarla de una vez a TODAS las
+  pantallas del mismo tipo; hacerlo en una sola deja el resto divergiendo y el fallo no
+  aparece hasta que alguien prueba en una pantalla grande (→ checklist #21, nuevo).
+- **Validado de paso:** el Letrero LED rasteriza emojis correctamente en la rejilla de puntos
+  (captura con "😄 Hello" desplazándose). Confirmada esa feature en dispositivo.
