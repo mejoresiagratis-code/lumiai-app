@@ -37,6 +37,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
@@ -69,7 +72,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -283,7 +285,11 @@ fun BeamHubScreen(
     // distinta — Baliza, con presets, crecía y EXPULSABA la píldora: el mismo efecto del memo
     // #27, ahora en vertical. Misma altura para TODOS los modos + scroll interno, y plegable
     // tocando la franja superior (asa incluida).
-    var sheetExpanded by rememberSaveable { mutableStateOf(true) }
+    // Plegada por defecto SIEMPRE al abrir la app (decision de Pablo). `remember` a proposito
+    // y no rememberSaveable: gracias a configChanges el giro no recrea la Activity (el estado
+    // sobrevive igualmente), y rememberSaveable restauraria "desplegada" tras una muerte de
+    // proceso — exactamente lo que no queremos.
+    var sheetExpanded by remember { mutableStateOf(false) }
     val sheetExpandedHeight = (screenHeightDp * 0.38f).dp
     val sheetCollapsedHeight = 72.dp
     // OJO: `PowerOrb` se dimensiona con `requiredSize()`, que IGNORA las restricciones del
@@ -338,8 +344,13 @@ fun BeamHubScreen(
     } else {
         RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     }
+    // Si la barra de navegacion esta visible (revelado transitorio, u OEM que ignore el
+    // hide), su inset se SUMA a la altura: la parte util de la hoja queda siempre POR ENCIMA
+    // del menu del sistema. Con la barra oculta el inset es 0 y no cambia nada.
+    val navBarPad = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val sheetHeight by animateDpAsState(
-        targetValue = if (sheetExpanded) sheetExpandedHeight else sheetCollapsedHeight,
+        targetValue = (if (sheetExpanded) sheetExpandedHeight else sheetCollapsedHeight) +
+            (if (side) 0.dp else navBarPad),
         animationSpec = LumiMotion.emphasized(),
         label = "sheetHeight"
     )

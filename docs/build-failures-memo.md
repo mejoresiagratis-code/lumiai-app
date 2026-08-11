@@ -634,3 +634,26 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **El chequeo anclado (#15) volvió a pagar:** `rememberSaveable` quedó usado sin import y
   el gate lo cazó ANTES del CI (usos=1 import=0). Un ciclo ahorrado.
 - Falso positivo conocido: el audit marca TODO por la palabra "TODOS" en un comentario.
+
+### 2026-08-11 (Fase 2m — hoja plegada por defecto + barra de navegación oculta)
+- **QA de Pablo (v0.8.4):** la hoja plegada quedaba DETRÁS del menú de navegación del sistema,
+  y pidió (a) plegada por defecto siempre al abrir, aunque se cerrara desplegada, y (b)
+  esconder el menú inferior.
+- **Aplicado:**
+  · `sheetExpanded` pasa a `remember { mutableStateOf(false) }`. **`remember` a propósito y
+    no `rememberSaveable`:** con `configChanges` el giro NO recrea la Activity (el estado
+    sobrevive igual), y `rememberSaveable` restauraría "desplegada" tras una muerte de
+    proceso — justo lo contrario de lo pedido.
+  · `MainActivity`: `WindowInsetsControllerCompat.hide(navigationBars())` con
+    `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`. La barra de estado no se toca. En apaisado
+    esto además libera el lateral derecho (más ancho útil para el panel).
+  · Cinturón y tirantes: si la barra reaparece (revelado transitorio u OEM que ignore el
+    hide), su inset se SUMA a la altura de la hoja → la parte útil queda siempre por encima
+    del menú. Con la barra oculta el inset es 0 y no altera la aritmética del orbe.
+- **El guard de imports cayó en su propia trampa (#9 aplicada al ESCRITOR):** la comprobación
+  `if 'import ...navigationBars' not in s` dio verde porque es PREFIJO de
+  `navigationBarsPadding`, y el import real nunca se insertó (usos=1, import=0 → habría sido
+  Unresolved reference en CI). El chequeo anclado posterior lo cazó en local.
+  **Lección:** los guards de INSERCIÓN de imports deben usar regex anclada
+  (`^import ...simbolo$`) igual que los de verificación; un `in` de substring sufre el mismo
+  falso positivo que un grep sin anclar (→ checklist #31, nuevo).
