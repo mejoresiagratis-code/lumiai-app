@@ -612,3 +612,25 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   **Lección:** toda condición de layout repetida en más de un fichero es deuda: extraerla a
   una fuente única ANTES de construir encima (la Cabina va a leer este mismo flag)
   (→ checklist #30, nuevo).
+
+### 2026-08-11 (Fase 2l — afinado del VERTICAL antes de la Cabina, QA de Pablo)
+- **Reporte con capturas (v0.8.3 vertical):** (a) la hoja medía distinto según el modo —
+  Baliza, con presets, crecía hasta EXPULSAR la píldora de estado: el mismo efecto del
+  memo #27 pero en vertical, porque `heightIn(max)` deja que el contenido decida y
+  `requiredSize` del orbe no cede; (b) hueco excesivo entre header y carrusel;
+  (c) petición: hoja plegable tocando su parte superior.
+- **Aplicado:**
+  · **Altura FIJA de hoja** en vertical: `alto * 0.38f` para TODOS los modos, con scroll
+    interno. La variable `sheetMaxHeight` (heightIn) desaparece.
+  · **Plegado:** `sheetExpanded` en `rememberSaveable` (sobrevive al giro; default true),
+    animado con `animateDpAsState` + `LumiMotion.emphasized()` a 72dp plegada. La zona
+    clicable es TODA la franja superior (asa incluida), `onClickLabel` con string nueva
+    `sheet_toggle_cd` (EN/ES en paridad, 274/274). Scroll deshabilitado al plegar para no
+    scrollear dentro de 72dp. En panel lateral (`side`) el plegado se ignora.
+  · **Orbe por RESTA también en vertical:** con la hoja fija el espacio es determinista:
+    `alto − hoja − top(64) − rail(128) − píldora(72) − 24`, acotado 150..240dp.
+    Verificado: S26 vertical ~890dp → 338+240+128+72+64 = 842 → 48dp de holgura.
+  · **Carrusel pegado al header:** fuera el `padding(top = md)` del ModeRail.
+- **El chequeo anclado (#15) volvió a pagar:** `rememberSaveable` quedó usado sin import y
+  el gate lo cazó ANTES del CI (usos=1 import=0). Un ciclo ahorrado.
+- Falso positivo conocido: el audit marca TODO por la palabra "TODOS" en un comentario.

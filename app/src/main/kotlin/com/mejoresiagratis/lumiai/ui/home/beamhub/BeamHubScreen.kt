@@ -69,6 +69,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -278,7 +279,13 @@ fun BeamHubScreen(
     // Apaisado en móvil: repartir por ALTURA deja la hoja en ~150dp y el orbe en su mínimo,
     // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
     val wideLayout = isCompactHeight()
-    val sheetMaxHeight = (screenHeightDp * 0.42f).dp
+    // Altura FIJA de la hoja en vertical (2l): con `heightIn(max)` cada modo medía una altura
+    // distinta — Baliza, con presets, crecía y EXPULSABA la píldora: el mismo efecto del memo
+    // #27, ahora en vertical. Misma altura para TODOS los modos + scroll interno, y plegable
+    // tocando la franja superior (asa incluida).
+    var sheetExpanded by rememberSaveable { mutableStateOf(true) }
+    val sheetExpandedHeight = (screenHeightDp * 0.38f).dp
+    val sheetCollapsedHeight = 72.dp
     // OJO: `PowerOrb` se dimensiona con `requiredSize()`, que IGNORA las restricciones del
     // padre. El orbe NUNCA se comprime aunque el Column no tenga sitio, asi que cualquier
     // hijo posterior (la pildora de estado) se sale de pantalla sin recorte ni scroll.
@@ -291,7 +298,13 @@ fun BeamHubScreen(
         val available = (screenHeightDp.dp - railHeight - pillHeight - topBarHeight)
         available.coerceIn(72.dp, 132.dp)
     } else {
-        (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
+        // Tambien por RESTA en vertical: con la hoja a altura fija el espacio es determinista
+        // y la pildora tiene sitio garantizado en todos los modos (no solo en Continuo).
+        val topBarHeight = 64.dp
+        val railHeight = 128.dp          // etiqueta MODO + tarjeta + padding inferior
+        val pillHeight = 72.dp
+        (screenHeightDp.dp - sheetExpandedHeight - topBarHeight - railHeight - pillHeight - 24.dp)
+            .coerceIn(150.dp, 240.dp)
     }
 
     // Aviso contextual del modo (Estrobo/Baliza): se muestra como toast descartable al
@@ -325,6 +338,12 @@ fun BeamHubScreen(
     } else {
         RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     }
+    val sheetHeight by animateDpAsState(
+        targetValue = if (sheetExpanded) sheetExpandedHeight else sheetCollapsedHeight,
+        animationSpec = LumiMotion.emphasized(),
+        label = "sheetHeight"
+    )
+    val sheetScroll = rememberScrollState()
     Column(
         modifier = Modifier
             .then(
@@ -333,7 +352,7 @@ fun BeamHubScreen(
                 // de borde a borde y se acota a 640dp; en movil no cambia nada.
                 else Modifier.widthIn(max = 640.dp).fillMaxWidth()
             )
-            .then(if (side) Modifier else Modifier.heightIn(max = sheetMaxHeight))
+            .then(if (side) Modifier else Modifier.height(sheetHeight))
             .shadow(elevation = 16.dp, shape = sheetShape, clip = false)
             .clip(sheetShape)
             .hazeEffect(
@@ -347,16 +366,29 @@ fun BeamHubScreen(
             .navigationBarsPadding()
             .then(if (side) Modifier.displayCutoutPadding() else Modifier)
             .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(sheetScroll, enabled = side || sheetExpanded),
         verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
     ) {
+        // Toda la franja superior (asa incluida) pliega/despliega la hoja en vertical.
         Box(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .size(width = 40.dp, height = 4.dp)
-                .clip(CircleShape)
-                .background(onSurface.copy(alpha = 0.45f))
-        )
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = !side,
+                    onClickLabel = stringResource(R.string.sheet_toggle_cd)
+                ) { sheetExpanded = !sheetExpanded }
+                .padding(vertical = LumiSpacing.xs),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(onSurface.copy(alpha = 0.45f))
+            )
+        }
         var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -480,7 +512,7 @@ fun BeamHubScreen(
                     onLocked = { lockedDialogMode = it },
                     caps = state.capabilities,
                     access = state.access,
-                    modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
+                    modifier = Modifier.padding(bottom = LumiSpacing.md)
                 )
                 if (!wideLayout) Spacer(modifier = Modifier.weight(1f))
                 if (state.mode.isAvailable(state.capabilities)) {

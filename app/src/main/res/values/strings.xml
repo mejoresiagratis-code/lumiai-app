@@ -282,4 +282,5 @@
     <string name="pro_subscribe_cta">Subscribe to Pro</string>
     <string name="pro_subscribe_gate_title">Sign in first</string>
     <string name="pro_subscribe_gate_body">To subscribe you need an account with an active session — it keeps your purchase safe across devices. Ad-based temporary unlock doesn\'t require this.</string>
+    <string name="sheet_toggle_cd">Fold or unfold the controls sheet</string>
 </resources>
