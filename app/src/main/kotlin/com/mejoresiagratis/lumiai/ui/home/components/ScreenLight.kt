@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -253,12 +254,20 @@ fun ScreenLight(
             )
             .semantics { contentDescription = cd }
     ) {
+        // Apaisado (2k): con poca altura el panel pasa a LATERAL, y el aviso y el candado se
+        // recolocan en el area de luz restante (62%) para no quedar bajo el panel.
+        val cfg = LocalConfiguration.current
+        val compactHeight = cfg.screenHeightDp < 480
+        val panelReserve = if (compactHeight) (cfg.screenWidthDp * 0.38f).dp else 0.dp
         Text(
             text = stringResource(R.string.screen_tap_off),
             style = MaterialTheme.typography.bodyMedium,
             color = onColor.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                // padding(end) tras align: el bloque medido incluye la reserva del panel, asi
+                // que el texto queda centrado sobre el AREA DE LUZ, no sobre la pantalla.
+                .padding(end = panelReserve)
                 // El fondo debe seguir siendo full-bleed (es la fuente de luz), asi que los
                 // insets se aplican al CONTENIDO, no al Box raiz. Con edge-to-edge (API 36)
                 // un padding fijo no basta: el texto quedaria bajo la barra de estado.
@@ -271,6 +280,8 @@ fun ScreenLight(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    // Retirado a la izquierda del panel lateral cuando este existe.
+                    .padding(end = panelReserve)
                     // En apaisado la barra de navegacion se coloca en el lateral DERECHO,
                     // justo donde vive este boton: sin systemBarsPadding quedaria debajo y
                     // seria intocable. El recorte de camara tambien cae de lado.
@@ -296,23 +307,42 @@ fun ScreenLight(
             }
         }
 
-        // El panel no tenia NI tope de altura NI scroll: crecia hasta caber su contenido, y en
-        // apaisado (~393dp de alto) eso significaba tapar la pantalla entera, incluido el
-        // "toca fuera para apagar". Se acota al 72% del alto con scroll interno, y se limita
-        // el ancho en superficies anchas para no estirar los controles.
-        val panelMaxHeight = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
+        // APAISADO (2k): una hoja INFERIOR compite por el eje escaso (el alto) y dejaba la luz
+        // reducida a una franja por mucho tope que se le pusiera (iteraciones 2h..2j). Con poca
+        // altura el panel pasa a LATERAL: 38% del ancho, alto completo, esquinas a la izquierda
+        // — el mismo patron `side` que ya funciona en el Beam Hub. La luz conserva SIEMPRE el
+        // fondo completo porque el panel se superpone (alpha 0xF0), no lo recorta.
+        // En vertical y tableta sigue siendo hoja inferior, acotada a 640dp y centrada.
+        val panelMaxHeight = (cfg.screenHeightDp * 0.72f).dp
+        val panelShape = if (compactHeight) {
+            RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)
+        } else {
+            RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        }
         Surface(
             color = Color(0xF00B0E13),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .widthIn(max = 640.dp)
-                .fillMaxWidth()
+            shape = panelShape,
+            modifier = Modifier.then(
+                if (compactHeight) {
+                    Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.38f)
+                } else {
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .widthIn(max = 640.dp)
+                        .fillMaxWidth()
+                }
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = panelMaxHeight)
+                    .then(
+                        if (compactHeight) Modifier.fillMaxHeight()
+                        else Modifier.heightIn(max = panelMaxHeight)
+                    )
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     .displayCutoutPadding()

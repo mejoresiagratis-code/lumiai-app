@@ -572,3 +572,25 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   la función: una linterna de pantalla o un letrero). Y todo elemento anclado a un borde
   (`TopEnd`, `BottomCenter`) es sospechoso: el borde que en vertical está libre, en apaisado
   es donde el sistema pone sus barras (→ checklist #28, nuevo).
+
+### 2026-08-11 (Fase 2k — modo Pantalla a panel lateral + hoja de tableta acotada)
+- **Decisión de diseño (mockup aprobado por Pablo):** la hoja INFERIOR de `ScreenLight` era
+  el patrón equivocado en apaisado — compite por el eje escaso (el alto) y dejaba la luz en
+  una franja del ~27% por mucho tope que se le pusiera (iteraciones 2h..2j fueron parches
+  sobre un patrón que no podía funcionar). Patrón correcto: *supporting pane* (validado por
+  la skill oficial `android/skills@adaptive`), implementado con la misma mecánica `side`
+  del Beam Hub, sin migrar a Navigation 3 antes del deadline.
+- **Aplicado:**
+  · `ScreenLight`: con `compactHeight` (<480dp de alto) el panel pasa a LATERAL — 38% del
+    ancho, alto completo, `CenterEnd`, esquinas `topStart+bottomStart` de 28dp. La luz
+    conserva el fondo completo porque el panel se SUPERPONE (alpha 0xF0), no lo recorta.
+    En vertical/tableta sigue siendo hoja inferior con su tope del 72% + scroll (red de 2h).
+  · Aviso "toca fuera para apagar" y candado: `.padding(end = panelReserve)` DESPUÉS de
+    `.align(...)` — el bloque medido incluye la reserva, así que quedan centrados/retirados
+    sobre el ÁREA DE LUZ (62%), no sobre la pantalla entera ni bajo el panel.
+  · Beam Hub, hoja de tableta: `widthIn(max = 640.dp)` (orden correcto, #23) + Box de
+    centrado en el slot `bottomBar` — **el slot alinea al inicio**: sin el Box, una hoja
+    acotada quedaría pegada a la izquierda en tableta, no centrada.
+  **Lección:** cuando varios parches consecutivos mejoran un layout "un poco pero sigue mal",
+  el patrón contenedor es el sospechoso, no las medidas: cambiar tope/scroll/porcentaje no
+  arregla un contenedor anclado al eje equivocado (→ checklist #29, nuevo).

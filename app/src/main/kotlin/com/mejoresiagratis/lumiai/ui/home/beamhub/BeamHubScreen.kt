@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -325,7 +326,12 @@ fun BeamHubScreen(
     }
     Column(
         modifier = Modifier
-            .then(if (side) Modifier.fillMaxHeight() else Modifier.fillMaxWidth())
+            .then(
+                if (side) Modifier.fillMaxHeight()
+                // Tope ANTES de fillMaxWidth (checklist #23): en tableta la hoja deja de ir
+                // de borde a borde y se acota a 640dp; en movil no cambia nada.
+                else Modifier.widthIn(max = 640.dp).fillMaxWidth()
+            )
             .then(if (side) Modifier else Modifier.heightIn(max = sheetMaxHeight))
             .shadow(elevation = 16.dp, shape = sheetShape, clip = false)
             .clip(sheetShape)
@@ -439,7 +445,16 @@ fun BeamHubScreen(
                     }
                 )
             },
-            bottomBar = { if (!wideLayout) controlSheet(false) },
+            bottomBar = {
+                if (!wideLayout) {
+                    // El slot del bottomBar alinea al inicio: sin este Box, una hoja acotada
+                    // a 640dp en tableta quedaria pegada a la IZQUIERDA en vez de centrada.
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) { controlSheet(false) }
+                }
+            },
         ) { padding ->
             // displayCutoutPadding en el contenedor de los dos paneles: en apaisado el
             // recorte de camara pasa al lateral IZQUIERDO, justo donde arranca el carrusel.
