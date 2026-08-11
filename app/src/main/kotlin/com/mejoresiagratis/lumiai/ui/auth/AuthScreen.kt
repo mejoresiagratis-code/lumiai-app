@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -99,6 +100,7 @@ fun AuthScreen(
             )
         }
     ) { padding ->
+        val compactHeight = LocalConfiguration.current.screenHeightDp < 480
         // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
         // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
         // centrado, igual que en Ajustes. En movil vertical no cambia nada.
@@ -115,15 +117,21 @@ fun AuthScreen(
                 .padding(horizontal = LumiSpacing.lg)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
+            verticalArrangement = Arrangement.spacedBy(
+                if (compactHeight) LumiSpacing.sm else LumiSpacing.lg
+            )
         ) {
             Spacer(modifier = Modifier.height(LumiSpacing.sm))
 
             // --- Cabecera de marca ---
+            // En apaisado la cabecera (icono 76dp + titulo grande + subtitulo) se comia todo
+            // el alto util y dejaba el formulario BAJO EL PLIEGUE: habia que desplazarse solo
+            // para ver el campo de correo. Al ser decorativa, se adelgaza: icono mas pequeno,
+            // titulo un grado menor y sin subtitulo. Asi el formulario entra sin scroll.
             Box(
                 modifier = Modifier
-                    .size(76.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .size(if (compactHeight) 48.dp else 76.dp)
+                    .clip(RoundedCornerShape(if (compactHeight) 16.dp else 24.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -131,20 +139,26 @@ fun AuthScreen(
                     painter = painterResource(R.drawable.ic_mode_continuous),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(if (compactHeight) 26.dp else 40.dp)
                 )
             }
             Text(
                 text = stringResource(R.string.auth_welcome_title),
-                style = MaterialTheme.typography.headlineMedium,
+                style = if (compactHeight) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.headlineMedium
+                },
                 textAlign = TextAlign.Center
             )
-            Text(
-                text = stringResource(R.string.account_guest_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            if (!compactHeight) {
+                Text(
+                    text = stringResource(R.string.account_guest_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             // --- Selector Iniciar sesión / Crear cuenta ---
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {

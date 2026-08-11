@@ -449,3 +449,21 @@
   aparece hasta que alguien prueba en una pantalla grande (→ checklist #21, nuevo).
 - **Validado de paso:** el Letrero LED rasteriza emojis correctamente en la rejilla de puntos
   (captura con "😄 Hello" desplazándose). Confirmada esa feature en dispositivo.
+
+### 2026-08-11 (Fase 2e — cabecera adaptativa en Acceder)
+- **QA de Pablo: `AuthScreen` en apaisado.** La cabecera de marca (icono 76dp + titulo
+  `headlineMedium` + subtitulo) consumia practicamente todo el alto util (~393dp), dejando el
+  formulario BAJO EL PLIEGUE: habia que desplazarse solo para ver el campo de correo. En una
+  pantalla de login eso es un fallo de usabilidad serio, no cosmetico.
+- **Fix:** cabecera adaptativa con `compactHeight = screenHeightDp < 480` — icono 76→48dp,
+  radio 24→16dp, glifo 40→26dp, titulo `headlineMedium`→`titleLarge`, subtitulo oculto (es
+  redundante: el mismo texto ya aparece en Ajustes al invitar a crear cuenta) y espaciado del
+  Column `lg`→`sm`. Con eso el formulario completo entra sin scroll.
+- **Decision deliberada:** NO se aplica el mismo adelgazamiento a la `DisclosureCard` de
+  `SoundAlertScreen`, aunque ocupe espacio parecido: contiene el aviso legal ("no es un
+  sistema de seguridad, no sustituye a un detector homologado"). Ese texto debe verse siempre
+  y en cualquier orientacion.
+  **Leccion:** al recuperar espacio vertical en pantallas compactas, distinguir contenido
+  DECORATIVO (cabeceras de marca, ilustraciones) de contenido OBLIGATORIO (avisos legales,
+  disclaimers de seguridad). Lo primero se adelgaza u oculta; lo segundo nunca
+  (→ checklist #22, nuevo).
