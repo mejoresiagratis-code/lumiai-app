@@ -19,8 +19,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.animation.animateContentSize
@@ -256,13 +259,23 @@ fun ScreenLight(
             color = onColor.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = LumiSpacing.xxl)
+                // El fondo debe seguir siendo full-bleed (es la fuente de luz), asi que los
+                // insets se aplican al CONTENIDO, no al Box raiz. Con edge-to-edge (API 36)
+                // un padding fijo no basta: el texto quedaria bajo la barra de estado.
+                .statusBarsPadding()
+                .displayCutoutPadding()
+                .padding(top = LumiSpacing.lg)
         )
 
         if (!locked) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    // En apaisado la barra de navegacion se coloca en el lateral DERECHO,
+                    // justo donde vive este boton: sin systemBarsPadding quedaria debajo y
+                    // seria intocable. El recorte de camara tambien cae de lado.
+                    .systemBarsPadding()
+                    .displayCutoutPadding()
                     .padding(LumiSpacing.lg)
                     .clip(CircleShape)
                     .background(onColor.copy(alpha = 0.10f))
@@ -302,6 +315,7 @@ fun ScreenLight(
                     .heightIn(max = panelMaxHeight)
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
+                    .displayCutoutPadding()
                     // Absorbe toques para no apagar al ajustar.
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -341,7 +342,14 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
             )
             .semantics { contentDescription = exitCd }
     ) {
-        LedBannerCanvas(config = config, modifier = Modifier.fillMaxSize())
+        // El FONDO negro va a sangre (es un letrero), pero la rejilla respeta el recorte de
+        // camara: sin esto, las letras que pasan por debajo del notch se ven mordidas.
+        LedBannerCanvas(
+            config = config,
+            modifier = Modifier
+                .fillMaxSize()
+                .displayCutoutPadding()
+        )
     }
 }
 

@@ -545,3 +545,30 @@
   **Lección 2 (proceso):** cuando un fix no funciona a la primera, NO reintentar con otra
   suposición: leer el layout del componente implicado. Tres iteraciones perdidas por no
   abrir `PowerOrb`.
+
+### 2026-08-11 (Fase 2j — auditoría sistemática de vistas a pantalla completa)
+Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
+- **`required*`:** solo un uso en todo el código (`PowerOrb.requiredSize`), ya tratado en 2i.
+  Confirmado que no hay más componentes que ignoren las restricciones del padre.
+- **Pantallas sin scroll:** todas tienen `verticalScroll`/`LazyColumn` salvo `OnboardingScreen`,
+  que se resolvió con dos paneles en 2a (decisión deliberada: añadir scroll escondería el
+  botón principal).
+- **`ScreenBeacon`:** destello blanco a pantalla completa sin contenido — sin problema.
+- **INSETS, los fallos reales encontrados:**
+  · `ScreenLight`, texto "toca fuera para apagar": usaba `padding(top = xxl)` FIJO. Con
+    edge-to-edge (API 36) el texto queda bajo la barra de estado. → `statusBarsPadding()` +
+    `displayCutoutPadding()`.
+  · `ScreenLight`, botón de candado en `Alignment.TopEnd`: en APAISADO la barra de navegación
+    se coloca en el lateral derecho, exactamente donde vive ese botón → quedaría **debajo e
+    intocable**. → `systemBarsPadding()` + `displayCutoutPadding()`.
+  · `ScreenLight`, panel: tenía `navigationBarsPadding` pero no recorte de cámara. → añadido.
+  · `LedBannerDisplay`: el fondo negro debe ir a sangre (es un letrero), pero la REJILLA no:
+    las letras que pasan bajo el notch se veían mordidas. → `displayCutoutPadding()` solo al
+    canvas, dejando el fondo full-bleed.
+  · `BeamHubScreen`, contenedor de los dos paneles: sin protección de recorte; en apaisado el
+    notch pasa al lateral izquierdo, donde arranca el carrusel. → añadido.
+  **Lección:** en una vista a pantalla completa los insets se aplican al CONTENIDO, nunca al
+  contenedor raíz — el fondo debe seguir cubriendo toda la pantalla (más aún si el fondo ES
+  la función: una linterna de pantalla o un letrero). Y todo elemento anclado a un borde
+  (`TopEnd`, `BottomCenter`) es sospechoso: el borde que en vertical está libre, en apaisado
+  es donde el sistema pone sus barras (→ checklist #28, nuevo).

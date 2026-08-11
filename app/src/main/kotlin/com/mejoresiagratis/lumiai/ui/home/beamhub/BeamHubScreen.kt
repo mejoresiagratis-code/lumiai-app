@@ -441,7 +441,14 @@ fun BeamHubScreen(
             },
             bottomBar = { if (!wideLayout) controlSheet(false) },
         ) { padding ->
-            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // displayCutoutPadding en el contenedor de los dos paneles: en apaisado el
+            // recorte de camara pasa al lateral IZQUIERDO, justo donde arranca el carrusel.
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .displayCutoutPadding()
+            ) {
             Column(
                 modifier = Modifier
                     .then(if (wideLayout) Modifier.weight(0.58f).fillMaxHeight() else Modifier.fillMaxSize()),
