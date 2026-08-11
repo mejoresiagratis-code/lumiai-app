@@ -3,6 +3,8 @@ package com.mejoresiagratis.lumiai.ui.home.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -64,6 +66,7 @@ private fun SettingGroup(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ModeSettingsPanel(
     mode: FlashMode,
@@ -126,18 +129,21 @@ fun ModeSettingsPanel(
         }
         if (ModeControl.BEACON_INTERVAL in controls) {
             SettingGroup {
-                Row(
+                // FlowRow y NO Row con weight(1f): al repartir el ancho a partes iguales, en el
+                // panel lateral del apaisado cada boton quedaba tan estrecho que "Localizacion"
+                // se partia por silabas ("Loc/aliz/aci/on"). Con FlowRow cada boton toma su
+                // ancho natural y baja de linea si no cabe.
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
                 ) {
                     FilledTonalButton(
-                        onClick = { onChange { it.copy(beaconIntervalMs = 2000L, beaconFlashMs = 150L) } },
-                        modifier = Modifier.weight(1f)
-                    ) { Text(stringResource(R.string.beacon_preset_locator)) }
+                        onClick = { onChange { it.copy(beaconIntervalMs = 2000L, beaconFlashMs = 150L) } }
+                    ) { Text(stringResource(R.string.beacon_preset_locator), maxLines = 1) }
                     FilledTonalButton(
-                        onClick = { onChange { it.copy(beaconIntervalMs = 600L, beaconFlashMs = 200L) } },
-                        modifier = Modifier.weight(1f)
-                    ) { Text(stringResource(R.string.beacon_preset_highvis)) }
+                        onClick = { onChange { it.copy(beaconIntervalMs = 600L, beaconFlashMs = 200L) } }
+                    ) { Text(stringResource(R.string.beacon_preset_highvis), maxLines = 1) }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)) {
                     Text(stringResource(R.string.settings_beacon_interval, settings.beaconIntervalMs.toInt()))

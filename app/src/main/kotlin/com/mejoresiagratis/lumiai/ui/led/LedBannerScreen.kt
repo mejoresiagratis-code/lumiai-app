@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -160,8 +161,11 @@ fun LedBannerScreen(
         ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
+                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
+                // Primero el tope, luego solo el alto.
                 .widthIn(max = 600.dp)
+                .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)

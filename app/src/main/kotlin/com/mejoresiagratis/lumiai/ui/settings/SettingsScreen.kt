@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -218,8 +219,11 @@ fun SettingsScreen(
         ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
+                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
+                // Primero el tope, luego solo el alto.
                 .widthIn(max = 600.dp)
+                .fillMaxHeight()
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)

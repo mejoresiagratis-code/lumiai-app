@@ -467,3 +467,23 @@
   DECORATIVO (cabeceras de marca, ilustraciones) de contenido OBLIGATORIO (avisos legales,
   disclaimers de seguridad). Lo primero se adelgaza u oculta; lo segundo nunca
   (→ checklist #22, nuevo).
+
+### 2026-08-11 (Fase 2f — el tope de ancho NUNCA se aplicó + texto partido en el panel)
+- **BUG DE MODIFICADORES (afectaba a 4 pantallas desde la Fase 2a).** El tope de 600dp se
+  escribió como `Modifier.fillMaxSize().widthIn(max = 600.dp)`. **El orden lo anula:**
+  `fillMaxSize()` fija minWidth = maxWidth = ancho del padre; `widthIn` no puede bajar el
+  maxWidth por debajo del minWidth ya impuesto, así que Compose lo descarta en silencio.
+  Resultado: Ajustes, Alerta Sonora, Acceder y Letrero LED seguían a ancho COMPLETO en
+  tablet, y las Fases 2a y 2d no hicieron nada visible pese a compilar y pasar el CI.
+  **Fix:** `Modifier.widthIn(max = 600.dp).fillMaxHeight()` — primero el tope, y solo el alto
+  se estira.
+  **Lección:** en Compose el orden de los modificadores de tamaño es semántico, no
+  cosmético: un `fillMaxX` antes de un `widthIn`/`heightIn` lo cancela. Ante un tope que
+  "no se ve", sospechar del orden antes que del valor (→ checklist #23, nuevo).
+- **Texto partido por sílabas en el panel lateral.** Los presets de Baliza usaban
+  `Row` + `FilledTonalButton(Modifier.weight(1f))`: repartir el ancho a partes iguales en un
+  panel estrecho dejaba cada botón por debajo del ancho de su etiqueta, y "Localización"
+  se rompía en "Loc / aliz / aci / ón" (4 líneas). Cambiado a `FlowRow` sin `weight`: cada
+  botón toma su ancho natural y baja de línea entero si no cabe. `maxLines = 1` como red.
+  **Lección:** `weight(1f)` reparte espacio SIN mirar el contenido; para etiquetas de texto
+  variable (i18n incluida) usar `FlowRow` o anchos naturales (→ checklist #24, nuevo).
