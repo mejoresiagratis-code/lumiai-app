@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -269,9 +270,17 @@ fun BeamHubScreen(
 
     // Tamaños adaptativos: el sheet nunca pasa del 42% de la pantalla (con scroll interno) y
     // el orbe se encoge según la altura disponible, acotado, para no solaparse nunca con el sheet.
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val configuration = LocalConfiguration.current
+    val screenHeightDp = configuration.screenHeightDp
+    // Apaisado en móvil: repartir por ALTURA deja la hoja en ~150dp y el orbe en su mínimo,
+    // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
+    val wideLayout = screenHeightDp < 480
     val sheetMaxHeight = (screenHeightDp * 0.42f).dp
-    val orbSize = (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
+    val orbSize = if (wideLayout) {
+        (screenHeightDp * 0.46f).dp.coerceIn(120.dp, 200.dp)
+    } else {
+        (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
+    }
 
     // Aviso contextual del modo (Estrobo/Baliza): se muestra como toast descartable al
     // tocar el icono de info, y se cierra al pulsar en cualquier parte de la pantalla.
@@ -292,6 +301,102 @@ fun BeamHubScreen(
                     )
                 )
         )
+
+        // La hoja de controles se define como lambda local para poder colocarla en DOS sitios
+        // sin duplicar su contenido ni pasar veinte parámetros: abajo en vertical (bottomBar)
+        // y como panel lateral derecho en apaisado. `side` solo cambia forma y cómo se estira.
+        val controlSheet: @Composable (side: Boolean) -> Unit = { side ->
+    // En panel lateral la hoja se redondea por la izquierda y se estira en alto;
+    // abajo mantiene las esquinas superiores y el tope del 42% de la altura.
+    val sheetShape = if (side) {
+        RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)
+    } else {
+        RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    }
+    Column(
+        modifier = Modifier
+            .then(if (side) Modifier.fillMaxHeight() else Modifier.fillMaxWidth())
+            .then(if (side) Modifier else Modifier.heightIn(max = sheetMaxHeight))
+            .shadow(elevation = 16.dp, shape = sheetShape, clip = false)
+            .clip(sheetShape)
+            .hazeEffect(
+                state = hazeState,
+                style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
+            )
+            .border(width = 1.dp, color = sheetBorder, shape = sheetShape)
+            .then(if (side) Modifier else Modifier.navigationBarsPadding())
+            .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(width = 40.dp, height = 4.dp)
+                .clip(CircleShape)
+                .background(onSurface.copy(alpha = 0.45f))
+        )
+        var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+            ) {
+                Text(
+                    text = stringResource(R.string.control_header),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (infoTextRes != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { infoVisible = true }
+                            .minimumInteractiveComponentSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_info),
+                            contentDescription = stringResource(R.string.info_cd),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+            if (modeHasAdvanced(state.mode, state.capabilities)) {
+                Text(
+                    text = stringResource(
+                        if (advancedExpanded) R.string.action_show_less else R.string.action_show_more
+                    ) + if (advancedExpanded) " ▴" else " ▾",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { advancedExpanded = !advancedExpanded }
+                )
+            }
+        }
+        if (state.mode == FlashMode.MUSIC) {
+            MusicControls(modifier = Modifier.animateContentSize())
+        } else {
+            ModeSettingsPanel(
+                mode = state.mode,
+                settings = state.settings,
+                caps = state.capabilities,
+                expanded = advancedExpanded,
+                onChange = viewModel::updateSettings,
+                modifier = Modifier.animateContentSize()
+            )
+        }
+    }
+        }
+
 
         Scaffold(
             containerColor = Color.Transparent,
@@ -320,103 +425,12 @@ fun BeamHubScreen(
                     }
                 )
             },
-            bottomBar = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = sheetMaxHeight)
-                        .shadow(
-                            elevation = 16.dp,
-                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                            clip = false
-                        )
-                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                        .hazeEffect(
-                            state = hazeState,
-                            style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = sheetBorder,
-                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                        )
-                        .navigationBarsPadding()
-                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .size(width = 40.dp, height = 4.dp)
-                            .clip(CircleShape)
-                            .background(onSurface.copy(alpha = 0.45f))
-                    )
-                    var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.control_header),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            if (infoTextRes != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null
-                                        ) { infoVisible = true }
-                                        .minimumInteractiveComponentSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_info),
-                                        contentDescription = stringResource(R.string.info_cd),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                        if (modeHasAdvanced(state.mode, state.capabilities)) {
-                            Text(
-                                text = stringResource(
-                                    if (advancedExpanded) R.string.action_show_less else R.string.action_show_more
-                                ) + if (advancedExpanded) " ▴" else " ▾",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.clickable { advancedExpanded = !advancedExpanded }
-                            )
-                        }
-                    }
-                    if (state.mode == FlashMode.MUSIC) {
-                        MusicControls(modifier = Modifier.animateContentSize())
-                    } else {
-                        ModeSettingsPanel(
-                            mode = state.mode,
-                            settings = state.settings,
-                            caps = state.capabilities,
-                            expanded = advancedExpanded,
-                            onChange = viewModel::updateSettings,
-                            modifier = Modifier.animateContentSize()
-                        )
-                    }
-                }
-            }
+            bottomBar = { if (!wideLayout) controlSheet(false) },
         ) { padding ->
+            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                    .then(if (wideLayout) Modifier.weight(1f).fillMaxHeight() else Modifier.fillMaxSize()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ModeRail(
@@ -479,6 +493,13 @@ fun BeamHubScreen(
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
+            }
+                // Panel lateral en apaisado: la MISMA hoja de controles, con su propio scroll.
+                if (wideLayout) {
+                    Box(modifier = Modifier.weight(0.44f).fillMaxHeight()) {
+                        controlSheet(true)
+                    }
+                }
             }
         }
 

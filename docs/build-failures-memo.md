@@ -388,3 +388,26 @@
   `Scaffold`, así que pasarla a panel lateral es reestructurar un fichero de ~900 líneas.
   Se deja para un commit aislado (checklist #17: separar cambios para poder atribuir fallos).
   `targetSdk` sigue en 35 hasta cerrar 2b y hacer el QA en dispositivo.
+
+### 2026-08-11 (Fase 2b — Beam Hub a dos paneles)
+- **Problema:** el Beam Hub repartía el espacio por ALTURA (`sheetMaxHeight = alto * 0.42f`,
+  `orbSize = alto * 0.27f` acotado a 180..240dp). En apaisado (~360dp de alto) la hoja quedaba
+  en ~150dp y el orbe en su mínimo de 180dp: solapados e inservibles. No crasheaba, pero la
+  pantalla principal quedaba inutilizable, y con API 36 el apaisado deja de ser evitable.
+- **Solución sin duplicar layouts:** la hoja de controles se extrae a una **lambda composable
+  local** `val controlSheet: @Composable (side: Boolean) -> Unit`. Definirla como lambda dentro
+  del composable (en vez de función top-level) le deja CAPTURAR el estado local — `state`,
+  `hazeState`, `viewModel`, `infoVisible`, `sheetContainer`… — sin pasar veinte parámetros.
+  Se invoca en dos sitios:
+  · vertical → `bottomBar = { if (!wideLayout) controlSheet(false) }`
+  · apaisado → panel lateral derecho `Box(Modifier.weight(0.44f).fillMaxHeight())`
+  El flag `side` solo altera forma (esquinas izquierdas vs superiores), cómo se estira
+  (`fillMaxHeight` vs `fillMaxWidth` + tope de altura) y si aplica `navigationBarsPadding`
+  (que en panel lateral no tiene sentido).
+- El contenido se envuelve en un `Row`; el orbe pasa a `alto * 0.46f` acotado 120..200dp cuando
+  `wideLayout`, porque ahora comparte ancho en vez de competir por altura.
+- `wideLayout = screenHeightDp < 480`: el criterio es la ALTURA disponible, no la orientación
+  nominal — así también cubre ventanas pequeñas en multiventana y plegables.
+  **Lección:** cuando un layout deba existir en dos disposiciones, extraer el bloque a una
+  lambda composable local y parametrizar SOLO lo que cambia; duplicar el bloque garantiza que
+  las dos copias diverjan con el tiempo (→ checklist #19, nuevo).
