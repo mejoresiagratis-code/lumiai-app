@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -15,8 +16,8 @@ android {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 32
-        versionName = "0.9.3"
+        versionCode = 33
+        versionName = "0.9.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -27,6 +28,27 @@ android {
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+        }
+        // Firma de RELEASE desde secretos de GitHub Actions (nunca commiteada).
+        // Sin secretos (PRs, builds locales) cae a la de debug: el APK minificado se puede
+        // INSTALAR para smoke en dispositivo, pero Play jamas aceptara esa firma — es a
+        // proposito: imposible publicar por accidente una build sin la clave real.
+        create("release") {
+            val ksB64 = System.getenv("LUMI_KEYSTORE_BASE64")
+            if (!ksB64.isNullOrBlank()) {
+                val ksFile = layout.buildDirectory.file("lumi-release.keystore").get().asFile
+                ksFile.parentFile.mkdirs()
+                ksFile.writeBytes(java.util.Base64.getDecoder().decode(ksB64))
+                storeFile = ksFile
+                storePassword = System.getenv("LUMI_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("LUMI_KEY_ALIAS")
+                keyPassword = System.getenv("LUMI_KEY_PASSWORD")
+            } else {
+                storeFile = file("lumiai-debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
@@ -39,6 +61,7 @@ android {
         }
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             // IDs reales de la cuenta de AdMob de LumiAI.
             manifestPlaceholders["admobAppId"] = "ca-app-pub-4452549520942931~7390634923"
             buildConfigField("String", "ADMOB_REWARDED_UNIT_ID", "\"ca-app-pub-4452549520942931/3592393086\"")
@@ -124,6 +147,10 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.crashlytics)
+    // Solo debug: detector de fugas de memoria. Con servicios foreground de linterna y
+    // microfono, una Activity retenida es plausible y barata de cazar ahora.
+    debugImplementation(libs.leakcanary)
     implementation(libs.billing.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.credentials)

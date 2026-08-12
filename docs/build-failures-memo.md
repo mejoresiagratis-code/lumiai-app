@@ -722,3 +722,25 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **Dejado a propósito:** los diálogos de acento multicolor y de Música conservan el copy
   sin urgencia de anuncios — esas funciones solo se desbloquean con suscripción (regla de
   negocio), y prometer "1 anuncio más" ahí sería falso.
+
+### 2026-08-12 (Q1+Q2 — firma de release, R8, Crashlytics, LeakCanary, StrictMode)
+- **Corrección de memoria del proyecto:** el `FirebaseManager` reflexivo (memo #4) YA NO
+  EXISTE en el código — cero `Class.forName`/`getMethod` en toda la app, y Firebase se reduce
+  a Auth+Firestore vía BoM. El hallazgo ① de la auditoría se reclasifica: el riesgo no era
+  reflexión sino que la build minificada JAMÁS se había compilado. Lección: los hallazgos de
+  auditoría se verifican contra el código actual antes de actuar, no contra la memoria.
+- **Firma:** `signingConfigs.release` lee 4 secretos de Actions (`LUMI_KEYSTORE_BASE64`,
+  `_PASSWORD`, `LUMI_KEY_ALIAS`, `LUMI_KEY_PASSWORD`); el keystore se decodifica a
+  `build/` (nunca al árbol de fuentes). SIN secretos cae a la firma de debug: el APK
+  minificado es instalable para smoke pero imposible de publicar por accidente.
+- **R8:** proguard-rules corto A PROPÓSITO (sin reflexión propia + consumer rules de las
+  libs): atributos de línea para Crashlytics + strip de Log.v/d. Cada -keep innecesario es
+  código sin optimizar.
+- **Crashlytics:** plugin 3.0.5 + dep vía BoM. La subida del mapping la hace el plugin en
+  release; el CI además lo guarda como artefacto 30 días. NOTA Data Safety (Q5): esto añade
+  "registros de fallos" como dato recogido.
+- **LeakCanary 2.14 (debugImplementation) + StrictMode** (thread+VM, detectAll+penaltyLog)
+  antes de super.onCreate, solo debug.
+- **CI:** job `release` solo en main: `assembleRelease` + artefactos APK y mapping. Los PRs
+  siguen validando con debug (más rápido).
+- Pendiente de Pablo: crear keystore y los 4 secretos (comando entregado en chat).

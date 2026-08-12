@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai
 
 import android.app.Application
+import android.os.StrictMode
 import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
@@ -30,6 +31,16 @@ class LumiAiApplication : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
+        // StrictMode ANTES de super: caza I/O en el hilo principal y fugas de recursos
+        // desde el primer frame. Solo debug; en release no existe.
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build()
+            )
+        }
         super.onCreate()
         purgeGodOverrideOnRelease()
         seedBillingProfileOnSignIn()
