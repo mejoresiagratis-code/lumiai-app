@@ -24,3 +24,4 @@ google-services.json
 # Clave de firma de release: JAMAS al repo (vive en secretos de Actions y en copia offline)
 lumiai-release.keystore
 *.jks
+*.b64
