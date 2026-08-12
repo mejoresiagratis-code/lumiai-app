@@ -10,21 +10,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.animation.animateContentSize
@@ -59,7 +53,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -74,7 +67,6 @@ import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.model.ScreenAnimation
 import com.mejoresiagratis.lumiai.domain.model.ScreenAtmosphere
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
-import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -255,39 +247,19 @@ fun ScreenLight(
             )
             .semantics { contentDescription = cd }
     ) {
-        // Apaisado (2k): con poca altura el panel pasa a LATERAL, y el aviso y el candado se
-        // recolocan en el area de luz restante (62%) para no quedar bajo el panel.
-        val cfg = LocalConfiguration.current
-        val compactHeight = isCompactHeight()
-        val panelReserve = if (compactHeight) (cfg.screenWidthDp * 0.38f).dp else 0.dp
         Text(
             text = stringResource(R.string.screen_tap_off),
             style = MaterialTheme.typography.bodyMedium,
             color = onColor.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                // padding(end) tras align: el bloque medido incluye la reserva del panel, asi
-                // que el texto queda centrado sobre el AREA DE LUZ, no sobre la pantalla.
-                .padding(end = panelReserve)
-                // El fondo debe seguir siendo full-bleed (es la fuente de luz), asi que los
-                // insets se aplican al CONTENIDO, no al Box raiz. Con edge-to-edge (API 36)
-                // un padding fijo no basta: el texto quedaria bajo la barra de estado.
-                .statusBarsPadding()
-                .displayCutoutPadding()
-                .padding(top = LumiSpacing.lg)
+                .padding(top = LumiSpacing.xxl)
         )
 
         if (!locked) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    // Retirado a la izquierda del panel lateral cuando este existe.
-                    .padding(end = panelReserve)
-                    // En apaisado la barra de navegacion se coloca en el lateral DERECHO,
-                    // justo donde vive este boton: sin systemBarsPadding quedaria debajo y
-                    // seria intocable. El recorte de camara tambien cae de lado.
-                    .systemBarsPadding()
-                    .displayCutoutPadding()
                     .padding(LumiSpacing.lg)
                     .clip(CircleShape)
                     .background(onColor.copy(alpha = 0.10f))
@@ -308,45 +280,17 @@ fun ScreenLight(
             }
         }
 
-        // APAISADO (2k): una hoja INFERIOR compite por el eje escaso (el alto) y dejaba la luz
-        // reducida a una franja por mucho tope que se le pusiera (iteraciones 2h..2j). Con poca
-        // altura el panel pasa a LATERAL: 38% del ancho, alto completo, esquinas a la izquierda
-        // — el mismo patron `side` que ya funciona en el Beam Hub. La luz conserva SIEMPRE el
-        // fondo completo porque el panel se superpone (alpha 0xF0), no lo recorta.
-        // En vertical y tableta sigue siendo hoja inferior, acotada a 640dp y centrada.
-        val panelMaxHeight = (cfg.screenHeightDp * 0.72f).dp
-        val panelShape = if (compactHeight) {
-            RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)
-        } else {
-            RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        }
         Surface(
             color = Color(0xF00B0E13),
-            shape = panelShape,
-            modifier = Modifier.then(
-                if (compactHeight) {
-                    Modifier
-                        .align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .fillMaxWidth(0.38f)
-                } else {
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .widthIn(max = 640.dp)
-                        .fillMaxWidth()
-                }
-            )
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(
-                        if (compactHeight) Modifier.fillMaxHeight()
-                        else Modifier.heightIn(max = panelMaxHeight)
-                    )
-                    .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .displayCutoutPadding()
                     // Absorbe toques para no apagar al ajustar.
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },

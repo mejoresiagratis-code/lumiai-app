@@ -657,3 +657,24 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   **Lección:** los guards de INSERCIÓN de imports deben usar regex anclada
   (`^import ...simbolo$`) igual que los de verificación; un `in` de substring sufre el mismo
   falso positivo que un grep sin anclar (→ checklist #31, nuevo).
+
+### 2026-08-12 (REVERT completo del apaisado — decisión de producto de Pablo)
+- **Decisión A:** revertir TODO el rango `38fc2b9..0372657` (Fases 2a–2m + limpieza) en un
+  único commit de reversión, historial intacto. La app vuelve a estar BLOQUEADA EN VERTICAL.
+- **Base legal/técnica de la decisión:** la norma de API 36 solo anula el bloqueo de
+  orientación en pantallas de ancho mínimo ≥600dp (tablets/plegables abiertos). Un móvil
+  como el S26 queda fuera: una app vertical con targetSdk 36 sigue siendo publicable y se
+  comporta igual en móviles. En tablet el sistema ignorará el bloqueo (layout vertical
+  estirado); mitigable con la propiedad de compatibilidad de Android 16 si llega el caso.
+- **Se pierde a propósito** (reimplementable en una tarde con las lecciones aprendidas):
+  orientación libre, paneles laterales (Beam Hub y Pantalla), topes de ancho, cabecera
+  adaptativa de Acceder, dos paneles del Onboarding, insets de apaisado, hoja de altura
+  fija + plegado (2l) y barra de navegación oculta (2m).
+- **Se conserva:** el Letrero LED girando durante el display (anterior al rango, `25b5c2d`;
+  su fallback vuelve correctamente a PORTRAIT con el revert) y este memo ÍNTEGRO — las
+  lecciones #14–#31 son conocimiento, no layout, y siguen vigentes para cualquier trabajo
+  futuro (varias aplican también en vertical: #23 orden de modificadores, #24 FlowRow,
+  #25 Spacer(weight), #27 requiredSize).
+- versionCode/Name avanzan a 0.9.0 (29) para que los dispositivos actualicen sin desinstalar.
+- Si el apaisado vuelve algún día: el commit revertido documenta la implementación completa,
+  y el roadmap Cabina + simulador HTML quedan entregados como referencia de diseño.

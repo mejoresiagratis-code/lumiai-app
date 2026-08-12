@@ -31,17 +31,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -132,7 +126,6 @@ import com.mejoresiagratis.lumiai.ui.theme.LocalHapticsEnabled
 import com.mejoresiagratis.lumiai.ui.theme.LocalReduceMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
-import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -276,42 +269,9 @@ fun BeamHubScreen(
 
     // Tamaños adaptativos: el sheet nunca pasa del 42% de la pantalla (con scroll interno) y
     // el orbe se encoge según la altura disponible, acotado, para no solaparse nunca con el sheet.
-    val configuration = LocalConfiguration.current
-    val screenHeightDp = configuration.screenHeightDp
-    // Apaisado en móvil: repartir por ALTURA deja la hoja en ~150dp y el orbe en su mínimo,
-    // solapados. Con poca altura pasamos a dos paneles y repartimos por ANCHO, que sobra.
-    val wideLayout = isCompactHeight()
-    // Altura FIJA de la hoja en vertical (2l): con `heightIn(max)` cada modo medía una altura
-    // distinta — Baliza, con presets, crecía y EXPULSABA la píldora: el mismo efecto del memo
-    // #27, ahora en vertical. Misma altura para TODOS los modos + scroll interno, y plegable
-    // tocando la franja superior (asa incluida).
-    // Plegada por defecto SIEMPRE al abrir la app (decision de Pablo). `remember` a proposito
-    // y no rememberSaveable: gracias a configChanges el giro no recrea la Activity (el estado
-    // sobrevive igualmente), y rememberSaveable restauraria "desplegada" tras una muerte de
-    // proceso — exactamente lo que no queremos.
-    var sheetExpanded by remember { mutableStateOf(false) }
-    val sheetExpandedHeight = (screenHeightDp * 0.38f).dp
-    val sheetCollapsedHeight = 72.dp
-    // OJO: `PowerOrb` se dimensiona con `requiredSize()`, que IGNORA las restricciones del
-    // padre. El orbe NUNCA se comprime aunque el Column no tenga sitio, asi que cualquier
-    // hijo posterior (la pildora de estado) se sale de pantalla sin recorte ni scroll.
-    // Por eso en apaisado el tamano se calcula RESTANDO lo que ocupan rail y pildora, en vez
-    // de ser un porcentaje del alto total.
-    val orbSize = if (wideLayout) {
-        val railHeight = 104.dp          // tarjeta del carrusel + paddings vertical md
-        val pillHeight = 64.dp           // pildora + su padding superior lg
-        val topBarHeight = 64.dp
-        val available = (screenHeightDp.dp - railHeight - pillHeight - topBarHeight)
-        available.coerceIn(72.dp, 132.dp)
-    } else {
-        // Tambien por RESTA en vertical: con la hoja a altura fija el espacio es determinista
-        // y la pildora tiene sitio garantizado en todos los modos (no solo en Continuo).
-        val topBarHeight = 64.dp
-        val railHeight = 128.dp          // etiqueta MODO + tarjeta + padding inferior
-        val pillHeight = 72.dp
-        (screenHeightDp.dp - sheetExpandedHeight - topBarHeight - railHeight - pillHeight - 24.dp)
-            .coerceIn(150.dp, 240.dp)
-    }
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val sheetMaxHeight = (screenHeightDp * 0.42f).dp
+    val orbSize = (screenHeightDp * 0.27f).dp.coerceIn(180.dp, 240.dp)
 
     // Aviso contextual del modo (Estrobo/Baliza): se muestra como toast descartable al
     // tocar el icono de info, y se cierra al pulsar en cualquier parte de la pantalla.
@@ -332,135 +292,6 @@ fun BeamHubScreen(
                     )
                 )
         )
-
-        // La hoja de controles se define como lambda local para poder colocarla en DOS sitios
-        // sin duplicar su contenido ni pasar veinte parámetros: abajo en vertical (bottomBar)
-        // y como panel lateral derecho en apaisado. `side` solo cambia forma y cómo se estira.
-        val controlSheet: @Composable (side: Boolean) -> Unit = { side ->
-    // En panel lateral la hoja se redondea por la izquierda y se estira en alto;
-    // abajo mantiene las esquinas superiores y el tope del 42% de la altura.
-    val sheetShape = if (side) {
-        RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)
-    } else {
-        RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    }
-    // Si la barra de navegacion esta visible (revelado transitorio, u OEM que ignore el
-    // hide), su inset se SUMA a la altura: la parte util de la hoja queda siempre POR ENCIMA
-    // del menu del sistema. Con la barra oculta el inset es 0 y no cambia nada.
-    val navBarPad = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val sheetHeight by animateDpAsState(
-        targetValue = (if (sheetExpanded) sheetExpandedHeight else sheetCollapsedHeight) +
-            (if (side) 0.dp else navBarPad),
-        animationSpec = LumiMotion.emphasized(),
-        label = "sheetHeight"
-    )
-    val sheetScroll = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .then(
-                if (side) Modifier.fillMaxHeight()
-                // Tope ANTES de fillMaxWidth (checklist #23): en tableta la hoja deja de ir
-                // de borde a borde y se acota a 640dp; en movil no cambia nada.
-                else Modifier.widthIn(max = 640.dp).fillMaxWidth()
-            )
-            .then(if (side) Modifier else Modifier.height(sheetHeight))
-            .shadow(elevation = 16.dp, shape = sheetShape, clip = false)
-            .clip(sheetShape)
-            .hazeEffect(
-                state = hazeState,
-                style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
-            )
-            .border(width = 1.dp, color = sheetBorder, shape = sheetShape)
-            // navigationBarsPadding SIEMPRE: en apaisado la barra del sistema se coloca en el
-            // lateral, justo donde vive este panel. Ademas el recorte de pantalla (camara)
-            // tambien cae de lado, de ahi displayCutoutPadding en modo panel.
-            .navigationBarsPadding()
-            .then(if (side) Modifier.displayCutoutPadding() else Modifier)
-            .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
-            .verticalScroll(sheetScroll, enabled = side || sheetExpanded),
-        verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-    ) {
-        // Toda la franja superior (asa incluida) pliega/despliega la hoja en vertical.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = !side,
-                    onClickLabel = stringResource(R.string.sheet_toggle_cd)
-                ) { sheetExpanded = !sheetExpanded }
-                .padding(vertical = LumiSpacing.xs),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 40.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(onSurface.copy(alpha = 0.45f))
-            )
-        }
-        var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
-            ) {
-                Text(
-                    text = stringResource(R.string.control_header),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (infoTextRes != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { infoVisible = true }
-                            .minimumInteractiveComponentSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_info),
-                            contentDescription = stringResource(R.string.info_cd),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-            if (modeHasAdvanced(state.mode, state.capabilities)) {
-                Text(
-                    text = stringResource(
-                        if (advancedExpanded) R.string.action_show_less else R.string.action_show_more
-                    ) + if (advancedExpanded) " ▴" else " ▾",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { advancedExpanded = !advancedExpanded }
-                )
-            }
-        }
-        if (state.mode == FlashMode.MUSIC) {
-            MusicControls(modifier = Modifier.animateContentSize())
-        } else {
-            ModeSettingsPanel(
-                mode = state.mode,
-                settings = state.settings,
-                caps = state.capabilities,
-                expanded = advancedExpanded,
-                onChange = viewModel::updateSettings,
-                modifier = Modifier.animateContentSize()
-            )
-        }
-    }
-        }
-
 
         Scaffold(
             containerColor = Color.Transparent,
@@ -490,32 +321,103 @@ fun BeamHubScreen(
                 )
             },
             bottomBar = {
-                if (!wideLayout) {
-                    // El slot del bottomBar alinea al inicio: sin este Box, una hoja acotada
-                    // a 640dp en tableta quedaria pegada a la IZQUIERDA en vez de centrada.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = sheetMaxHeight)
+                        .shadow(
+                            elevation = 16.dp,
+                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                            clip = false
+                        )
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                        .hazeEffect(
+                            state = hazeState,
+                            style = HazeDefaults.style(backgroundColor = sheetContainer, blurRadius = 24.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = sheetBorder,
+                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                        )
+                        .navigationBarsPadding()
+                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.md)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
                     Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .size(width = 40.dp, height = 4.dp)
+                            .clip(CircleShape)
+                            .background(onSurface.copy(alpha = 0.45f))
+                    )
+                    var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.BottomCenter
-                    ) { controlSheet(false) }
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.control_header),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (infoTextRes != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) { infoVisible = true }
+                                        .minimumInteractiveComponentSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_info),
+                                        contentDescription = stringResource(R.string.info_cd),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                        if (modeHasAdvanced(state.mode, state.capabilities)) {
+                            Text(
+                                text = stringResource(
+                                    if (advancedExpanded) R.string.action_show_less else R.string.action_show_more
+                                ) + if (advancedExpanded) " ▴" else " ▾",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable { advancedExpanded = !advancedExpanded }
+                            )
+                        }
+                    }
+                    if (state.mode == FlashMode.MUSIC) {
+                        MusicControls(modifier = Modifier.animateContentSize())
+                    } else {
+                        ModeSettingsPanel(
+                            mode = state.mode,
+                            settings = state.settings,
+                            caps = state.capabilities,
+                            expanded = advancedExpanded,
+                            onChange = viewModel::updateSettings,
+                            modifier = Modifier.animateContentSize()
+                        )
+                    }
                 }
-            },
+            }
         ) { padding ->
-            // displayCutoutPadding en el contenedor de los dos paneles: en apaisado el
-            // recorte de camara pasa al lateral IZQUIERDO, justo donde arranca el carrusel.
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .displayCutoutPadding()
-            ) {
             Column(
                 modifier = Modifier
-                    .then(if (wideLayout) Modifier.weight(0.58f).fillMaxHeight() else Modifier.fillMaxSize()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                // En apaisado NO usamos los Spacer(weight) para centrar: si el contenido se
-                // pasa de alto, los pesos van a cero y la pildora de estado se sale de
-                // pantalla sin aviso. Centrar el bloque entero es estable ante desbordes.
-                verticalArrangement = if (wideLayout) Arrangement.Center else Arrangement.Top
+                    .fillMaxSize()
+                    .padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ModeRail(
                     selected = state.mode,
@@ -523,9 +425,9 @@ fun BeamHubScreen(
                     onLocked = { lockedDialogMode = it },
                     caps = state.capabilities,
                     access = state.access,
-                    modifier = Modifier.padding(bottom = LumiSpacing.md)
+                    modifier = Modifier.padding(top = LumiSpacing.md, bottom = LumiSpacing.md)
                 )
-                if (!wideLayout) Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
                 if (state.mode.isAvailable(state.capabilities)) {
                     PowerOrb(
                         isOn = state.isOn,
@@ -551,9 +453,7 @@ fun BeamHubScreen(
                     StatusPill(
                         isOn = state.isOn,
                         modeLabelRes = MODE_CATALOG.firstOrNull { it.mode == state.mode }?.labelRes,
-                        modifier = Modifier.padding(
-                            top = if (wideLayout) LumiSpacing.sm else LumiSpacing.lg
-                        )
+                        modifier = Modifier.padding(top = LumiSpacing.lg)
                     )
                 } else {
                     // Dispositivo sin flash y modo que lo necesita: ocultamos el orbe de
@@ -578,14 +478,7 @@ fun BeamHubScreen(
                         Text(stringResource(R.string.action_use_screen))
                     }
                 }
-                if (!wideLayout) Spacer(modifier = Modifier.weight(1f))
-            }
-                // Panel lateral en apaisado: la MISMA hoja de controles, con su propio scroll.
-                if (wideLayout) {
-                    Box(modifier = Modifier.weight(0.42f).fillMaxHeight()) {
-                        controlSheet(true)
-                    }
-                }
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
 

@@ -16,14 +16,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -151,22 +148,10 @@ fun LedBannerScreen(
             )
         }
     ) { padding ->
-        // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
-        // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
-        // centrado, igual que en Ajustes. En movil vertical no cambia nada.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
         Column(
             modifier = Modifier
-                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
-                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
-                // Primero el tope, luego solo el alto.
-                .widthIn(max = 600.dp)
-                .fillMaxHeight()
+                .fillMaxSize()
+                .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
@@ -262,7 +247,6 @@ fun LedBannerScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        }
     }
 }
 
@@ -314,9 +298,9 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
             lp.screenBrightness = 1f
             it.attributes = lp
         }
-        // Desde v0.7.2 la app ya NO se bloquea en vertical (API 36 lo prohíbe en pantallas
-        // grandes), así que aquí solo garantizamos que el letrero puede girar aunque el
-        // usuario tenga el giro del sistema desactivado. Se restaura el valor previo al salir.
+        // La app está bloqueada en vertical (manifest), pero un letrero se lee mucho mejor
+        // apaisado: liberamos la orientación SOLO mientras dura el display y la restauramos
+        // al salir, para no exponer el resto de la UI (no diseñada para landscape).
         val prevOrientation = activity?.requestedOrientation
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
         onDispose {
@@ -327,7 +311,7 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
                 it.attributes = lp
             }
             activity?.requestedOrientation =
-                prevOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                prevOrientation ?: ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
     val exitCd = stringResource(R.string.led_exit_cd)
@@ -342,14 +326,7 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
             )
             .semantics { contentDescription = exitCd }
     ) {
-        // El FONDO negro va a sangre (es un letrero), pero la rejilla respeta el recorte de
-        // camara: sin esto, las letras que pasan por debajo del notch se ven mordidas.
-        LedBannerCanvas(
-            config = config,
-            modifier = Modifier
-                .fillMaxSize()
-                .displayCutoutPadding()
-        )
+        LedBannerCanvas(config = config, modifier = Modifier.fillMaxSize())
     }
 }
 

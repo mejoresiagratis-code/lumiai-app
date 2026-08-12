@@ -20,13 +20,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -207,23 +205,10 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        // En pantallas anchas (apaisado, tablets) el contenido a ancho completo produce
-        // líneas de 90+ caracteres, incómodas de leer. Lo acotamos a 600dp centrados, que es
-        // la recomendación de Material para texto en superficies anchas. En vertical no
-        // cambia nada: `widthIn` solo actúa cuando hay ancho de sobra.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
         Column(
             modifier = Modifier
-                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
-                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
-                // Primero el tope, luego solo el alto.
-                .widthIn(max = 600.dp)
-                .fillMaxHeight()
+                .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
@@ -643,7 +628,6 @@ fun SettingsScreen(
                         Text("Abrir God mode")
                     }
                 }
-            }
             }
         }
     }

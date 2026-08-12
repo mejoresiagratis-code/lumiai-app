@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -63,7 +61,6 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.AuthError
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
-import com.mejoresiagratis.lumiai.ui.util.isCompactHeight
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,41 +98,22 @@ fun AuthScreen(
             )
         }
     ) { padding ->
-        val compactHeight = isCompactHeight()
-        // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
-        // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
-        // centrado, igual que en Ajustes. En movil vertical no cambia nada.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
         Column(
             modifier = Modifier
-                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
-                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
-                // Primero el tope, luego solo el alto.
-                .widthIn(max = 600.dp)
-                .fillMaxHeight()
+                .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = LumiSpacing.lg)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(
-                if (compactHeight) LumiSpacing.sm else LumiSpacing.lg
-            )
+            verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
         ) {
             Spacer(modifier = Modifier.height(LumiSpacing.sm))
 
             // --- Cabecera de marca ---
-            // En apaisado la cabecera (icono 76dp + titulo grande + subtitulo) se comia todo
-            // el alto util y dejaba el formulario BAJO EL PLIEGUE: habia que desplazarse solo
-            // para ver el campo de correo. Al ser decorativa, se adelgaza: icono mas pequeno,
-            // titulo un grado menor y sin subtitulo. Asi el formulario entra sin scroll.
             Box(
                 modifier = Modifier
-                    .size(if (compactHeight) 48.dp else 76.dp)
-                    .clip(RoundedCornerShape(if (compactHeight) 16.dp else 24.dp))
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -143,26 +121,20 @@ fun AuthScreen(
                     painter = painterResource(R.drawable.ic_mode_continuous),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(if (compactHeight) 26.dp else 40.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             }
             Text(
                 text = stringResource(R.string.auth_welcome_title),
-                style = if (compactHeight) {
-                    MaterialTheme.typography.titleLarge
-                } else {
-                    MaterialTheme.typography.headlineMedium
-                },
+                style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
-            if (!compactHeight) {
-                Text(
-                    text = stringResource(R.string.account_guest_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = stringResource(R.string.account_guest_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
 
             // --- Selector Iniciar sesión / Crear cuenta ---
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -301,7 +273,6 @@ fun AuthScreen(
             }
 
             Spacer(modifier = Modifier.height(LumiSpacing.md))
-        }
         }
     }
 }

@@ -20,14 +20,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -139,22 +137,10 @@ fun SoundAlertScreen(
             )
         }
     ) { padding ->
-        // En pantallas anchas (tablet, plegable, apaisado) el contenido a ancho completo
-        // separa las etiquetas de sus controles y estira los campos. Tope de 600dp
-        // centrado, igual que en Ajustes. En movil vertical no cambia nada.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
         Column(
             modifier = Modifier
-                // OJO al orden: `fillMaxSize()` fija el ancho MINIMO al del padre, y despues
-                // `widthIn` no puede bajar del minimo -> el tope se ignoraba por completo.
-                // Primero el tope, luego solo el alto.
-                .widthIn(max = 600.dp)
-                .fillMaxHeight()
+                .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.lg)
@@ -195,7 +181,6 @@ fun SoundAlertScreen(
                 Text(stringResource(R.string.sa_reset))
             }
             Spacer(Modifier.height(LumiSpacing.sm))
-        }
         }
     }
 }

@@ -13,8 +13,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
@@ -46,17 +44,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         splash.setKeepOnScreenCondition { startViewModel.onboardingCompleted.value == null }
         enableEdgeToEdge()
-        // La barra de navegacion del sistema se ESCONDE (peticion de Pablo: la hoja plegada
-        // quedaba detras del menu inferior). Transitoria: un gesto desde el borde la revela
-        // unos segundos y se vuelve a ocultar sola. La barra de estado NO se toca.
-        // Con la barra oculta sus insets pasan a 0, asi que navigationBarsPadding() y el
-        // extra de altura de la hoja se anulan solos; si el sistema la muestra
-        // transitoriamente, vuelven a actuar. En apaisado esto ademas libera el lateral.
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
-        }
         setContent { LumiAiApp() }
 
         // Consentimiento (UMP) antes de cualquier anuncio; AdMob solo se inicializa si se permite.

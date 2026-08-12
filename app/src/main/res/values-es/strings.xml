@@ -282,5 +282,4 @@
     <string name="pro_subscribe_cta">Suscríbete a Pro</string>
     <string name="pro_subscribe_gate_title">Inicia sesión primero</string>
     <string name="pro_subscribe_gate_body">Para suscribirte hace falta una cuenta con sesión activa: protege tu compra entre dispositivos. El desbloqueo temporal por anuncios no lo exige.</string>
-    <string name="sheet_toggle_cd">Pliega o despliega la hoja de controles</string>
 </resources>
