@@ -708,3 +708,17 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   `FilledTonalButton`. Regla: el relleno primario queda RESERVADO para la conversión Pro
   (Acceso Pro / desbloqueo por anuncio); las herramientas son tonales.
 - 2 strings nuevas EN/ES (276/276). Sin cambios de comportamiento fuera de Ajustes.
+
+### 2026-08-12 (monetización — los diálogos de bloqueo reconocen el progreso de anuncios)
+- **QA de Pablo:** el diálogo "Modo bloqueado" mostraba el copy genérico ("mira anuncios,
+  2 = 1 h") aunque el usuario llevara ya 1/2 — mientras el drawer sí celebraba el progreso
+  ("¡Ya casi! Llevas 1...") con CTA de urgencia. El momento de MÁXIMA intención (tocar un
+  modo bloqueado) recibía el copy más flojo.
+- **Fix:** flag único `lastAdPending = adsWatched >= adsPerGrant - 1 && !active` leído por
+  las TRES superficies de diálogo (Beam Hub, Alerta Sonora, Letrero LED). Con el último
+  anuncio pendiente: body → `pro_progress_one_left` y CTA → `pro_watch_ad_last`; si no,
+  CTA `pro_watch_ad` ("Ver anuncio 1 de 2...") en vez del genérico "Ver anuncio". CERO
+  strings nuevas: se reutilizan las del drawer, ya traducidas.
+- **Dejado a propósito:** los diálogos de acento multicolor y de Música conservan el copy
+  sin urgencia de anuncios — esas funciones solo se desbloquean con suscripción (regla de
+  negocio), y prometer "1 anuncio más" ahí sería falso.

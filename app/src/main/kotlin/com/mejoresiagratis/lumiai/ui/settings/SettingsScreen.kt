@@ -135,6 +135,10 @@ fun SettingsScreen(
     val isGuest = user == null || user?.isAnonymous == true
     val accountUi by accountViewModel.ui.collectAsStateWithLifecycle()
     val proUi by rewardedUnlockViewModel.ui.collectAsStateWithLifecycle()
+    // A un anuncio del premio, TODAS las superficies deben decirlo — el drawer ya lo hacia
+    // pero los dialogos de "Modo bloqueado" iban a ciegas con el copy generico, justo en el
+    // momento de maxima intencion (QA de Pablo). Un solo flag para todos.
+    val lastAdPending = proUi.adsWatched >= proUi.adsPerGrant - 1 && !proUi.active
     val context = LocalContext.current
     val hasVibrator = remember {
         runCatching { context.getSystemService(Vibrator::class.java)?.hasVibrator() == true }.getOrDefault(false)
@@ -720,8 +724,12 @@ fun SettingsScreen(
             onDismiss = { showSoundAlertLocked = false },
             iconRes = R.drawable.ic_lock,
             title = stringResource(R.string.mode_locked_title),
-            body = stringResource(R.string.sound_alert_locked),
-            primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+            body = stringResource(
+                if (lastAdPending) R.string.pro_progress_one_left else R.string.sound_alert_locked
+            ),
+            primaryLabel = stringResource(
+                if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+            ),
             onPrimary = {
                 showSoundAlertLocked = false
                 val act = soundActivity
@@ -758,8 +766,12 @@ fun SettingsScreen(
             onDismiss = { showLedLocked = false },
             iconRes = R.drawable.ic_lock,
             title = stringResource(R.string.mode_locked_title),
-            body = stringResource(R.string.led_locked),
-            primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+            body = stringResource(
+                if (lastAdPending) R.string.pro_progress_one_left else R.string.led_locked
+            ),
+            primaryLabel = stringResource(
+                if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+            ),
             onPrimary = {
                 showLedLocked = false
                 val act = ledActivity

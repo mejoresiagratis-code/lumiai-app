@@ -143,6 +143,7 @@ fun BeamHubScreen(
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val proUi by rewardedUnlockViewModel.ui.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
     val hapticsEnabled = LocalHapticsEnabled.current
 
@@ -226,14 +227,23 @@ fun BeamHubScreen(
             )
         } else {
             val canSignIn = mode.tier == Tier.ADVANCED && !state.access.entitlements.hasAccount
+            // Con el ultimo anuncio pendiente el dialogo reconoce el progreso, como el drawer:
+            // "¡Ya casi! Llevas 1..." + CTA de urgencia, en vez del copy generico.
+            val lastAdPending = proUi.adsWatched >= proUi.adsPerGrant - 1 && !proUi.active
             LumiDialog(
                 onDismiss = { lockedDialogMode = null },
                 iconRes = R.drawable.ic_lock,
                 title = stringResource(R.string.mode_locked_title),
                 body = stringResource(
-                    if (canSignIn) R.string.mode_locked_body else R.string.mode_locked_body_ad_only
+                    when {
+                        lastAdPending -> R.string.pro_progress_one_left
+                        canSignIn -> R.string.mode_locked_body
+                        else -> R.string.mode_locked_body_ad_only
+                    }
                 ),
-                primaryLabel = stringResource(R.string.mode_unlock_watch_ad),
+                primaryLabel = stringResource(
+                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                ),
                 onPrimary = {
                     lockedDialogMode = null
                     val act = activity
