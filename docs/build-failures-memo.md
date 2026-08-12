@@ -763,3 +763,12 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **Ampliación (#33b):** el `2d` (guion) del segundo fallo venía del SILABEO del lector de
   texto de Pablo al partir la línea. Filtro definitivo: quedarse solo con el alfabeto
   base64 (`isLetterOrDigit() || +/=`) — cerrado por definición, inmune a cualquier visor.
+
+### 2026-08-13 (lección #34 — primer R8 verde: dontwarn de javax.lang.model)
+- `minifyReleaseWithR8` falló con `Missing class javax.lang.model.*` (AutoValue shaded
+  dentro de una dependencia). Son clases de COMPILE-TIME inexistentes en Android: el fix
+  correcto es `-dontwarn` (declarar ausencia esperada), NUNCA `-keep` (guardaría código
+  muerto). R8 genera la lista exacta en `build/outputs/mapping/release/missing_rules.txt`.
+- Cronología completa del primer assembleRelease de la historia del proyecto:
+  #32 `java` sombreado en .kts → #33 base64 con espacios → #33b guiones de silabeo →
+  #34 dontwarn. Cuatro capas, cuatro lecciones, cero presentes en debug.

@@ -14,3 +14,10 @@
     public static int v(...);
     public static int d(...);
 }
+
+# Clases de COMPILE-TIME arrastradas por el procesador AutoValue empaquetado dentro de una
+# dependencia: jamas existen en Android en runtime y nadie las invoca. R8 exige declarar
+# que su ausencia es esperada (memo #34; lista tomada del missing_rules.txt que genera R8).
+-dontwarn javax.lang.model.**
+-dontwarn com.google.auto.value.**
+-dontwarn autovalue.shaded.**
