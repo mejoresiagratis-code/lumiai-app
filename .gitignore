@@ -20,3 +20,7 @@ google-services.json
 
 # ZIP de entrega (flujo patch+ZIP); nunca deben versionarse
 *.zip
+
+# Clave de firma de release: JAMAS al repo (vive en secretos de Actions y en copia offline)
+lumiai-release.keystore
+*.jks
