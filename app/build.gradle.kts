@@ -42,7 +42,9 @@ android {
             if (!ksB64.isNullOrBlank()) {
                 val ksFile = layout.buildDirectory.file("lumi-release.keystore").get().asFile
                 ksFile.parentFile.mkdirs()
-                ksFile.writeBytes(Base64.getDecoder().decode(ksB64))
+                // El copy-paste desde un terminal (movil sobre todo) cuela espacios/saltos en los
+                // puntos de quiebre de linea: se filtran ANTES de decodificar (memo #33).
+                ksFile.writeBytes(Base64.getDecoder().decode(ksB64.filterNot { it.isWhitespace() }))
                 storeFile = ksFile
                 storePassword = System.getenv("LUMI_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("LUMI_KEY_ALIAS")

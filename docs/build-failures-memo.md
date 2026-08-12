@@ -754,3 +754,9 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   cabecera del script (los imports van antes de `plugins {}`).
 - Ojo aparte: este fallo tumbó TAMBIÉN el job de debug — un error de configure rompe
   todos los jobs del build, no solo el que usa esa rama de código.
+
+### 2026-08-13 (lección #33 — base64 de secretos: filtrar espacios SIEMPRE)
+- `Illegal base64 character 20` al decodificar `LUMI_KEYSTORE_BASE64`: la copia del churro
+  desde el terminal de Codespaces en el móvil mete espacios en los puntos de quiebre de
+  línea. Fix permanente en el build: `.filterNot { it.isWhitespace() }` antes de decode —
+  cualquier futuro re-pegado del secreto queda inmunizado.
