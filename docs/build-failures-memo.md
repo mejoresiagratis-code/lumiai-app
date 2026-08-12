@@ -744,3 +744,13 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **CI:** job `release` solo en main: `assembleRelease` + artefactos APK y mapping. Los PRs
   siguen validando con debug (más rápido).
 - Pendiente de Pablo: crear keystore y los 4 secretos (comando entregado en chat).
+
+### 2026-08-13 (lección #32 — `java` está sombreado en Gradle Kotlin DSL)
+- `assembleRelease` (primer intento de la historia) cayó en configure:
+  `Unresolved reference: util` en `java.util.Base64.getDecoder()` dentro de
+  `signingConfigs`. En un `.kts` de Gradle, el identificador `java` NO es el paquete:
+  es el accessor generado de `JavaPluginExtension`, así que `java.util.*` inline se
+  resuelve contra la extensión y no compila. Fix: `import java.util.Base64` en la
+  cabecera del script (los imports van antes de `plugins {}`).
+- Ojo aparte: este fallo tumbó TAMBIÉN el job de debug — un error de configure rompe
+  todos los jobs del build, no solo el que usa esa rama de código.

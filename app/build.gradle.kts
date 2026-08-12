@@ -1,3 +1,7 @@
+// `java` dentro del script es el ACCESSOR de JavaPluginExtension, no el paquete:
+// java.util.Base64 inline no compila (memo #32). Import de cabecera y listo.
+import java.util.Base64
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -38,7 +42,7 @@ android {
             if (!ksB64.isNullOrBlank()) {
                 val ksFile = layout.buildDirectory.file("lumi-release.keystore").get().asFile
                 ksFile.parentFile.mkdirs()
-                ksFile.writeBytes(java.util.Base64.getDecoder().decode(ksB64))
+                ksFile.writeBytes(Base64.getDecoder().decode(ksB64))
                 storeFile = ksFile
                 storePassword = System.getenv("LUMI_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("LUMI_KEY_ALIAS")
