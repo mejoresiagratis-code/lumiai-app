@@ -678,3 +678,14 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - versionCode/Name avanzan a 0.9.0 (29) para que los dispositivos actualicen sin desinstalar.
 - Si el apaisado vuelve algún día: el commit revertido documenta la implementación completa,
   y el roadmap Cabina + simulador HTML quedan entregados como referencia de diseño.
+
+### 2026-08-12 (GATE — targetSdk 36)
+- **`targetSdk 35 → 36`** (compileSdk ya estaba en 36 desde Fase 1a). v0.9.1 (versionCode 30).
+  Requisito de Play para apps nuevas desde el 31-ago-2026; empujado con 19 días de colchón.
+- **Barrido dirigido previo (lección #18) sobre app VERTICAL:**
+  · Orientación: la cláusula de API 36 solo afecta a ≥600dp de ancho mínimo; el bloqueo
+    vertical sigue efectivo en móviles (decisión A documentada en la entrada anterior).
+  · Edge-to-edge sin opt-out: cero usos del opt-out legacy en el proyecto; `enableEdgeToEdge`
+    activo desde antes; insets cubiertos por Scaffold (6 pantallas) + paddings explícitos (3).
+  · Sin `LAYOUT_IN_DISPLAY_CUTOUT_MODE` manual que pudiera chocar.
+- Pendiente de confirmar en CI + QA de humo de Pablo en dispositivo (0.9.1).
