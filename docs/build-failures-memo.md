@@ -689,3 +689,22 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
     activo desde antes; insets cubiertos por Scaffold (6 pantallas) + paddings explícitos (3).
   · Sin `LAYOUT_IN_DISPLAY_CUTOUT_MODE` manual que pudiera chocar.
 - Pendiente de confirmar en CI + QA de humo de Pablo en dispositivo (0.9.1).
+
+### 2026-08-12 (pulido de Ajustes — tipografía, ritmo y estructura; estilo actual, base para 1.1)
+- **Petición de Pablo tras QA verde de 0.9.1:** afinar márgenes, interlineados, separaciones,
+  tamaños y estructura de Ajustes; valorar submenús/expansiones. Sin cambiar de estilo.
+- **Tipografía en las PRIMITIVAS (cascada a toda la pantalla):**
+  · Cabeceras de sección: tracking 2sp→1.2sp + SemiBold + lineHeight 16 — 2sp hacía flotar
+    las letras del overline.
+  · `SettingsToggle`: la descripción bajaba de bodyMedium (14/20, 3 líneas y el switch
+    flotando — visible en las capturas de Pablo) a bodySmall con interlínea 16sp; título a
+    Medium; 2dp entre título y soporte.
+  · `SettingsRow`: mismo tratamiento (título Medium, soporte 12/16).
+- **Estructura:** el perfil de facturación se pliega tras una fila-cabecera con chevron
+  animado (`animateFloatAsState` + `LumiMotion.emphasized`): se toca una vez en la vida y
+  estorbaba a diario. `rememberSaveable(false)` — aquí SÍ saveable, a diferencia de la hoja
+  del Beam Hub (2m): no hay preferencia del usuario que violar, solo continuidad de proceso.
+- **Jerarquía de CTAs:** los botones de Alerta Sonora y Letrero LED pasan de `Button` a
+  `FilledTonalButton`. Regla: el relleno primario queda RESERVADO para la conversión Pro
+  (Acceso Pro / desbloqueo por anuncio); las herramientas son tonales.
+- 2 strings nuevas EN/ES (276/276). Sin cambios de comportamiento fuera de Ajustes.

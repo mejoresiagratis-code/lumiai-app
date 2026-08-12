@@ -99,6 +99,10 @@ import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.solidColor
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -145,6 +149,10 @@ fun SettingsScreen(
     var showChangelog by remember { mutableStateOf(false) }
     var showLicenses by remember { mutableStateOf(false) }
     val billingProfile by accountViewModel.billingProfile.collectAsStateWithLifecycle()
+    // El perfil de facturacion se toca una vez y estorba el resto del tiempo: plegado por
+    // defecto tras una fila-cabecera con chevron. rememberSaveable para respetar el estado
+    // si el proceso muere con el panel abierto.
+    var billingOpen by rememberSaveable { mutableStateOf(false) }
     val subscriptionUi by subscriptionViewModel.ui.collectAsStateWithLifecycle()
 
     // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
@@ -314,6 +322,47 @@ fun SettingsScreen(
             // cobro y emite el recibo; la app nunca ve ni guarda datos de tarjeta. ---
             if (!isGuest) {
                 SettingsSection(R.string.billing_section) {
+                    val chev by animateFloatAsState(
+                        targetValue = if (billingOpen) 180f else 0f,
+                        animationSpec = LumiMotion.emphasized(),
+                        label = "billingChevron"
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(role = Role.Button) { billingOpen = !billingOpen }
+                            .padding(vertical = LumiSpacing.xs),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.billing_profile_row),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = stringResource(R.string.billing_profile_support),
+                                style = MaterialTheme.typography.bodySmall,
+                                lineHeight = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(R.drawable.ic_chevron_down),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .rotate(chev)
+                        )
+                    }
+                    AnimatedVisibility(visible = billingOpen) {
+                        Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+
                     Text(
                         text = stringResource(R.string.billing_explainer),
                         style = MaterialTheme.typography.bodySmall,
@@ -344,6 +393,9 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                
+                        }
+                    }
                 }
             }
 
@@ -495,11 +547,11 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (proUi.proUnlocked) {
-                    Button(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
+                    FilledTonalButton(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.sound_alert_open))
                     }
                 } else {
-                    Button(
+                    FilledTonalButton(
                         onClick = { showSoundAlertLocked = true },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
@@ -513,11 +565,11 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (proUi.proUnlocked) {
-                    Button(onClick = onOpenLedBanner, modifier = Modifier.fillMaxWidth()) {
+                    FilledTonalButton(onClick = onOpenLedBanner, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.led_open))
                     }
                 } else {
-                    Button(
+                    FilledTonalButton(
                         onClick = { showLedLocked = true },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
@@ -849,7 +901,11 @@ private fun SettingsSection(
             text = stringResource(headerRes).uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
-            letterSpacing = 2.sp,
+            fontWeight = FontWeight.SemiBold,
+            // 2sp de tracking hacia flotar las cabeceras; 1.2sp mantiene el caracter
+            // de overline sin desligar las letras.
+            letterSpacing = 1.2.sp,
+            lineHeight = 16.sp,
             modifier = Modifier
                 .padding(start = LumiSpacing.md)
                 .semantics { heading() }
@@ -945,12 +1001,20 @@ private fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                stringResource(titleRes),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
             subtitle?.let {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
+                    lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1010,11 +1074,21 @@ private fun SettingsToggle(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            // bodyMedium (14/20) hacia que cada descripcion ocupara 3 lineas y el switch
+            // quedara flotando; bodySmall con 16sp de interlinea compacta sin perder lectura.
             Text(
                 text = stringResource(descRes),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
+                lineHeight = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
