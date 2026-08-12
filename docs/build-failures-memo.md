@@ -760,3 +760,6 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   desde el terminal de Codespaces en el móvil mete espacios en los puntos de quiebre de
   línea. Fix permanente en el build: `.filterNot { it.isWhitespace() }` antes de decode —
   cualquier futuro re-pegado del secreto queda inmunizado.
+- **Ampliación (#33b):** el `2d` (guion) del segundo fallo venía del SILABEO del lector de
+  texto de Pablo al partir la línea. Filtro definitivo: quedarse solo con el alfabeto
+  base64 (`isLetterOrDigit() || +/=`) — cerrado por definición, inmune a cualquier visor.
