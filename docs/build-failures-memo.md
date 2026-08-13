@@ -797,3 +797,20 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   GradleDependency/NewerVersionAvailable (actualizaciones programadas), UnusedResources
   (falsos positivos en Compose), AndroidGradlePluginVersion.
 - Job quality ahora corre en cada push a main (antes solo manual).
+
+### 2026-08-13 (lección #35 — la regla del lint era sobre la API, no sobre el scope)
+- Tres iteraciones peleando contra `LocalContextGetResourceValueCall` moviendo
+  `context.getString` de sitio (dentro del lambda → captura en el lambda → captura en el
+  composable) y la regla seguía disparando. La regla NO es sobre dónde: PROHÍBE consultar
+  recursos vía `LocalContext.current` en cualquier punto de un composable, porque ese valor
+  no reacciona a cambios de idioma/configuración. La API correcta es `stringResource()`
+  (composable, consciente de recomposición) capturada en scope composable y cerrada en el
+  callback. **Leer la INTENCIÓN de la regla antes de la tercera iteración, no después.**
+- Barrido del proyecto (petición de Pablo, "similares y futuros"):
+  · 12/12 consultas en composables convertidas a stringResource (BeamHub 3, Settings 9).
+  · Services/Repository (Music, SoundAlert, FirebaseAuth): getString via context es el
+    patrón CORRECTO fuera de Compose — cero cambios, lint no los marca.
+  · Cero autoreferencias `val x = x` en el proyecto.
+  · FUTURO detectado: `LocalConfiguration.current.screenHeightDp` en BeamHub:288 (hoja al
+    42%) dispara el warning ConfigurationScreenWidthHeight — API moderna: LocalWindowInfo.
+    No bloquea (warning) y la app es vertical fija; migrar en Q6 junto al resto de Compose.

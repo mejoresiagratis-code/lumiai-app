@@ -438,9 +438,9 @@ fun SettingsScreen(
                     )
                 }
                 val activity = remember(context) { context.findActivity() }
-                val msgGranted = context.getString(R.string.pro_granted)
-                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-                val msgProgressFmt = context.getString(R.string.pro_progress_more)
+                val msgGranted = stringResource(R.string.pro_granted)
+                val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
+                val msgProgressFmt = stringResource(R.string.pro_progress_more)
                 Button(
                     onClick = {
                         val act = activity
@@ -723,9 +723,9 @@ fun SettingsScreen(
 
     if (showSoundAlertLocked) {
         val soundActivity = remember(context) { context.findActivity() }
-        val msgGranted = context.getString(R.string.pro_granted)
-        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-        val msgProgressFmt = context.getString(R.string.pro_progress_more)
+        val msgGranted = stringResource(R.string.pro_granted)
+        val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
+        val msgProgressFmt = stringResource(R.string.pro_progress_more)
         LumiDialog(
             onDismiss = { showSoundAlertLocked = false },
             iconRes = R.drawable.ic_lock,
@@ -768,9 +768,9 @@ fun SettingsScreen(
 
     if (showLedLocked) {
         val ledActivity = remember(context) { context.findActivity() }
-        val msgGranted = context.getString(R.string.pro_granted)
-        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-        val msgProgressFmt = context.getString(R.string.pro_progress_more)
+        val msgGranted = stringResource(R.string.pro_granted)
+        val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
+        val msgProgressFmt = stringResource(R.string.pro_progress_more)
         LumiDialog(
             onDismiss = { showLedLocked = false },
             iconRes = R.drawable.ic_lock,
