@@ -768,6 +768,9 @@ fun SettingsScreen(
 
     if (showLedLocked) {
         val ledActivity = remember(context) { context.findActivity() }
+        val msgGranted = context.getString(R.string.pro_granted)
+        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
+        val msgProgressFmt = context.getString(R.string.pro_progress_more)
         LumiDialog(
             onDismiss = { showLedLocked = false },
             iconRes = R.drawable.ic_lock,
