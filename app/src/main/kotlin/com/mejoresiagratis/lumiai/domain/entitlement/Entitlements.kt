@@ -21,11 +21,20 @@ enum class Tier { BASIC, ADVANCED, AI, PRO }
 fun canStartSubscriptionPurchase(hasAccount: Boolean): Boolean = hasAccount
 
 /**
- * Matriz de acceso por modo (decisión de producto, jul 2026):
+ * Matriz de acceso por modo (decisión de producto, revisada 13-ago-2026):
  * - BASIC (libre para todos, incluso sin cuenta): Continuo y Pantalla.
- * - ADVANCED (cuenta O anuncio de desbloqueo temporal): SOS, Estrobo, Baliza y Morse.
- * - AI (suscripción Pro O desbloqueo temporal): Alerta Sonora — vive fuera de este
- *   enum (no está en el carrusel); su gate usa Tier.AI vía RewardedUnlockViewModel.
+ * - ADVANCED (SOLO cuenta; el pop-up de estos modos ya NO ofrece desbloqueo por
+ *   anuncio — decisión 13-ago para no gastar impresiones en modos ligeros):
+ *   SOS, Estrobo, Baliza y Morse. El desbloqueo temporal ganado en otra pantalla
+ *   (Música/Alerta Sonora/LED) sigue contando para ellos vía [AccessState] — si
+ *   estuviera activo el modo no llegaría bloqueado en primer lugar.
+ * - AI (suscripción Pro O desbloqueo temporal por anuncios; invitado: se antepone
+ *   el alta de cuenta sin cerrar la puerta del anuncio): Música, Alerta Sonora y
+ *   Letrero LED. Música se unifica aquí (antes Tier.PRO estricto, sin anuncio);
+ *   Alerta Sonora y LED viven fuera de este enum (no están en el carrusel), su
+ *   gate usa Tier.AI vía RewardedUnlockViewModel igualmente.
+ * - PRO (estrictamente suscripción, el temporal NO lo abre): reservado para
+ *   futuros modos que quieran ese trato; ningún modo actual lo usa.
  */
 val FlashMode.tier: Tier
     get() = when (this) {
@@ -35,7 +44,7 @@ val FlashMode.tier: Tier
         FlashMode.STROBE,
         FlashMode.BEACON,
         FlashMode.TEXT_MORSE -> Tier.ADVANCED
-        FlashMode.MUSIC -> Tier.PRO
+        FlashMode.MUSIC -> Tier.AI
     }
 
 /**

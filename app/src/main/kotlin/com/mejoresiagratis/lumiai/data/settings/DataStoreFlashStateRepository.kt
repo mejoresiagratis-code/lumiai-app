@@ -44,9 +44,22 @@ class DataStoreFlashStateRepository @Inject constructor(
     private val _isOn = MutableStateFlow(false)
     override val isOn: StateFlow<Boolean> = _isOn.asStateFlow()
 
+    // Decision de producto (13-ago): la app SIEMPRE entra por Continuo cuando el proceso
+    // es nuevo (app cerrada del todo o recien actualizada) — nunca hereda el ultimo modo
+    // usado. In-memory (no DataStore) y sin bloquear el arranque con I/O: al ser esta clase
+    // un @Singleton de Hilt, su instancia nace UNA vez por proceso — exactamente el mismo
+    // ciclo de vida que "app cerrada = proceso nuevo". Reaperturas dentro del MISMO proceso
+    // (minimizar/maximizar, navegar entre pantallas) siguen respetando el modo elegido.
+    @Volatile private var isColdStart = true
+
     override val mode: Flow<FlashMode> = dataStore.data.map { p ->
-        runCatching { FlashMode.valueOf(p[Keys.MODE] ?: FlashMode.CONTINUOUS.name) }
-            .getOrDefault(FlashMode.CONTINUOUS)
+        if (isColdStart) {
+            isColdStart = false
+            FlashMode.CONTINUOUS
+        } else {
+            runCatching { FlashMode.valueOf(p[Keys.MODE] ?: FlashMode.CONTINUOUS.name) }
+                .getOrDefault(FlashMode.CONTINUOUS)
+        }
     }
 
     override val settings: Flow<FlashSettings> = dataStore.data.map { p ->

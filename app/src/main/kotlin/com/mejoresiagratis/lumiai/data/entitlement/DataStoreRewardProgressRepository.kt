@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import com.mejoresiagratis.lumiai.domain.entitlement.ProProgressReset
 import com.mejoresiagratis.lumiai.domain.repository.RewardProgressRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,10 +17,20 @@ class DataStoreRewardProgressRepository @Inject constructor(
 ) : RewardProgressRepository {
 
     private val countKey = intPreferencesKey("reward_ad_count")
+    private val versionKey = intPreferencesKey("reward_last_version_code")
 
     override val count: Flow<Int> = dataStore.data.map { it[countKey] ?: 0 }
 
     override suspend fun set(value: Int) {
         dataStore.edit { it[countKey] = value.coerceAtLeast(0) }
+    }
+
+    override suspend fun resetIfVersionChanged(currentVersionCode: Int) {
+        dataStore.edit { prefs ->
+            if (ProProgressReset.shouldReset(prefs[versionKey], currentVersionCode)) {
+                prefs[countKey] = 0
+            }
+            prefs[versionKey] = currentVersionCode
+        }
     }
 }

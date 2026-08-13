@@ -880,3 +880,36 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **Lección de proceso:** verificar el campo EXACTO que consume el flujo en cuestión, no
   el primero con nombre similar. `client_info.android_client_info.certificate_hash` está
   casi siempre vacío en los JSON reales — no es el que usa Credential Manager/Google Sign-In.
+
+### 2026-08-13 (auditoría + 4 cambios de producto — acceso, arranque en frío, contador)
+- **① SOS/Estrobo/Baliza/Morse (Tier.ADVANCED): solo cuenta en el pop-up.** Se retira el
+  botón "ver 2 anuncios" de ESTOS diálogos — decisión de producto para no gastar
+  impresiones en modos ligeros. La regla de acceso subyacente NO cambia: si el usuario
+  ya tiene un desbloqueo temporal activo (ganado en Música/Alerta/LED), el modo no llega
+  bloqueado en primer lugar (`AccessState.unlocks` sigue combinando cuenta O temporal).
+  Nueva string `mode_locked_sign_in_only`.
+- **② Música/Alerta Sonora/Letrero LED: invitado ve login + anuncio; con cuenta, anuncio
+  + suscripción.** Música se reclasifica de `Tier.PRO` (estricto, sin anuncio) a `Tier.AI`
+  (como Alerta/LED: suscripción O temporal) — cambio de regla de producto explícito de
+  Pablo, documentado en la matriz de `Entitlements.kt`. Diálogo con dos ramas: invitado
+  → primario "Iniciar sesión" + secundario "Ver anuncio" (sin cerrar la puerta del
+  anuncio); con cuenta → primario "Ver anuncio" + secundario "Suscríbete" (como ya
+  funcionaba Alerta/LED). `Tier.PRO` queda reservado, sin ningún modo actual usándolo.
+  Nueva string `music_locked_body`. `BeamHubScreen`: diálogo reestructurado en `when`
+  exhaustivo por tier (BASIC/PRO/ADVANCED/AI) con `watchAd` factorizado una vez.
+- **③ Arranque en frío: siempre Continuo.** `DataStoreFlashStateRepository.mode` fuerza
+  `FlashMode.CONTINUOUS` en la PRIMERA emisión de cada instancia — y al ser `@Singleton`
+  de Hilt, nace exactamente una vez por proceso (app cerrada/actualizada = proceso nuevo).
+  In-memory (`@Volatile`), sin bloquear el arranque con I/O. Reaperturas dentro del MISMO
+  proceso (minimizar/maximizar) siguen respetando el modo elegido — solo un flip por vida
+  del proceso. QA manual pendiente (no cubierto por unit test: requiere Robolectric):
+  forzar-cerrar la app en SOS, reabrir, confirmar que entra en Continuo.
+- **④ Contador de anuncios se reinicia en cada actualización de versión.** Regla PURA
+  nueva: `ProProgressReset.shouldReset(lastVersionCode, currentVersionCode)` — testeada
+  en JVM sin Android (4 casos: instalación inicial, misma versión, actualización,
+  regresión). `RewardProgressRepository.resetIfVersionChanged` (nuevo método de interfaz)
+  compara contra un versionCode persistido y resetea el contador en una única transacción
+  atómica de DataStore. Disparado una vez por proceso desde `LumiAiApplication.onCreate`.
+  NO toca el desbloqueo temporal ya activo — solo el contador hacia el PRÓXIMO premio.
+- 4 strings nuevas EN/ES (281/281). 4 tests nuevos (ProProgressResetTest) + 2 tests
+  existentes actualizados (Fake con el nuevo método; EntitlementsTest con Tier.AI).

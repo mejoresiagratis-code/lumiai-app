@@ -216,65 +216,100 @@ fun BeamHubScreen(
     }
 
     lockedDialogMode?.let { mode ->
-        if (mode.tier == Tier.PRO) {
-            // Pro ESTRICTO (Musica): sin puerta por anuncio.
-            LumiDialog(
-                onDismiss = { lockedDialogMode = null },
-                iconRes = R.drawable.ic_lock,
-                title = stringResource(R.string.music_locked_title),
-                body = stringResource(R.string.music_locked),
-                dismissLabel = stringResource(R.string.dialog_close)
-            )
-        } else {
-            val canSignIn = mode.tier == Tier.ADVANCED && !state.access.entitlements.hasAccount
-            // Con el ultimo anuncio pendiente el dialogo reconoce el progreso, como el drawer:
-            // "¡Ya casi! Llevas 1..." + CTA de urgencia, en vez del copy generico.
-            val lastAdPending = proUi.adsWatched >= proUi.adsPerGrant - 1 && !proUi.active
-            // stringResource (NO getString via context): la regla LocalContextGetResourceValueCall
-            // prohibe consultar recursos via LocalContext en CUALQUIER punto de un composable
-            // — el valor no se actualiza al cambiar idioma/config. stringResource si (memo #35).
-            val msgGranted = stringResource(R.string.pro_granted)
-            val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
-            val msgProgressFmt = stringResource(R.string.pro_progress_more)
-            LumiDialog(
-                onDismiss = { lockedDialogMode = null },
-                iconRes = R.drawable.ic_lock,
-                title = stringResource(R.string.mode_locked_title),
-                body = stringResource(
-                    when {
-                        lastAdPending -> R.string.pro_progress_one_left
-                        canSignIn -> R.string.mode_locked_body
-                        else -> R.string.mode_locked_body_ad_only
+        val isGuest = !state.access.entitlements.hasAccount
+        val lastAdPending = proUi.adsWatched >= proUi.adsPerGrant - 1 && !proUi.active
+        val msgGranted = stringResource(R.string.pro_granted)
+        val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
+        val msgProgressFmt = stringResource(R.string.pro_progress_more)
+
+        // Accion compartida por las variantes AI: ver el anuncio recompensado.
+        val watchAd: () -> Unit = {
+            lockedDialogMode = null
+            val act = activity
+            if (act != null) {
+                rewardedUnlockViewModel.watchAd(
+                    activity = act,
+                    onReward = { outcome ->
+                        if (outcome.grantsUnlock) {
+                            Toast.makeText(context, msgGranted, Toast.LENGTH_SHORT).show()
+                            viewModel.selectMode(mode)
+                        } else {
+                            val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                            Toast.makeText(context, msgProgressFmt.format(remaining), Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onUnavailable = {
+                        Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                     }
-                ),
-                primaryLabel = stringResource(
-                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-                ),
-                onPrimary = {
-                    lockedDialogMode = null
-                    val act = activity
-                    if (act != null) {
-                        rewardedUnlockViewModel.watchAd(
-                            activity = act,
-                            onReward = { outcome ->
-                                if (outcome.grantsUnlock) {
-                                    Toast.makeText(context, msgGranted, Toast.LENGTH_SHORT).show()
-                                    viewModel.selectMode(mode)
-                                } else {
-                                    val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                    Toast.makeText(context, msgProgressFmt.format(remaining), Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            onUnavailable = {
-                                Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                    }
-                },
-                secondaryLabel = if (canSignIn) stringResource(R.string.mode_unlock_sign_in) else null,
-                onSecondary = if (canSignIn) ({ lockedDialogMode = null; onOpenAuth() }) else null,
-                dismissLabel = stringResource(R.string.action_cancel)
-            )
+                )
+            }
+        }
+
+        when (mode.tier) {
+            Tier.BASIC -> Unit // nunca bloqueado; rama exhaustiva por seguridad de tipos.
+            Tier.PRO -> {
+                // Estricto (reservado para futuros modos): sin puerta por anuncio.
+                // Ningun modo actual usa este tier (Musica se movio a AI, 13-ago).
+                LumiDialog(
+                    onDismiss = { lockedDialogMode = null },
+                    iconRes = R.drawable.ic_lock,
+                    title = stringResource(R.string.music_locked_title),
+                    body = stringResource(R.string.music_locked),
+                    dismissLabel = stringResource(R.string.dialog_close)
+                )
+            }
+            Tier.ADVANCED -> {
+                // SOS, Estrobo, Baliza, Morse: SOLO cuenta (decision 13-ago). Se retira
+                // el atajo de anuncio de este pop-up para no gastar impresiones en modos
+                // ligeros; el desbloqueo temporal ganado en Musica/Alerta/LED sigue
+                // aplicando igual (si estuviera activo, el modo no llegaria bloqueado).
+                LumiDialog(
+                    onDismiss = { lockedDialogMode = null },
+                    iconRes = R.drawable.ic_lock,
+                    title = stringResource(R.string.mode_locked_title),
+                    body = stringResource(R.string.mode_locked_sign_in_only),
+                    primaryLabel = stringResource(R.string.mode_unlock_sign_in),
+                    onPrimary = { lockedDialogMode = null; onOpenAuth() },
+                    dismissLabel = stringResource(R.string.dialog_close)
+                )
+            }
+            Tier.AI -> {
+                if (isGuest) {
+                    // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del
+                    // anuncio — puede probar 1h de Pro sin registrarse si asi lo prefiere.
+                    LumiDialog(
+                        onDismiss = { lockedDialogMode = null },
+                        iconRes = R.drawable.ic_lock,
+                        title = stringResource(R.string.mode_locked_title),
+                        body = stringResource(R.string.mode_locked_body),
+                        primaryLabel = stringResource(R.string.mode_unlock_sign_in),
+                        onPrimary = { lockedDialogMode = null; onOpenAuth() },
+                        secondaryLabel = stringResource(
+                            if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                        ),
+                        onSecondary = watchAd,
+                        dismissLabel = stringResource(R.string.dialog_close)
+                    )
+                } else {
+                    // Con cuenta: anuncio (1h) o suscripcion — la suscripcion se completa
+                    // en Ajustes, donde ya vive el flujo real de Play Billing.
+                    LumiDialog(
+                        onDismiss = { lockedDialogMode = null },
+                        iconRes = R.drawable.ic_lock,
+                        title = stringResource(R.string.mode_locked_title),
+                        body = stringResource(
+                            if (lastAdPending) R.string.pro_progress_one_left else R.string.music_locked_body
+                        ),
+                        primaryLabel = stringResource(
+                            if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                        ),
+                        onPrimary = watchAd,
+                        secondaryLabel = stringResource(R.string.pro_subscribe_cta),
+                        onSecondary = { lockedDialogMode = null; onOpenSettings() },
+                        dismissLabel = stringResource(R.string.dialog_close)
+                    )
+                }
+            }
         }
     }
     val primary = MaterialTheme.colorScheme.primary

@@ -7,6 +7,7 @@ import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
+import com.mejoresiagratis.lumiai.domain.repository.RewardProgressRepository
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistrySnapshot
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistryRepository
 import dagger.hilt.android.HiltAndroidApp
@@ -27,6 +28,7 @@ class LumiAiApplication : Application() {
     @Inject lateinit var subscriptionRepo: SubscriptionRepository
     @Inject lateinit var userRegistry: UserRegistryRepository
     @Inject lateinit var entitlementOverrideRepo: EntitlementOverrideRepository
+    @Inject lateinit var rewardProgress: RewardProgressRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -43,8 +45,19 @@ class LumiAiApplication : Application() {
         }
         super.onCreate()
         purgeGodOverrideOnRelease()
+        resetProProgressOnUpdate()
         seedBillingProfileOnSignIn()
         syncUserRegistryOnChange()
+    }
+
+    /**
+     * Actualización de versión detectada -> reinicia el contador de anuncios hacia la
+     * próxima hora de Pro gratuita (decisión de producto, 13-ago). El desbloqueo YA
+     * ACTIVO (si el usuario está disfrutando de una hora en curso) no se toca aquí:
+     * solo se resetea cuántos anuncios lleva vistos hacia el PRÓXIMO premio.
+     */
+    private fun resetProProgressOnUpdate() {
+        appScope.launch { runCatching { rewardProgress.resetIfVersionChanged(BuildConfig.VERSION_CODE) } }
     }
 
     /**

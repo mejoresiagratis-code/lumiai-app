@@ -286,4 +286,6 @@
     <string name="billing_profile_support">Nombre y país para recibos y soporte</string>
     <string name="notif_action_off">Apagar</string>
     <string name="auth_error_google">Google no pudo iniciar tu sesión. Inténtalo de nuevo.</string>
+    <string name="mode_locked_sign_in_only">Crea una cuenta para desbloquear este modo gratis.</string>
+    <string name="music_locked_body">Disponible con Pro, o desbloqueando tiempo al ver 2 anuncios.</string>
 </resources>

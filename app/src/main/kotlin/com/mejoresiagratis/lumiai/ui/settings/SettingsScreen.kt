@@ -728,44 +728,63 @@ fun SettingsScreen(
         val msgGranted = stringResource(R.string.pro_granted)
         val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
         val msgProgressFmt = stringResource(R.string.pro_progress_more)
-        LumiDialog(
-            onDismiss = { showSoundAlertLocked = false },
-            iconRes = R.drawable.ic_lock,
-            title = stringResource(R.string.mode_locked_title),
-            body = stringResource(
-                if (lastAdPending) R.string.pro_progress_one_left else R.string.sound_alert_locked
-            ),
-            primaryLabel = stringResource(
-                if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-            ),
-            onPrimary = {
-                showSoundAlertLocked = false
-                val act = soundActivity
-                if (act != null) {
-                    rewardedUnlockViewModel.watchAd(
-                        activity = act,
-                        onReward = { outcome ->
-                            val msg = if (outcome.grantsUnlock) {
-                                msgGranted
-                            } else {
-                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                msgProgressFmt.format(remaining)
-                            }
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                        },
-                        onUnavailable = {
-                            Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
+        val watchAd: () -> Unit = {
+            showSoundAlertLocked = false
+            val act = soundActivity
+            if (act != null) {
+                rewardedUnlockViewModel.watchAd(
+                    activity = act,
+                    onReward = { outcome ->
+                        val msg = if (outcome.grantsUnlock) {
+                            msgGranted
+                        } else {
+                            val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                            msgProgressFmt.format(remaining)
                         }
-                    )
-                }
-            },
-            secondaryLabel = stringResource(R.string.pro_subscribe_cta),
-            onSecondary = {
-                showSoundAlertLocked = false
-                if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
-            },
-            dismissLabel = stringResource(R.string.dialog_close)
-        )
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    },
+                    onUnavailable = {
+                        Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
+        if (isGuest) {
+            // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del anuncio
+            // (decision 13-ago) — puede probar 1h de Pro sin registrarse si prefiere.
+            LumiDialog(
+                onDismiss = { showSoundAlertLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(R.string.mode_locked_body),
+                primaryLabel = stringResource(R.string.mode_unlock_sign_in),
+                onPrimary = { showSoundAlertLocked = false; onOpenAuth() },
+                secondaryLabel = stringResource(
+                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                ),
+                onSecondary = watchAd,
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+        } else {
+            LumiDialog(
+                onDismiss = { showSoundAlertLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(
+                    if (lastAdPending) R.string.pro_progress_one_left else R.string.sound_alert_locked
+                ),
+                primaryLabel = stringResource(
+                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                ),
+                onPrimary = watchAd,
+                secondaryLabel = stringResource(R.string.pro_subscribe_cta),
+                onSecondary = {
+                    showSoundAlertLocked = false
+                    if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
+                },
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+        }
     }
 
     if (showLedLocked) {
@@ -773,44 +792,63 @@ fun SettingsScreen(
         val msgGranted = stringResource(R.string.pro_granted)
         val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
         val msgProgressFmt = stringResource(R.string.pro_progress_more)
-        LumiDialog(
-            onDismiss = { showLedLocked = false },
-            iconRes = R.drawable.ic_lock,
-            title = stringResource(R.string.mode_locked_title),
-            body = stringResource(
-                if (lastAdPending) R.string.pro_progress_one_left else R.string.led_locked
-            ),
-            primaryLabel = stringResource(
-                if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-            ),
-            onPrimary = {
-                showLedLocked = false
-                val act = ledActivity
-                if (act != null) {
-                    rewardedUnlockViewModel.watchAd(
-                        activity = act,
-                        onReward = { outcome ->
-                            val msg = if (outcome.grantsUnlock) {
-                                msgGranted
-                            } else {
-                                val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                msgProgressFmt.format(remaining)
-                            }
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                        },
-                        onUnavailable = {
-                            Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
+        val watchAd: () -> Unit = {
+            showLedLocked = false
+            val act = ledActivity
+            if (act != null) {
+                rewardedUnlockViewModel.watchAd(
+                    activity = act,
+                    onReward = { outcome ->
+                        val msg = if (outcome.grantsUnlock) {
+                            msgGranted
+                        } else {
+                            val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                            msgProgressFmt.format(remaining)
                         }
-                    )
-                }
-            },
-            secondaryLabel = stringResource(R.string.pro_subscribe_cta),
-            onSecondary = {
-                showLedLocked = false
-                if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
-            },
-            dismissLabel = stringResource(R.string.dialog_close)
-        )
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    },
+                    onUnavailable = {
+                        Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+        }
+        if (isGuest) {
+            // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del anuncio
+            // (decision 13-ago) — puede probar 1h de Pro sin registrarse si prefiere.
+            LumiDialog(
+                onDismiss = { showLedLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(R.string.mode_locked_body),
+                primaryLabel = stringResource(R.string.mode_unlock_sign_in),
+                onPrimary = { showLedLocked = false; onOpenAuth() },
+                secondaryLabel = stringResource(
+                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                ),
+                onSecondary = watchAd,
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+        } else {
+            LumiDialog(
+                onDismiss = { showLedLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(
+                    if (lastAdPending) R.string.pro_progress_one_left else R.string.led_locked
+                ),
+                primaryLabel = stringResource(
+                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
+                ),
+                onPrimary = watchAd,
+                secondaryLabel = stringResource(R.string.pro_subscribe_cta),
+                onSecondary = {
+                    showLedLocked = false
+                    if (!canStartSubscriptionPurchase(hasAccount = !isGuest)) showSubscribeGate = true else subscriptionViewModel.purchase(context.findActivity())
+                },
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+        }
     }
 
     if (showChangelog) {

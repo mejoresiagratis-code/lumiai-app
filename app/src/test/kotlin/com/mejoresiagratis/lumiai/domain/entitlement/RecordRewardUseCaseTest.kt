@@ -15,6 +15,7 @@ private class FakeRewardProgressRepository(initial: Int = 0) : RewardProgressRep
     private val state = MutableStateFlow(initial)
     override val count: Flow<Int> = state
     override suspend fun set(value: Int) { state.value = value.coerceAtLeast(0) }
+    override suspend fun resetIfVersionChanged(currentVersionCode: Int) { /* no ejercitado aquí */ }
 }
 
 private class FakeTemporaryUnlockRepository : TemporaryUnlockRepository {
