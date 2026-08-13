@@ -71,6 +71,13 @@ class FlashViewModel @Inject constructor(
     fun toggle() {
         val turningOn = !repo.isOn.value
         repo.setOn(turningOn)
+        // MUSICA es dueña de su propia sesion (MusicFlashService: LED + notificacion).
+        // Arrancar tambien TorchService aqui producia DOS notificaciones en ese modo
+        // (QA de Pablo, 13-ago). El resto de modos siguen pasando por TorchService.
+        if (repo.mode.value == FlashMode.MUSIC) {
+            if (!turningOn) autoOffJob?.cancel()
+            return
+        }
         if (turningOn) {
             engine.start()
             scheduleBeaconAutoOff()

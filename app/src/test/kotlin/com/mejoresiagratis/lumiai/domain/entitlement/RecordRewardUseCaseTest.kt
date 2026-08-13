@@ -30,6 +30,38 @@ private class FakeTemporaryUnlockRepository : TemporaryUnlockRepository {
 
 class RecordRewardUseCaseTest {
 
+    // ── Regla de producto (QA 13-ago): con Pro ACTIVO los anuncios no cuentan ni extienden ──
+
+    @Test
+    fun con_pro_activo_el_anuncio_no_cuenta_ni_extiende() = runTest {
+        val progress = FakeRewardProgressRepository(0)
+        val unlock = FakeTemporaryUnlockRepository().apply { extend(60_000L) } // activo
+        val out = RecordRewardUseCase(progress, unlock)(now = 1_000L)          // 1s < 60s
+        assertEquals(0, out.newCount)
+        assertFalse(out.grantsUnlock)
+        assertEquals(0, progress.count.first())                 // contador intacto
+        assertEquals(listOf(60_000L), unlock.extendCalls)       // solo el extend del setup
+    }
+
+    @Test
+    fun con_pro_caducado_el_anuncio_vuelve_a_contar() = runTest {
+        val progress = FakeRewardProgressRepository(0)
+        val unlock = FakeTemporaryUnlockRepository().apply { extend(60_000L) }
+        val out = RecordRewardUseCase(progress, unlock)(now = 60_001L)          // ya caducado
+        assertEquals(1, out.newCount)
+        assertFalse(out.grantsUnlock)
+        assertEquals(1, progress.count.first())
+    }
+
+    @Test
+    fun umbral_alcanzado_con_pro_activo_NO_concede_otra_hora() = runTest {
+        val progress = FakeRewardProgressRepository(RewardProgress.ADS_PER_GRANT - 1)
+        val unlock = FakeTemporaryUnlockRepository().apply { extend(3_600_000L) }
+        val out = RecordRewardUseCase(progress, unlock)(now = 5_000L)
+        assertFalse(out.grantsUnlock)
+        assertEquals(listOf(3_600_000L), unlock.extendCalls)    // sin segunda extension
+    }
+
     @Test
     fun primer_anuncio_no_concede_hora() = runTest {
         val progress = FakeRewardProgressRepository(0)

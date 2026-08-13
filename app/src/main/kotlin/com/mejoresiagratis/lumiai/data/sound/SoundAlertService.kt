@@ -54,7 +54,22 @@ class SoundAlertService : Service() {
     override fun onCreate() {
         super.onCreate()
         ensureChannel(this)
-        startInForeground()
+        // CRASH-LOOP arreglado (QA 13-ago): startForeground de tipo microfono SIN el
+        // permiso RECORD_AUDIO lanza SecurityException en API 34+. Si ademas el sistema
+        // reintentaba (STICKY), la app moria en cada arranque hasta limpiar datos.
+        // Orden correcto: permiso primero; sin el, parada limpia antes del foreground.
+        val micGranted = ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!micGranted) {
+            stopSelf()
+            return
+        }
+        runCatching { startInForeground() }.onFailure {
+            // Cinturon para OEMs con politicas FGS propias: parada suave, jamas crash.
+            stopSelf()
+            return
+        }
         scope.launch {
             val config = configRepo.config.first()
             currentConfig = config
@@ -71,7 +86,9 @@ class SoundAlertService : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    // NOT_STICKY: la escucha se (re)activa solo por accion del usuario. Un servicio de
+    // microfono resucitado por el sistema sin contexto es el ingrediente del crash-loop.
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 

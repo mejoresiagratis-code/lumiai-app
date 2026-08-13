@@ -132,7 +132,18 @@ fun SoundAlertScreen(
                 listening = listening,
                 micGranted = micGranted,
                 anyEnabled = config.anyEnabled,
-                onStart = { SoundAlertService.start(context); listening = true },
+                onStart = {
+                    // Doble guarda: la barra ya exige micGranted, pero el permiso puede
+                    // revocarse con la pantalla abierta (ajustes en split/ventana).
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED
+                    ) {
+                        SoundAlertService.start(context); listening = true
+                    } else {
+                        micGranted = false
+                        micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
                 onStop = { SoundAlertService.stop(context); listening = false }
             )
         }

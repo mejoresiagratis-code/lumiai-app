@@ -284,4 +284,5 @@
     <string name="pro_subscribe_gate_body">Para suscribirte hace falta una cuenta con sesión activa: protege tu compra entre dispositivos. El desbloqueo temporal por anuncios no lo exige.</string>
     <string name="billing_profile_row">Perfil de facturación</string>
     <string name="billing_profile_support">Nombre y país para recibos y soporte</string>
+    <string name="notif_action_off">Apagar</string>
 </resources>

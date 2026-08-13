@@ -83,21 +83,24 @@ class MusicFlashService : Service() {
     override fun onCreate() {
         super.onCreate()
         ensureChannel(this)
-        startInForeground()
-
+        // El permiso se comprueba ANTES de startForeground: un FGS de tipo microfono
+        // sin RECORD_AUDIO lanza SecurityException en API 34+ (crash, no fallo suave).
         val micGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
         if (!micGranted || !torch.hasFlash) {
+            // Sin permiso/LED el modo no puede correr: el orbe vuelve a apagado
+            // para que la UI no quede encendida sin sesion detras.
+            flashState.setOn(false)
             stopSelf()
             return
         }
+        startInForeground()
 
-        // El motor principal suelta el LED antes de empezar el show.
-        if (flashState.isOn.value) {
-            flashState.setOn(false)
-            engine.stop()
-        }
+        // El motor principal suelta el LED antes del show, pero SIN tocar isOn:
+        // en Musica el orbe encendido representa ESTA sesion (una sola notificacion,
+        // la de este servicio — QA 13-ago).
+        engine.stop()
 
         // La sensibilidad se aplica en vivo sin reiniciar la escucha.
         scope.launch {
@@ -226,6 +229,7 @@ class MusicFlashService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        runCatching { flashState.setOn(false) }
         audioJob?.cancel()
         flashJob?.cancel()
         abandonAudioFocus()

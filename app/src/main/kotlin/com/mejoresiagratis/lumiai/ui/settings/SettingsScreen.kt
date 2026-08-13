@@ -441,7 +441,9 @@ fun SettingsScreen(
                 val msgGranted = stringResource(R.string.pro_granted)
                 val msgUnavailable = stringResource(R.string.pro_ad_unavailable)
                 val msgProgressFmt = stringResource(R.string.pro_progress_more)
-                Button(
+                // Con Pro activo el boton de anuncios se OCULTA (no solo se deshabilita):
+                // el tope canjeable es 1 h y ofrecer mas seria prometer algo falso (QA 13-ago).
+                if (!proUi.active) Button(
                     onClick = {
                         val act = activity
                         if (act != null) {

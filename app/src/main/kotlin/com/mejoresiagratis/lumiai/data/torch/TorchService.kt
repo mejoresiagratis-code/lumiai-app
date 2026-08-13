@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.data.torch
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -47,7 +48,15 @@ class TorchService : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Boton "Apagar" de la notificacion: apagar el estado hace el resto (el colector
+        // de onCreate detiene el engine y llama stopSelf). Un solo camino de apagado.
+        if (intent?.action == ACTION_STOP) {
+            repo.setOn(false)
+            return START_NOT_STICKY
+        }
+        return START_STICKY
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -56,14 +65,29 @@ class TorchService : Service() {
         super.onDestroy()
     }
 
-    private fun buildNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setContentTitle(getString(R.string.app_name))
-        .setContentText(getString(R.string.torch_running))
-        .setSmallIcon(R.drawable.ic_launcher_foreground)
-        .setOngoing(true)
-        .build()
+    private fun buildNotification(): android.app.Notification {
+        val openApp = PendingIntent.getActivity(
+            this, 0,
+            packageManager.getLaunchIntentForPackage(packageName),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        val stop = PendingIntent.getService(
+            this, 1,
+            Intent(this, TorchService::class.java).setAction(ACTION_STOP),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.torch_running))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .setContentIntent(openApp)
+            .addAction(0, getString(R.string.notif_action_off), stop)
+            .build()
+    }
 
     companion object {
+        private const val ACTION_STOP = "com.mejoresiagratis.lumiai.action.TORCH_STOP"
         private const val CHANNEL_ID = "torch"
         private const val NOTIF_ID = 1
 

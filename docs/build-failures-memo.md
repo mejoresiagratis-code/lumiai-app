@@ -814,3 +814,30 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   · FUTURO detectado: `LocalConfiguration.current.screenHeightDp` en BeamHub:288 (hoja al
     42%) dispara el warning ConfigurationScreenWidthHeight — API moderna: LocalWindowInfo.
     No bloquea (warning) y la app es vertical fija; migrar en Q6 junto al resto de Compose.
+
+### 2026-08-13 (QA de release en S26 — 4 bugs de Pablo, auditoría + fixes + tests)
+- **① Notificación parpadeando al ritmo del flash:** la NUESTRA es estable (TorchService,
+  startForeground una vez, stopSelf solo al apagar — verificado); la que parpadea es la del
+  SISTEMA de Samsung, que salta con cada setTorchMode(true) del pulso. No hay API para
+  suprimirla. Mitigación: la nuestra pasa a ser LA completa — tap abre la app + botón
+  "Apagar" (ACTION_STOP → repo.setOn(false); el colector hace el resto: un solo camino de
+  apagado). Strings notif_action_off EN/ES (277/277).
+- **② Dos notificaciones en Música:** el orbe arrancaba TorchService (notif "linterna en
+  uso" sosteniendo awaitCancellation) ADEMÁS de MusicFlashService (notif propia). Fix:
+  FlashViewModel.toggle deja MUSIC fuera del TorchService (Música es dueña de su sesión);
+  MusicFlashService ya no apaga isOn al arrancar (el orbe encendido representa SU sesión)
+  y lo apaga en onDestroy y en la parada por falta de permiso/LED (UI nunca miente).
+- **③ Pro extensible infinitamente:** ver anuncios durante la hora activa reiniciaba el
+  contador y ENCADENABA horas. Regla de producto fijada en DOMINIO: RecordRewardUseCase
+  ignora anuncios con Pro activo (now inyectable para tests). UI: el botón de anuncio se
+  OCULTA con Pro activo. 3 tests nuevos: activo-no-cuenta, caducado-vuelve-a-contar,
+  umbral-con-activo-no-concede.
+- **④ Crash-loop de Alerta Sonora:** startForeground de tipo MICROPHONE sin RECORD_AUDIO
+  lanza SecurityException (API 34+); con START_STICKY el sistema reintentaba y la app moría
+  en cada arranque hasta limpiar datos. Fix triple: permiso ANTES de startForeground +
+  runCatching de cinturón + START_NOT_STICKY (la escucha solo revive por acción del
+  usuario). MusicFlashService tenía el MISMO bug latente (startInForeground antes del
+  check) — corregido en la misma pasada. Pantalla: doble guarda en onStart por si el
+  permiso se revoca con la vista abierta.
+- **Lección transversal:** los servicios de micrófono se auditan en pareja — un bug en uno
+  suele existir en su gemelo.

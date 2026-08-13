@@ -284,4 +284,5 @@
     <string name="pro_subscribe_gate_body">To subscribe you need an account with an active session — it keeps your purchase safe across devices. Ad-based temporary unlock doesn\'t require this.</string>
     <string name="billing_profile_row">Billing profile</string>
     <string name="billing_profile_support">Name and country for receipts and support</string>
+    <string name="notif_action_off">Turn off</string>
 </resources>
