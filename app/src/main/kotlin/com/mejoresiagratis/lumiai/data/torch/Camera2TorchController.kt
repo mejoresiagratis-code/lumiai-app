@@ -47,6 +47,20 @@ class Camera2TorchController @Inject constructor(
         runCatching { cameraManager.setTorchMode(id, false) }
     }
 
+    override fun pulseOff() {
+        val id = flashCameraId ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maxIntensityLevel > 1) {
+            // Nivel 1 = minimo LEGAL de la API (nunca 0); se mantiene "encendida" para
+            // el sistema, solo cambia la intensidad -> onTorchStrengthLevelChanged, no
+            // onTorchModeChanged. Si el HAL rechaza el nivel minimo por cualquier razon,
+            // apagado real de respaldo: nunca nos quedamos con la luz a medias.
+            runCatching { cameraManager.turnOnTorchWithStrengthLevel(id, 1) }
+                .onFailure { turnOff() }
+        } else {
+            turnOff()
+        }
+    }
+
     private fun scaleToDevice(logical: Int): Int {
         val pct = logical.coerceIn(FlashSettings.MIN_INTENSITY, FlashSettings.MAX_INTENSITY) / 100f
         return (pct * maxIntensityLevel).roundToInt().coerceIn(1, maxIntensityLevel)

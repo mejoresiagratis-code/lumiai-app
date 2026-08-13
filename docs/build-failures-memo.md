@@ -913,3 +913,31 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   NO toca el desbloqueo temporal ya activo — solo el contador hacia el PRÓXIMO premio.
 - 4 strings nuevas EN/ES (281/281). 4 tests nuevos (ProProgressResetTest) + 2 tests
   existentes actualizados (Fake con el nuevo método; EntitlementsTest con Tier.AI).
+
+### 2026-08-13 (EXPERIMENTAL — pulseOff: evitar el parpadeo de la notificación de Samsung)
+- **Investigación (a petición de Pablo tras el bug de notificaciones):** ¿existe forma real
+  de que el indicador del sistema no reaccione a cada pulso de SOS/Estrobo/Baliza/Morse?
+  Hallazgo documentado en la API de Android 13+ (`CameraManager.TorchCallback`):
+  `onTorchModeChanged` (encendida/apagada) y `onTorchStrengthLevelChanged` (solo
+  intensidad, con la luz YA encendida) son callbacks DISTINTOS. `SystemUI` casi con
+  toda seguridad escucha el primero para decidir cuándo mostrar su indicador, no el
+  segundo — así que si el patrón nunca apaga de verdad la linterna (solo baja su
+  intensidad al mínimo) durante los huecos, el indicador no debería re-dispararse.
+- **Implementación:** nuevo método `TorchController.pulseOff()` junto a `turnOff()`
+  existente. En dispositivos con intensidad variable (API 33+, `maxIntensityLevel > 1`,
+  ya detectado por el slider existente) usa `turnOnTorchWithStrengthLevel(id, 1)` — el
+  mínimo LEGAL de la API — en vez de `setTorchMode(false)`. Sin ese soporte, cae a un
+  apagado real idéntico a `turnOff()`: CERO cambio de comportamiento en esos móviles.
+  `FlashEngine` usa `pulseOff()` en los huecos DENTRO de un patrón activo (beacon,
+  strobe, textMorse, morse) y reserva `turnOff()` (real) exclusivamente para el `finally`
+  de fin de sesión. Mismo tratamiento en `SoundAlertService.flash()` y
+  `MusicFlashService.pulse()` (mismo problema, misma causa).
+- **RIESGO REAL, no cosmético — pendiente de validar en el S26 de Pablo:** el nivel
+  mínimo de intensidad podría seguir siendo visible en oscuridad real (justo cuando
+  importa un SOS), lo que difuminaría el contraste on/off del que depende la legibilidad
+  del patrón. Si eso ocurre, hay que revertir `pulseOff()` a un alias de `turnOff()` —
+  el cambio es reversible en un solo punto (la implementación de `Camera2TorchController`).
+- Tests: `FlashEngineTest` actualizado (2 tests reescritos con la nueva semántica: la
+  linterna NUNCA se apaga de verdad a mitad de patrón, solo al terminar la sesión) +
+  1 test nuevo cubriendo el fallback en hardware sin intensidad variable.
+  `FakeTorchController` espeja ambos caminos del controlador real.

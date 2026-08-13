@@ -211,7 +211,12 @@ class MusicFlashService : Service() {
         }
     }
 
-    /** Un destello por golpe: brillo y duracion proporcionales a su fuerza. */
+    /**
+     * Un destello por golpe: brillo y duracion proporcionales a su fuerza. Entre golpes
+     * usa pulseOff (experimental, QA 13-ago) en vez de apagado real: con ritmos rapidos
+     * evita el parpadeo del indicador de Samsung en cada destello, y de paso deja un
+     * ligero resplandor entre golpes en vez de un corte seco — a confirmar si gusta.
+     */
     private fun pulse(strength: Float) {
         flashJob?.cancel()
         flashJob = scope.launch {
@@ -219,7 +224,7 @@ class MusicFlashService : Service() {
                 torch.turnOn(BeatFlashMapper.intensityPercent(strength))
                 delay(BeatFlashMapper.durationMs(strength))
             } finally {
-                torch.turnOff()
+                torch.pulseOff()
             }
         }
     }

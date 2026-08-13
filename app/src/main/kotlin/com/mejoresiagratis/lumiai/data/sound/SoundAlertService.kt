@@ -146,7 +146,10 @@ class SoundAlertService : Service() {
                 while (i < pattern.size) {
                     torch.turnOn(level)
                     delay(pattern[i])
-                    torch.turnOff()
+                    // Hueco DENTRO del patron (sigue "avisando"): pulseOff experimental
+                    // (QA 13-ago) — evita el parpadeo del indicador del sistema en cada
+                    // destello. El apagado real solo llega al terminar todo el patron.
+                    torch.pulseOff()
                     if (i + 1 < pattern.size) delay(pattern[i + 1])
                     i += 2
                 }

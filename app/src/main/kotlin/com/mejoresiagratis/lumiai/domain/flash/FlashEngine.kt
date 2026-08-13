@@ -37,12 +37,18 @@ class FlashEngine @Inject constructor(
         }
     }
 
+    // Los huecos DENTRO de un patron activo usan pulseOff() (experimental, QA 13-ago):
+    // en dispositivos compatibles no apaga de verdad, evita el parpadeo del indicador
+    // del sistema en cada pulso. El apagado REAL solo ocurre al terminar la sesion
+    // entera (el `finally` de play(), y los casos defensivos de mensaje vacio/SCREEN/
+    // MUSIC mas abajo) — nunca a mitad de un patron en marcha.
+
     private suspend fun beacon(s: FlashSettings) {
         val onMs = s.beaconFlashMs.coerceAtLeast(1L)
         val offMs = (s.beaconIntervalMs - s.beaconFlashMs).coerceAtLeast(1L)
         while (true) {
             torch.turnOn(s.intensityLevel); delay(onMs)
-            torch.turnOff(); delay(offMs)
+            torch.pulseOff(); delay(offMs)
         }
     }
 
@@ -52,19 +58,19 @@ class FlashEngine @Inject constructor(
         val offMs = period - onMs
         while (true) {
             torch.turnOn(s.intensityLevel); delay(onMs)
-            torch.turnOff(); delay(offMs)
+            torch.pulseOff(); delay(offMs)
         }
     }
 
     private suspend fun textMorse(s: FlashSettings) {
         val durations = Morse.toDurations(s.morseText, s.morseUnitMs)
-        if (durations.isEmpty()) { torch.turnOff(); return }
+        if (durations.isEmpty()) { torch.turnOff(); return } // nada que transmitir: apagado real
         while (true) {
             for (i in durations.indices) {
-                if (i % 2 == 0) torch.turnOn(s.intensityLevel) else torch.turnOff()
+                if (i % 2 == 0) torch.turnOn(s.intensityLevel) else torch.pulseOff()
                 delay(durations[i])
             }
-            torch.turnOff()
+            torch.pulseOff() // hueco entre repeticiones del mensaje: sigue "transmitiendo"
             delay(s.morseUnitMs * 7)
         }
     }
@@ -73,10 +79,10 @@ class FlashEngine @Inject constructor(
         val durations = Morse.sos(s.morseUnitMs)
         while (true) {
             for (i in durations.indices) {
-                if (i % 2 == 0) torch.turnOn(s.intensityLevel) else torch.turnOff()
+                if (i % 2 == 0) torch.turnOn(s.intensityLevel) else torch.pulseOff()
                 delay(durations[i])
             }
-            torch.turnOff()
+            torch.pulseOff() // hueco entre repeticiones del SOS: sigue "transmitiendo"
             delay(s.morseUnitMs * 7)
         }
     }

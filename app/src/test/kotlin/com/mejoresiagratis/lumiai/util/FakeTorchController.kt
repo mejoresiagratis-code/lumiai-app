@@ -11,6 +11,8 @@ class FakeTorchController(
     var lastIntensity: Int = 0
         private set
     val transitions = mutableListOf<Boolean>()
+    var pulseOffCalls: Int = 0
+        private set
 
     override fun turnOn(intensityLevel: Int) {
         lastIntensity = intensityLevel
@@ -21,5 +23,16 @@ class FakeTorchController(
     override fun turnOff() {
         if (isOn) transitions.add(false)
         isOn = false
+    }
+
+    override fun pulseOff() {
+        pulseOffCalls++
+        // Espeja Camera2TorchController: con intensidad variable, se queda ENCENDIDA
+        // al minimo (isOn NO cambia); sin ella, cae a un apagado real identico a turnOff().
+        if (maxIntensityLevel > 1) {
+            lastIntensity = 1
+        } else {
+            turnOff()
+        }
     }
 }
