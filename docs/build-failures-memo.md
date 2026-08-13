@@ -941,3 +941,30 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   linterna NUNCA se apaga de verdad a mitad de patrón, solo al terminar la sesión) +
   1 test nuevo cubriendo el fallback en hardware sin intensidad variable.
   `FakeTorchController` espeja ambos caminos del controlador real.
+
+### 2026-08-13 (notificación duplicada en Samsung — límites reales de la plataforma)
+- **Petición de Pablo tras confirmar que pulseOff frenó el parpadeo:** ahora ve DOS
+  notificaciones estables simultáneas — "Linterna encendida / Activado / Desactivar"
+  (del SISTEMA, generada por Samsung, package ajeno) y "LumiAI / Linterna activa /
+  Apagar" (la nuestra, `TorchService`). Pidió mostrar solo una según fabricante.
+- **Dos restricciones duras de la plataforma, verificadas antes de escribir código:**
+  · La notificación de Samsung la genera OTRO paquete del sistema — cero API para
+    leerla, tocarla o suprimirla desde nuestra app. Imposible por diseño de Android.
+  · Un servicio en primer plano DEBE mostrar una notificación (`startForeground`
+    exige un `Notification` no nulo); "no mostrar nada" mata el servicio.
+  · La importancia de un canal de notificación es INMUTABLE una vez creado — no se
+    puede "bajar" en caliente para instalaciones que ya tengan el canal "torch".
+- **Compromiso real implementado:** `ManufacturerInfo.isSamsung` (Build.MANUFACTURER)
+  + canal NUEVO por fabricante en `TorchService` (`torch_samsung` en vez de `torch`,
+  evita colisionar con el canal viejo de instalaciones previas). En Samsung nace en
+  `IMPORTANCE_MIN`: sigue existiendo (obligatorio) pero sin icono en la barra de
+  estado, "por debajo del pliegue" del panel — Samsung queda como la fuente visible
+  práctica. En el resto de fabricantes sigue en `IMPORTANCE_LOW`, sin cambios.
+- **Alcance deliberadamente limitado a `TorchService`:** Alerta Sonora y Música
+  NO se tocan — sus notificaciones dicen "escuchando" / "parpadeando al ritmo de la
+  música", información que Samsung NO muestra; no son redundantes, degradarlas
+  perdería información real.
+- **Efecto secundario menor, sin impacto funcional:** en dispositivos Samsung que ya
+  tenían el canal "torch" antiguo (builds previas), quedará huérfano y visible en
+  Ajustes > Apps > LumiAI > Notificaciones — solo ruido en esa pantalla del sistema,
+  nunca en el uso normal de la app.

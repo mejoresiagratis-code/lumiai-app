@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.data.system.ManufacturerInfo
 import com.mejoresiagratis.lumiai.domain.flash.FlashEngine
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -88,15 +89,30 @@ class TorchService : Service() {
 
     companion object {
         private const val ACTION_STOP = "com.mejoresiagratis.lumiai.action.TORCH_STOP"
-        private const val CHANNEL_ID = "torch"
+
+        // Canal DISTINTO por fabricante (QA 13-ago): la importancia de un canal es
+        // INMUTABLE una vez creado — no se puede "bajar" en caliente para instalaciones
+        // ya existentes. Usar un ID nuevo evita colisionar con cualquier canal "torch"
+        // previo. En Samsung, el sistema YA muestra su propia notificacion de "Linterna
+        // encendida / Desactivar" (fuera de nuestro control, sin API para suprimirla):
+        // la nuestra seria puro ruido duplicado, asi que nace en IMPORTANCE_MIN (sigue
+        // existiendo — Android exige notificacion para todo servicio en primer plano —
+        // pero sin icono en la barra de estado, "por debajo del pliegue" en el panel).
+        // En el resto de fabricantes sigue en IMPORTANCE_LOW: es la unica fuente visible.
+        private val CHANNEL_ID = if (ManufacturerInfo.isSamsung) "torch_samsung" else "torch"
         private const val NOTIF_ID = 1
 
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val mgr = context.getSystemService(NotificationManager::class.java)
                 if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
+                    val importance = if (ManufacturerInfo.isSamsung) {
+                        NotificationManager.IMPORTANCE_MIN
+                    } else {
+                        NotificationManager.IMPORTANCE_LOW
+                    }
                     mgr.createNotificationChannel(
-                        NotificationChannel(CHANNEL_ID, "Torch", NotificationManager.IMPORTANCE_LOW)
+                        NotificationChannel(CHANNEL_ID, "Torch", importance)
                     )
                 }
             }
