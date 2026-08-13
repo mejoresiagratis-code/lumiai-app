@@ -230,6 +230,11 @@ fun BeamHubScreen(
             // Con el ultimo anuncio pendiente el dialogo reconoce el progreso, como el drawer:
             // "¡Ya casi! Llevas 1..." + CTA de urgencia, en vez del copy generico.
             val lastAdPending = proUi.adsWatched >= proUi.adsPerGrant - 1 && !proUi.active
+            // Capturas en el scope del composable (ANTES del lambda): el lint exige que
+            // context.getString no se llame dentro de lambdas onClick/onReward/onUnavailable.
+            val msgGranted = context.getString(R.string.pro_granted)
+            val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
+            val msgProgressFmt = context.getString(R.string.pro_progress_more)
             LumiDialog(
                 onDismiss = { lockedDialogMode = null },
                 iconRes = R.drawable.ic_lock,
@@ -248,12 +253,6 @@ fun BeamHubScreen(
                     lockedDialogMode = null
                     val act = activity
                     if (act != null) {
-                        // Las strings se capturan ANTES del callback para evitar llamadas
-                        // a LocalContext.current.getString dentro de lambdas que no corren
-                        // en el scope de Compose (LocalContextGetResourceValueCall, Q4).
-                        val msgGranted = context.getString(R.string.pro_granted)
-                        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-                        val msgProgressFmt = context.getString(R.string.pro_progress_more)
                         rewardedUnlockViewModel.watchAd(
                             activity = act,
                             onReward = { outcome ->

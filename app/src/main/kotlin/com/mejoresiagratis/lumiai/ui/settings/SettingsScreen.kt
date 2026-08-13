@@ -438,12 +438,12 @@ fun SettingsScreen(
                     )
                 }
                 val activity = remember(context) { context.findActivity() }
+                val msgGranted = context.getString(R.string.pro_granted)
+                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
+                val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 Button(
                     onClick = {
                         val act = activity
-                        val msgGranted = context.getString(R.string.pro_granted)
-                        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-                        val msgProgressFmt = context.getString(R.string.pro_progress_more)
                         if (act != null) {
                             rewardedUnlockViewModel.watchAd(
                                 activity = act,
@@ -723,6 +723,9 @@ fun SettingsScreen(
 
     if (showSoundAlertLocked) {
         val soundActivity = remember(context) { context.findActivity() }
+        val msgGranted = context.getString(R.string.pro_granted)
+        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
+        val msgProgressFmt = context.getString(R.string.pro_progress_more)
         LumiDialog(
             onDismiss = { showSoundAlertLocked = false },
             iconRes = R.drawable.ic_lock,
@@ -735,9 +738,6 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showSoundAlertLocked = false
-                val msgGranted = context.getString(R.string.pro_granted)
-                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-                val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = soundActivity
                 if (act != null) {
                     rewardedUnlockViewModel.watchAd(
@@ -780,9 +780,6 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showLedLocked = false
-                val msgGranted = context.getString(R.string.pro_granted)
-                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
-                val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = ledActivity
                 if (act != null) {
                     rewardedUnlockViewModel.watchAd(
