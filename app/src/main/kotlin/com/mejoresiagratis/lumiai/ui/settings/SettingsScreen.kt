@@ -441,8 +441,8 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         val act = activity
-                        val msgGranted = msgGranted
-                        val msgUnavailable = msgUnavailable
+                        val msgGranted = context.getString(R.string.pro_granted)
+                        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
                         val msgProgressFmt = context.getString(R.string.pro_progress_more)
                         if (act != null) {
                             rewardedUnlockViewModel.watchAd(
@@ -735,8 +735,8 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showSoundAlertLocked = false
-                val msgGranted = msgGranted
-                val msgUnavailable = msgUnavailable
+                val msgGranted = context.getString(R.string.pro_granted)
+                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
                 val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = soundActivity
                 if (act != null) {
@@ -780,8 +780,8 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showLedLocked = false
-                val msgGranted = msgGranted
-                val msgUnavailable = msgUnavailable
+                val msgGranted = context.getString(R.string.pro_granted)
+                val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
                 val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = ledActivity
                 if (act != null) {
