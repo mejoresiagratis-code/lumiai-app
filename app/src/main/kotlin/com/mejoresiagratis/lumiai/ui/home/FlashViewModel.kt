@@ -74,7 +74,7 @@ class FlashViewModel @Inject constructor(
         // MUSICA es dueña de su propia sesion (MusicFlashService: LED + notificacion).
         // Arrancar tambien TorchService aqui producia DOS notificaciones en ese modo
         // (QA de Pablo, 13-ago). El resto de modos siguen pasando por TorchService.
-        if (repo.mode.value == FlashMode.MUSIC) {
+        if (uiState.value.mode == FlashMode.MUSIC) {
             if (!turningOn) autoOffJob?.cancel()
             return
         }

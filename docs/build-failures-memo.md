@@ -841,3 +841,9 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   permiso se revoca con la vista abierta.
 - **Lección transversal:** los servicios de micrófono se auditan en pareja — un bug en uno
   suele existir en su gemelo.
+
+### 2026-08-13 (lección #36 — verificar el tipo real, no asumir StateFlow)
+- `repo.mode.value` no compiló: `FlashStateRepository.mode` es `Flow<FlashMode>`, no
+  `StateFlow` — no expone `.value`. Fix: usar `uiState.value.mode`, el StateFlow ya
+  combinado del propio ViewModel que sí lo trae. Lección: antes de escribir `.value`
+  sobre cualquier propiedad, comprobar su tipo declarado — no asumir por el nombre.
