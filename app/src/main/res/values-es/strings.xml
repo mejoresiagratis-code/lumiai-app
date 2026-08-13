@@ -288,4 +288,7 @@
     <string name="auth_error_google">Google no pudo iniciar tu sesión. Inténtalo de nuevo.</string>
     <string name="mode_locked_sign_in_only">Crea una cuenta para desbloquear este modo gratis.</string>
     <string name="music_locked_body">Disponible con Pro, o desbloqueando tiempo al ver 2 anuncios.</string>
+    <string name="mode_locked_ai_sign_in">Crea una cuenta para probar Pro gratis (2 anuncios = 1 hora) o suscríbete.</string>
+    <string name="mode_locked_ai_verify">Verifica tu correo para probar Pro gratis o suscríbete.</string>
+    <string name="mode_unlock_verify_email">Verificar correo</string>
 </resources>

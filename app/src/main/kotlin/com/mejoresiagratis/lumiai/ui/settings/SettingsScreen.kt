@@ -443,37 +443,53 @@ fun SettingsScreen(
                 val msgProgressFmt = stringResource(R.string.pro_progress_more)
                 // Con Pro activo el boton de anuncios se OCULTA (no solo se deshabilita):
                 // el tope canjeable es 1 h y ofrecer mas seria prometer algo falso (QA 13-ago).
-                if (!proUi.active) Button(
-                    onClick = {
-                        val act = activity
-                        if (act != null) {
-                            rewardedUnlockViewModel.watchAd(
-                                activity = act,
-                                onReward = { outcome ->
-                                    val msg = if (outcome.grantsUnlock) {
-                                        msgGranted
-                                    } else {
-                                        val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                        msgProgressFmt.format(remaining)
+                // Ver anuncios exige cuenta CON correo verificado (13-ago): sin eso, el
+                // boton se sustituye por el aviso correspondiente en vez de ofrecerlo.
+                if (!proUi.active && proUi.canTryPro) {
+                    Button(
+                        onClick = {
+                            val act = activity
+                            if (act != null) {
+                                rewardedUnlockViewModel.watchAd(
+                                    activity = act,
+                                    onReward = { outcome ->
+                                        val msg = if (outcome.grantsUnlock) {
+                                            msgGranted
+                                        } else {
+                                            val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
+                                            msgProgressFmt.format(remaining)
+                                        }
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onUnavailable = {
+                                        Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                                     }
-                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                },
-                                onUnavailable = {
-                                    Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        }
-                    },
-                    enabled = activity != null,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                                )
+                            }
+                        },
+                        enabled = activity != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = when {
+                                !proUi.adReady -> stringResource(R.string.pro_watch_ad_loading)
+                                proUi.adsWatched >= proUi.adsPerGrant - 1 ->
+                                    stringResource(R.string.pro_watch_ad_last)
+                                else -> stringResource(R.string.pro_watch_ad)
+                            }
+                        )
+                    }
+                } else if (!proUi.active && !proUi.hasAccount) {
+                    OutlinedButton(
+                        onClick = onOpenAuth,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.mode_unlock_sign_in)) }
+                } else if (!proUi.active && !proUi.isEmailVerified) {
                     Text(
-                        text = when {
-                            !proUi.adReady -> stringResource(R.string.pro_watch_ad_loading)
-                            proUi.adsWatched >= proUi.adsPerGrant - 1 ->
-                                stringResource(R.string.pro_watch_ad_last)
-                            else -> stringResource(R.string.pro_watch_ad)
-                        }
+                        text = stringResource(R.string.mode_locked_ai_verify),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = LumiSpacing.xs)
                     )
                 }
                 if (!proUi.hasSubscription) {
@@ -749,24 +765,27 @@ fun SettingsScreen(
                 )
             }
         }
-        if (isGuest) {
-            // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del anuncio
-            // (decision 13-ago) — puede probar 1h de Pro sin registrarse si prefiere.
-            LumiDialog(
+        when {
+            isGuest -> LumiDialog(
                 onDismiss = { showSoundAlertLocked = false },
                 iconRes = R.drawable.ic_lock,
                 title = stringResource(R.string.mode_locked_title),
-                body = stringResource(R.string.mode_locked_body),
+                body = stringResource(R.string.mode_locked_ai_sign_in),
                 primaryLabel = stringResource(R.string.mode_unlock_sign_in),
                 onPrimary = { showSoundAlertLocked = false; onOpenAuth() },
-                secondaryLabel = stringResource(
-                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-                ),
-                onSecondary = watchAd,
                 dismissLabel = stringResource(R.string.dialog_close)
             )
-        } else {
-            LumiDialog(
+            !proUi.isEmailVerified -> LumiDialog(
+                // Ya estamos en Ajustes: el flujo de reenvio vive en la seccion Cuenta,
+                // arriba en esta misma pantalla — sin boton de "accion" que solo cerraria
+                // (dismiss-only, mismo patron que el dialogo estricto de Tier.PRO).
+                onDismiss = { showSoundAlertLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(R.string.mode_locked_ai_verify),
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+            else -> LumiDialog(
                 onDismiss = { showSoundAlertLocked = false },
                 iconRes = R.drawable.ic_lock,
                 title = stringResource(R.string.mode_locked_title),
@@ -813,24 +832,26 @@ fun SettingsScreen(
                 )
             }
         }
-        if (isGuest) {
-            // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del anuncio
-            // (decision 13-ago) — puede probar 1h de Pro sin registrarse si prefiere.
-            LumiDialog(
+        when {
+            isGuest -> LumiDialog(
                 onDismiss = { showLedLocked = false },
                 iconRes = R.drawable.ic_lock,
                 title = stringResource(R.string.mode_locked_title),
-                body = stringResource(R.string.mode_locked_body),
+                body = stringResource(R.string.mode_locked_ai_sign_in),
                 primaryLabel = stringResource(R.string.mode_unlock_sign_in),
                 onPrimary = { showLedLocked = false; onOpenAuth() },
-                secondaryLabel = stringResource(
-                    if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-                ),
-                onSecondary = watchAd,
                 dismissLabel = stringResource(R.string.dialog_close)
             )
-        } else {
-            LumiDialog(
+            !proUi.isEmailVerified -> LumiDialog(
+                // Ya estamos en Ajustes: el flujo de reenvio vive en la seccion Cuenta,
+                // arriba en esta misma pantalla — sin boton de "accion" que solo cerraria.
+                onDismiss = { showLedLocked = false },
+                iconRes = R.drawable.ic_lock,
+                title = stringResource(R.string.mode_locked_title),
+                body = stringResource(R.string.mode_locked_ai_verify),
+                dismissLabel = stringResource(R.string.dialog_close)
+            )
+            else -> LumiDialog(
                 onDismiss = { showLedLocked = false },
                 iconRes = R.drawable.ic_lock,
                 title = stringResource(R.string.mode_locked_title),

@@ -54,8 +54,16 @@ val FlashMode.tier: Tier
  */
 data class Entitlements(
     val hasAccount: Boolean = false,
-    val hasSubscription: Boolean = false
+    val hasSubscription: Boolean = false,
+    val isEmailVerified: Boolean = false
 ) {
+    /**
+     * ¿Puede probar Pro viendo anuncios? (regla de producto, 13-ago): hace falta
+     * cuenta CON el correo verificado — cierra la puerta que antes dejaba a un
+     * invitado ver anuncios sin registrarse en Musica/Alerta Sonora/LED.
+     */
+    fun canTryProByAd(): Boolean = hasAccount && isEmailVerified
+
     fun unlocks(tier: Tier): Boolean = when (tier) {
         Tier.BASIC -> true
         Tier.ADVANCED -> hasAccount || hasSubscription

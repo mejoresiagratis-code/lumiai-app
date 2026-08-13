@@ -274,26 +274,31 @@ fun BeamHubScreen(
                 )
             }
             Tier.AI -> {
-                if (isGuest) {
-                    // Invitado: se antepone el alta de cuenta SIN cerrar la puerta del
-                    // anuncio — puede probar 1h de Pro sin registrarse si asi lo prefiere.
-                    LumiDialog(
+                // Para PROBAR Pro con anuncios hace falta cuenta CON correo verificado
+                // (regla de producto, 13-ago) — cierra la puerta que antes dejaba a un
+                // invitado ver anuncios sin registrarse. Tres estados posibles.
+                when {
+                    !state.access.entitlements.hasAccount -> LumiDialog(
                         onDismiss = { lockedDialogMode = null },
                         iconRes = R.drawable.ic_lock,
                         title = stringResource(R.string.mode_locked_title),
-                        body = stringResource(R.string.mode_locked_body),
+                        body = stringResource(R.string.mode_locked_ai_sign_in),
                         primaryLabel = stringResource(R.string.mode_unlock_sign_in),
                         onPrimary = { lockedDialogMode = null; onOpenAuth() },
-                        secondaryLabel = stringResource(
-                            if (lastAdPending) R.string.pro_watch_ad_last else R.string.pro_watch_ad
-                        ),
-                        onSecondary = watchAd,
                         dismissLabel = stringResource(R.string.dialog_close)
                     )
-                } else {
-                    // Con cuenta: anuncio (1h) o suscripcion — la suscripcion se completa
-                    // en Ajustes, donde ya vive el flujo real de Play Billing.
-                    LumiDialog(
+                    !state.access.entitlements.isEmailVerified -> LumiDialog(
+                        onDismiss = { lockedDialogMode = null },
+                        iconRes = R.drawable.ic_lock,
+                        title = stringResource(R.string.mode_locked_title),
+                        body = stringResource(R.string.mode_locked_ai_verify),
+                        primaryLabel = stringResource(R.string.mode_unlock_verify_email),
+                        onPrimary = { lockedDialogMode = null; onOpenSettings() },
+                        dismissLabel = stringResource(R.string.dialog_close)
+                    )
+                    else -> LumiDialog(
+                        // Cuenta y correo verificados: anuncio (1h) o suscripcion — la
+                        // suscripcion se completa en Ajustes, donde vive Play Billing.
                         onDismiss = { lockedDialogMode = null },
                         iconRes = R.drawable.ic_lock,
                         title = stringResource(R.string.mode_locked_title),

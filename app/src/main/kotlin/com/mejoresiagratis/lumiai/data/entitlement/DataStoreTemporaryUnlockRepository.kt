@@ -18,7 +18,19 @@ class DataStoreTemporaryUnlockRepository @Inject constructor(
 
     private val proUntilKey = longPreferencesKey("pro_until_millis")
 
-    override val proUntilMillis: Flow<Long> = dataStore.data.map { it[proUntilKey] ?: 0L }
+    // Decision de producto (13-ago): la prueba de Pro temporal se pierde si la app se
+    // cierra del todo, aunque no haya pasado la hora — mismo patron que el reinicio a
+    // Continuo al arrancar (in-memory, @Volatile, Singleton nace una vez por proceso).
+    @Volatile private var isColdStart = true
+
+    override val proUntilMillis: Flow<Long> = dataStore.data.map { p ->
+        if (isColdStart) {
+            isColdStart = false
+            0L
+        } else {
+            p[proUntilKey] ?: 0L
+        }
+    }
 
     override suspend fun extend(durationMillis: Long) {
         dataStore.edit { prefs ->

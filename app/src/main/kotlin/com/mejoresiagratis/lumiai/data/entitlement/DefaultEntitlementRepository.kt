@@ -24,7 +24,8 @@ class DefaultEntitlementRepository @Inject constructor(
         combine(auth.currentUser, overrideRepo.override, subscriptionRepo.isSubscribed) { user, ov, subscribed ->
             val base = Entitlements(
                 hasAccount = user != null && !user.isAnonymous,
-                hasSubscription = subscribed
+                hasSubscription = subscribed,
+                isEmailVerified = user?.isEmailVerified == true
             )
             if (BuildConfig.DEBUG) ov.apply(base) else base
         }

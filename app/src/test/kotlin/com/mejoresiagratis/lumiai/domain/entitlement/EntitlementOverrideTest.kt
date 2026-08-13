@@ -31,4 +31,11 @@ class EntitlementOverrideTest {
             .apply(Entitlements())
         assertEquals(Entitlements(hasAccount = true, hasSubscription = true), out)
     }
+
+    @Test
+    fun forzar_correo_verificado_anula_el_real() {
+        val base = Entitlements(hasAccount = true, isEmailVerified = false)
+        val out = EntitlementOverride(forceEmailVerified = true).apply(base)
+        assertEquals(Entitlements(hasAccount = true, isEmailVerified = true), out)
+    }
 }

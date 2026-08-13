@@ -51,4 +51,26 @@ class EntitlementsTest {
         assertFalse(canStartSubscriptionPurchase(hasAccount = false))
         assertTrue(canStartSubscriptionPurchase(hasAccount = true))
     }
+
+    // ── canTryProByAd: probar Pro con anuncios exige cuenta CON correo verificado (13-ago) ──
+
+    @Test
+    fun `sin cuenta no puede probar pro por anuncio`() {
+        assertFalse(Entitlements(hasAccount = false, isEmailVerified = false).canTryProByAd())
+    }
+
+    @Test
+    fun `con cuenta pero sin verificar tampoco puede`() {
+        assertFalse(Entitlements(hasAccount = true, isEmailVerified = false).canTryProByAd())
+    }
+
+    @Test
+    fun `verificado sin cuenta sigue sin poder (caso imposible en la practica, pero la regla es AND)`() {
+        assertFalse(Entitlements(hasAccount = false, isEmailVerified = true).canTryProByAd())
+    }
+
+    @Test
+    fun `cuenta y correo verificado SI puede probar pro`() {
+        assertTrue(Entitlements(hasAccount = true, isEmailVerified = true).canTryProByAd())
+    }
 }

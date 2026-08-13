@@ -8,6 +8,7 @@ import com.mejoresiagratis.lumiai.domain.model.AuthUser
 import com.mejoresiagratis.lumiai.domain.model.BillingProfile
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
+import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +28,8 @@ data class AccountUiState(
 @HiltViewModel
 class AccountViewModel @Inject constructor(
     private val auth: AuthRepository,
-    private val billingProfileRepo: BillingProfileRepository
+    private val billingProfileRepo: BillingProfileRepository,
+    private val temporaryUnlock: TemporaryUnlockRepository
 ) : ViewModel() {
 
     val user: StateFlow<AuthUser?> =
@@ -52,6 +54,9 @@ class AccountViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
+            // Regla de producto (13-ago): la prueba de Pro NO sobrevive a un logout,
+            // aunque no haya pasado la hora — hay que volver a ver los 2 anuncios.
+            temporaryUnlock.clear()
             auth.signOut()
             auth.ensureAnonymous()
         }

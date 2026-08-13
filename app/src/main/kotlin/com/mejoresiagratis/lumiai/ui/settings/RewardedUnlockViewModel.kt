@@ -28,7 +28,12 @@ data class RewardedUnlockUi(
     /** Acceso efectivo al tier IA: suscripción Pro o desbloqueo temporal activo. */
     val proUnlocked: Boolean = false,
     /** Suscripción Pro real (SIN contar el desbloqueo temporal). Gate estricto de Multicolor. */
-    val hasSubscription: Boolean = false
+    val hasSubscription: Boolean = false,
+    /** ¿Cuenta con correo verificado? Requisito para ver anuncios (13-ago). */
+    val hasAccount: Boolean = false,
+    val isEmailVerified: Boolean = false,
+    /** Puede ver anuncios para probar Pro: cuenta CON correo verificado (13-ago). */
+    val canTryPro: Boolean = false
 )
 
 @HiltViewModel
@@ -62,7 +67,10 @@ class RewardedUnlockViewModel @Inject constructor(
             adsWatched = count,
             adReady = ready,
             proUnlocked = ent.unlocks(Tier.AI) || active,
-            hasSubscription = ent.hasSubscription
+            hasSubscription = ent.hasSubscription,
+            hasAccount = ent.hasAccount,
+            isEmailVerified = ent.isEmailVerified,
+            canTryPro = ent.canTryProByAd()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), RewardedUnlockUi())
 
@@ -71,6 +79,13 @@ class RewardedUnlockViewModel @Inject constructor(
         onReward: (RewardProgress.Outcome) -> Unit,
         onUnavailable: () -> Unit
     ) {
+        // Cinturon de seguridad (13-ago): fuente unica de verdad ademas del gateo en
+        // cada pantalla — si por cualquier via se llega aqui sin cuenta verificada,
+        // no se muestra el anuncio en vez de dejarlo pasar silenciosamente.
+        if (!ui.value.canTryPro) {
+            onUnavailable()
+            return
+        }
         rewardedAdController.showIfAvailable(
             activity = activity,
             onReward = onReward,

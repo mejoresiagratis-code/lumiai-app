@@ -27,10 +27,10 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val hapticsKey = booleanPreferencesKey("a11y_haptics")
     private val autoLockScreenKey = booleanPreferencesKey("a11y_auto_lock_screen")
 
-    // Default de la app: tema oscuro con ámbar, como el Splash.
+    // Default de la app (13-ago): sigue el tema del sistema — antes forzaba oscuro.
     override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
-        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.DARK.name) }
-            .getOrDefault(ThemeMode.DARK)
+        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.SYSTEM.name) }
+            .getOrDefault(ThemeMode.SYSTEM)
     }
 
     override suspend fun setThemeMode(mode: ThemeMode) {

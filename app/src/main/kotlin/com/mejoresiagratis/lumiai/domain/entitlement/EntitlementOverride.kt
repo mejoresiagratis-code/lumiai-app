@@ -8,11 +8,13 @@ package com.mejoresiagratis.lumiai.domain.entitlement
  */
 data class EntitlementOverride(
     val forceAccount: Boolean? = null,
-    val forceSubscription: Boolean? = null
+    val forceSubscription: Boolean? = null,
+    val forceEmailVerified: Boolean? = null
 ) {
     /** Aplica el override sobre unos [Entitlements] reales, respetando los campos no forzados. */
     fun apply(base: Entitlements): Entitlements = Entitlements(
         hasAccount = forceAccount ?: base.hasAccount,
-        hasSubscription = forceSubscription ?: base.hasSubscription
+        hasSubscription = forceSubscription ?: base.hasSubscription,
+        isEmailVerified = forceEmailVerified ?: base.isEmailVerified
     )
 }

@@ -998,3 +998,30 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Sin test end-to-end del flujo completo (requiere Robolectric, aún no montado en el
   proyecto — mismo hueco ya anotado para el arranque en frío). Cubierto en JVM puro: la
   regla `SelfOffWindow` que decide propio-vs-externo, con 4 casos.
+
+### 2026-08-13 (revisión de estados de usuario — 3 reglas nuevas, una revierte trabajo previo)
+- **① Probar Pro exige cuenta CON correo verificado.** Revierte deliberadamente el
+  cambio de dos turnos atrás que dejaba a un invitado ver anuncios sin registrarse en
+  Música/Alerta Sonora/LED — decisión de producto explícita de Pablo. Fuente única de
+  verdad: `Entitlements.canTryProByAd() = hasAccount && isEmailVerified`, nuevo campo
+  `isEmailVerified` poblado en `DefaultEntitlementRepository` desde `AuthUser`.
+  `RewardedUnlockViewModel.watchAd()` lleva cinturón de seguridad (bloquea con
+  `onUnavailable()` si `!canTryPro`, aunque la UI ya lo filtre). Diálogos de Música/
+  Alerta/LED pasan de 2 a 3 vías: sin cuenta → solo "Iniciar sesión"; con cuenta sin
+  verificar → aviso "Verifica tu correo" (dismiss-only en Ajustes: el flujo de reenvío
+  ya vive ahí mismo, en Cuenta — un botón "de acción" ahí solo habría cerrado el
+  diálogo, así que se quitó para no fingir); verificado → anuncio + suscripción, sin
+  cambios. La tarjeta "Acceso Pro" del drawer refleja los mismos 3 estados.
+- **② El desbloqueo temporal de Pro pierde persistencia entre reinicios de proceso.**
+  Confirmado explícitamente por Pablo: cerrar la app del todo mata la prueba aunque
+  queden minutos. Mismo patrón que el reinicio a Continuo de hace unas horas:
+  `@Volatile isColdStart` en `DataStoreTemporaryUnlockRepository` — Singleton nace una
+  vez por proceso, la primera lectura de `proUntilMillis` en cada proceso nuevo se
+  fuerza a `0L` (expirado) sin bloquear el arranque con I/O. Logout también lo mata
+  aunque no haya pasado la hora: `AccountViewModel.signOut()` llama
+  `temporaryUnlock.clear()` antes de cerrar sesión.
+- **③ Tema por defecto: Sistema, no Oscuro.** `AccentColor.BLUE` y `AccentStyle.VIVID`
+  YA eran el default (verificado antes de tocar nada) — solo `ThemeMode` cambia de
+  `DARK` a `SYSTEM`.
+- 3 strings nuevas EN/ES (284/284). 5 tests nuevos (4 en `EntitlementsTest` para
+  `canTryProByAd`, 1 en `EntitlementOverrideTest` para el nuevo campo tri-estado).
