@@ -1050,3 +1050,29 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   que el SERVICIO escribe (`true` tras `startInForeground()` exitoso, `false` en
   `onDestroy()`) y la pantalla observa vía el ViewModel. Con esto, si el servicio no
   llega a arrancar o muere, el botón vuelve solo a "Iniciar" — honesto en vez de mentir.
+
+### 2026-08-13 (lección #37 — MediaPipe necesita reglas R8 explícitas, sus consumer-rules no bastan)
+- **Bug de Pablo:** botón "Iniciar" de Alerta Sonora no cambia a "Parar" ni con
+  permisos/categorías correctos. Encaja con el crash reportado antes de anoche: el
+  `runCatching` defensivo añadido en v0.9.21 probablemente convirtió un crash visible
+  en un fallo SILENCIOSO (el servicio se para solo, sin que se note por qué).
+- **Causa confirmada por fuentes externas, no conjetura:** `proguard-rules.pro` tenía
+  CERO reglas para MediaPipe (`tasks-audio`, usado por Alerta Sonora/YAMNet). MediaPipe
+  lee sus mensajes protobuf (`GeneratedMessageLite`) por reflexión en runtime, y sus
+  consumer-rules del AAR son INSUFICIENTES con R8 — confirmado con varios issues
+  abiertos y sin resolver en el propio repo de Google (mediapipe#6138, #5141, #3509):
+  el fallo típico es `Field xxx_ for Yyy not found` justo al llamar
+  `createFromOptions()`. Esa excepción NO es `RuntimeException` en todos los casos
+  (puede ser `ExceptionInInitializerError`), así que ni el catch interno de
+  `MediaPipeSoundClassifier.start()` ni potencialmente el `runCatching` exterior la
+  cubrían con seguridad según el tipo exacto.
+- **Fix:** `-keep class com.google.mediapipe.** { *; }` + `-dontwarn` +
+  `-keepclassmembers` para los campos de `GeneratedMessageLite`. Excepción deliberada
+  a la filosofía de fichero corto — documentada con las fuentes que la justifican.
+  Música NO usa MediaPipe (algoritmo propio de detección de golpes): sin exposición
+  a este bug, confirmado antes de descartar tocar nada ahí.
+- **Pregunta de producto de Pablo (permisos de Música al principio, como notificaciones):
+  respondida sin cambio de código** — Música ya pide RECORD_AUDIO en el momento de
+  usarlo (tocar el orbe en ese modo), no al abrir la app. Es el patrón que Android
+  recomienda oficialmente: pedir permisos en contexto reduce denegaciones reflejas
+  frente a pedirlos de golpe al arrancar sin que el usuario entienda para qué.

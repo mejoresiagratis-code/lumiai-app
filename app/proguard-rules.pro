@@ -21,3 +21,19 @@
 -dontwarn javax.lang.model.**
 -dontwarn com.google.auto.value.**
 -dontwarn autovalue.shaded.**
+
+# MediaPipe Tasks Audio (Alerta Sonora, clasificador YAMNet) — EXCEPCION deliberada a la
+# filosofia de fichero corto de arriba. MediaPipe lee sus mensajes protobuf (proto-lite,
+# GeneratedMessageLite) por REFLEXION en runtime, y sus consumer-rules del AAR NO son
+# suficientes con R8 (confirmado: multiples issues abiertos y sin resolver en el propio
+# repo de Google — github.com/google-ai-edge/mediapipe/issues/6138, /5141, /3509 — el
+# fallo tipico es "Field xxx_ for Yyy not found" nada mas llamar a createFromOptions()).
+# Sin esto, MediaPipeSoundClassifier.start() lanza una excepcion NO capturada por su
+# catch(RuntimeException) — probablemente la causa real del crash/fallo silencioso de
+# Alerta Sonora en release (QA 13/14-ago).
+-keep class com.google.mediapipe.** { *; }
+-dontwarn com.google.mediapipe.**
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
+    <fields>;
+}
+
