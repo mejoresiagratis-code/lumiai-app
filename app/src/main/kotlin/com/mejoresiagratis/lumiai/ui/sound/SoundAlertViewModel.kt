@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
+import com.mejoresiagratis.lumiai.domain.repository.SoundAlertStateRepository
 import com.mejoresiagratis.lumiai.domain.sound.AlertChannel
 import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
@@ -23,13 +24,17 @@ import javax.inject.Inject
 @HiltViewModel
 class SoundAlertViewModel @Inject constructor(
     private val repository: SoundAlertConfigRepository,
-    torch: TorchController
+    torch: TorchController,
+    stateRepo: SoundAlertStateRepository
 ) : ViewModel() {
 
     val hasFlash: Boolean = torch.hasFlash
 
     val config: StateFlow<SoundAlertConfig> = repository.config
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SoundAlertConfig())
+
+    /** Refleja si el SERVICIO esta vivo de verdad — no un tap optimista (QA 13-ago). */
+    val listening: StateFlow<Boolean> = stateRepo.listening
 
     fun setEnabled(category: SoundCategory, enabled: Boolean) =
         viewModelScope.launch { repository.setEnabled(category, enabled) }

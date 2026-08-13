@@ -86,6 +86,12 @@ abstract class AppModule {
 
     @Binds
     @Singleton
+    abstract fun bindSoundAlertState(
+        impl: com.mejoresiagratis.lumiai.data.sound.InMemorySoundAlertStateRepository
+    ): com.mejoresiagratis.lumiai.domain.repository.SoundAlertStateRepository
+
+    @Binds
+    @Singleton
     abstract fun bindThemeRepo(impl: DataStoreThemePreferencesRepository): ThemePreferencesRepository
 
     @Binds

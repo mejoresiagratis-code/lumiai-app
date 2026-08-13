@@ -108,7 +108,9 @@ fun SoundAlertScreen(
     val micLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> micGranted = granted }
-    var listening by remember { mutableStateOf(false) }
+    // Estado REAL del servicio (no un tap local optimista): si muere por cualquier
+    // razon, el boton vuelve solo a "Iniciar" en vez de quedar pillado en "Parar" (QA 13-ago).
+    val listening by viewModel.listening.collectAsStateWithLifecycle()
 
     // Acordeon: nombre de la categoria expandida (sobrevive a rotacion).
     var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -138,13 +140,15 @@ fun SoundAlertScreen(
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                         PackageManager.PERMISSION_GRANTED
                     ) {
-                        SoundAlertService.start(context); listening = true
+                        // Ya no se asume listening=true aqui: lo confirma el propio
+                        // servicio via listeningState cuando arranca de verdad (QA 13-ago).
+                        SoundAlertService.start(context)
                     } else {
                         micGranted = false
                         micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     }
                 },
-                onStop = { SoundAlertService.stop(context); listening = false }
+                onStop = { SoundAlertService.stop(context) }
             )
         }
     ) { padding ->

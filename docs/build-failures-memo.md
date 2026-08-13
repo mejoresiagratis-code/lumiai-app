@@ -1025,3 +1025,28 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   `DARK` a `SYSTEM`.
 - 3 strings nuevas EN/ES (284/284). 5 tests nuevos (4 en `EntitlementsTest` para
   `canTryProByAd`, 1 en `EntitlementOverrideTest` para el nuevo campo tri-estado).
+
+### 2026-08-13 (Alerta Sonora — dos bugs reales: crash sin manejar + UI que miente)
+- **Petición de Pablo:** tras conceder el permiso de micrófono y tocar "Iniciar", la app
+  se cierra y la escucha no arranca.
+- **Auditado exhaustivamente antes de tocar código:** manifest (`foregroundServiceType`
+  correcto en manifest Y runtime), permisos declarados, `MediaPipeSoundClassifier.start()`
+  (ya envuelto en try/catch para `IllegalStateException`/`RuntimeException`, incluye
+  `SecurityException` por herencia) — todo correcto. NO se pudo aislar la línea exacta sin
+  un stack trace real de Pablo (pendiente si el bug reaparece: Crashlytics, activo desde
+  Q2, lo capturaría). Dos problemas reales SÍ confirmados por lectura:
+- **① Cinturón de seguridad ausente:** la corrutina que monta `SoundDetectionEngine` +
+  `MediaPipeSoundClassifier` en `onCreate()` no tenía NINGÚN `try/catch` ni
+  `CoroutineExceptionHandler`. Un `SupervisorJob` NO absorbe excepciones de sus hijos —
+  solo evita que se cancelen entre sí. Cualquier fallo ahí dentro (config corrupta,
+  MediaPipe, lo que fuera) tumbaba TODA LA APP, no solo el servicio. Envuelto en
+  `runCatching { ... }.onFailure { stopSelf() }`: ahora degrada en vez de crashear.
+- **② La UI mentía sobre si estaba escuchando.** `SoundAlertScreen` llevaba un
+  `listening` LOCAL que se ponía a `true` en el mismo tap del botón, sin verificar NUNCA
+  que el servicio arrancara de verdad. Si moría por cualquier razón (el propio crash de
+  ①, u otra), el botón se quedaba pillado en "Parar" para siempre — coincide con lo
+  reportado. Fix: `SoundAlertStateRepository` (in-memory, `@Singleton`, deliberadamente
+  SIN DataStore — es estado de sesión puro, igual que la prueba de Pro de hace un rato)
+  que el SERVICIO escribe (`true` tras `startInForeground()` exitoso, `false` en
+  `onDestroy()`) y la pantalla observa vía el ViewModel. Con esto, si el servicio no
+  llega a arrancar o muere, el botón vuelve solo a "Iniciar" — honesto en vez de mentir.

@@ -15,6 +15,7 @@ import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
+import com.mejoresiagratis.lumiai.domain.repository.SoundAlertStateRepository
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
 import com.mejoresiagratis.lumiai.domain.sound.SoundAlertFlash
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
@@ -45,6 +46,7 @@ class SoundAlertService : Service() {
 
     @Inject lateinit var torch: TorchController
     @Inject lateinit var configRepo: SoundAlertConfigRepository
+    @Inject lateinit var listeningState: SoundAlertStateRepository
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var classifier: MediaPipeSoundClassifier? = null
@@ -70,22 +72,32 @@ class SoundAlertService : Service() {
             stopSelf()
             return
         }
+        // Escucha REALMENTE arrancada (servicio vivo en primer plano): la pantalla deja
+        // de fiarse de un flag local optimista y refleja esto (QA 13-ago).
+        listeningState.setListening(true)
         // Apagado EXTERNO (boton "Desactivar" del sistema) durante un destello activo
         // (QA 13-ago). stopSelf() dispara la limpieza normal del servicio.
         scope.launch { torch.externalOffEvents.collect { stopSelf() } }
         scope.launch {
-            val config = configRepo.config.first()
-            currentConfig = config
-            val engine = SoundDetectionEngine(config)
-            val classifier = MediaPipeSoundClassifier(
-                context = applicationContext,
-                engine = engine,
-                allowedLabels = config.activeLabels().toList(),
-                onDetected = { category -> onDetected(category) },
-                onError = { /* sin modelo o sin permiso: sigue sin avisos */ }
-            )
-            this@SoundAlertService.classifier = classifier
-            classifier.start()
+            // Cinturon de seguridad (QA 13-ago): SIN esto, cualquier fallo aqui dentro
+            // (config corrupta, MediaPipe, lo que sea) tumbaba TODA LA APP — un
+            // SupervisorJob sin manejador de excepciones no absorbe fallos de sus hijos,
+            // solo evita que se cancelen entre si. Ahora degrada: se para el servicio,
+            // la app sigue viva y la pantalla vuelve sola a "Iniciar".
+            runCatching {
+                val config = configRepo.config.first()
+                currentConfig = config
+                val engine = SoundDetectionEngine(config)
+                val classifier = MediaPipeSoundClassifier(
+                    context = applicationContext,
+                    engine = engine,
+                    allowedLabels = config.activeLabels().toList(),
+                    onDetected = { category -> onDetected(category) },
+                    onError = { /* sin modelo o sin permiso: sigue sin avisos */ }
+                )
+                this@SoundAlertService.classifier = classifier
+                classifier.start()
+            }.onFailure { stopSelf() }
         }
     }
 
@@ -96,6 +108,7 @@ class SoundAlertService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        listeningState.setListening(false)
         flashJob?.cancel()
         classifier?.stop()
         classifier = null
