@@ -42,3 +42,24 @@
     <fields>;
 }
 
+# QA 14-ago (captura de Pablo, v0.9.23 release): ExceptionInInitializerError en el
+# clasificador CON las reglas de arriba ya aplicadas — este bug va mas hondo que los
+# keeps de mediapipe/protobuf. La causa raiz documentada en mediapipe#6138 es flogger
+# (el logger de Google que MediaPipe usa): su deteccion de "quien me llama" camina la
+# pila de llamadas identificando sus propios frames POR NOMBRE DE CLASE; la ofuscacion
+# y el inlining de R8 los rompen y el <clinit> de TaskRunner muere. Keeps dirigidos:
+-keep class com.google.common.flogger.** { *; }
+-dontwarn com.google.common.flogger.**
+-keep class org.tensorflow.** { *; }
+-dontwarn org.tensorflow.**
+
+# Y el seguro de vida: -dontobfuscate GLOBAL — la UNICA solucion CONFIRMADA como
+# funcional por los reportes del propio repo de MediaPipe (#5141, textual: "App works
+# in release mode also if I have this proguard-rules.pro: -dontobfuscate -keep class
+# com.google.mediapipe.** {*;}"). Coste real: los nombres de clases no se renombran
+# (la app es algo mas legible al ingenieria-inversa); el SHRINKING y la OPTIMIZACION
+# de R8 siguen activos (el tamano apenas cambia). Beneficio: fiabilidad garantizada
+# HOY, con deadline de Play el 31-ago. Revisar en v1.1: quitar esta linea, probar en
+# dispositivo si los keeps dirigidos bastan por si solos, y reactivar la ofuscacion.
+-dontobfuscate
+

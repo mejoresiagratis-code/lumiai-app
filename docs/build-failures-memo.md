@@ -1103,3 +1103,28 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **Nota:** el fix de MediaPipe de v0.9.22 (lección #37) podría YA haber resuelto el
   fallo — Pablo aún no lo había probado al reportar. v0.9.23 lleva ambas cosas: el
   posible fix Y el diagnóstico que lo confirma o desmiente en una sola prueba.
+
+### 2026-08-14 (lección #39 — el diagnóstico en pantalla funcionó A LA PRIMERA; causa raíz confirmada)
+- **La captura de Pablo dice, textual:** "clasificador: ExceptionInInitializerError: null"
+  en v0.9.23 release — la FIRMA EXACTA de mediapipe#6138 (muere el inicializador estático
+  de TaskRunner bajo R8), Y con las reglas keep de mediapipe/protobuf de #37/#38 YA
+  aplicadas. Conclusión dura: esos keeps son insuficientes para este caso.
+- **Dos deudas del diagnóstico anterior, saldadas:** ① el "null" escondía la causa real —
+  `ExceptionInInitializerError.cause` lleva la excepción que lanzó el `<clinit>` y no la
+  imprimíamos. `describeThrowable()` ahora recorre la cadena de causas (3 niveles,
+  " <- " como separador). ② Causa raíz probable según la traza de #6138 ("no caller
+  found on the stack for: j3.d"): FLOGGER, el logger de Google que MediaPipe usa — su
+  detección de llamador camina la pila identificando sus propios frames POR NOMBRE, y
+  la ofuscación/inlining de R8 los rompe. Keeps dirigidos añadidos (flogger, tensorflow).
+- **Y la decisión de ingeniería: `-dontobfuscate` GLOBAL.** Es la ÚNICA solución
+  CONFIRMADA como funcional en los issues del propio repo de MediaPipe (#5141, cita
+  textual en el proguard). Trade-off aceptado conscientemente: sin renombrado de clases
+  (algo más legible al reverse-engineering) pero SHRINKING y OPTIMIZACIÓN siguen activos
+  — el tamaño apenas cambia. Con deadline de Play el 31-ago, fiabilidad > ofuscación.
+  TAREA v1.1: quitar `-dontobfuscate`, probar en dispositivo si los keeps dirigidos
+  bastan solos, y reactivar la ofuscación si es así.
+- **Nota Crashlytics:** sin ofuscación no hay mapping que subir — los stacktraces llegan
+  legibles de serie; el plugin de Crashlytics omite la subida sin quejarse.
+- **Meta-lección:** invertir una iteración en observabilidad (stopReason en pantalla)
+  convirtió un ciclo infinito de adivinanzas en UNA captura con el nombre exacto del
+  asesino. Patrón a repetir ante cualquier fallo no reproducible en el sandbox.

@@ -104,7 +104,7 @@ class SoundAlertService : Service() {
                 this@SoundAlertService.classifier = classifier
                 classifier.start()
             }.onFailure { e ->
-                listeningState.setStopReason("clasificador: ${e.javaClass.simpleName}: ${e.message}")
+                listeningState.setStopReason("clasificador: ${describeThrowable(e)}")
                 stopSelf()
             }
         }
@@ -115,6 +115,23 @@ class SoundAlertService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /**
+     * Clase y mensaje del error Y de su cadena de causas (hasta 3 niveles). Un
+     * ExceptionInInitializerError, por ejemplo, lleva la causa real en `cause` — sin
+     * recorrerla, el diagnostico se queda en "null" (QA 14-ago, captura de Pablo).
+     */
+    private fun describeThrowable(e: Throwable): String {
+        val parts = mutableListOf<String>()
+        var t: Throwable? = e
+        var depth = 0
+        while (t != null && depth < 3) {
+            parts.add("${t.javaClass.simpleName}: ${t.message ?: "(sin mensaje)"}")
+            t = t.cause
+            depth++
+        }
+        return parts.joinToString(" <- ")
+    }
 
     override fun onDestroy() {
         listeningState.setListening(false)
