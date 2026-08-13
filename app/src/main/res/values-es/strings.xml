@@ -285,4 +285,5 @@
     <string name="billing_profile_row">Perfil de facturación</string>
     <string name="billing_profile_support">Nombre y país para recibos y soporte</string>
     <string name="notif_action_off">Apagar</string>
+    <string name="auth_error_google">Google no pudo iniciar tu sesión. Inténtalo de nuevo.</string>
 </resources>

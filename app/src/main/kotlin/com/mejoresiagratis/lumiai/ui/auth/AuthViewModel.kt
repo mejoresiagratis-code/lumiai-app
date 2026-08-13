@@ -66,8 +66,8 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun reportFailure() {
-        _state.value = AuthUiState(error = AuthError.Unknown)
+    fun reportFailure(error: AuthError = AuthError.Unknown) {
+        _state.value = AuthUiState(error = error)
     }
 
     private fun launchAuth(block: suspend () -> Result<Unit>) {

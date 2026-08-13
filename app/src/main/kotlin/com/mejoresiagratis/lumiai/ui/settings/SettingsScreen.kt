@@ -1305,6 +1305,7 @@ private fun accountErrorMessage(error: AuthError): String = when (error) {
     AuthError.WeakPassword -> stringResource(R.string.auth_error_weak_password)
     AuthError.Network -> stringResource(R.string.auth_error_network)
     AuthError.RecentLoginRequired -> stringResource(R.string.auth_error_generic)
+    AuthError.GoogleSignInFailed -> stringResource(R.string.auth_error_google)
     AuthError.Unknown -> stringResource(R.string.auth_error_generic)
 }
 

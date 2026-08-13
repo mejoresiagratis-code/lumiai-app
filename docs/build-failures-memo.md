@@ -847,3 +847,18 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   `StateFlow` — no expone `.value`. Fix: usar `uiState.value.mode`, el StateFlow ya
   combinado del propio ViewModel que sí lo trae. Lección: antes de escribir `.value`
   sobre cualquier propiedad, comprobar su tipo declarado — no asumir por el nombre.
+
+### 2026-08-13 (bug de Pablo — "Continuar con Google" falla con mensaje genérico)
+- **Causa raíz probable:** `app/google-services.json` tiene `certificate_hash` VACÍO en
+  `android_client_info` — ninguna firma (ni debug, ni la release nueva de anoche) está
+  registrada en el proyecto Firebase. Google Identity Services rechaza el idToken sin
+  SHA-1 coincidente; el flujo cae al catch genérico.
+- **Acción de Pablo (fuera del repo):** añadir el SHA-1 de debug Y de release en Firebase
+  Console → Configuración → Android app → Añadir huella, y volver a descargar el JSON.
+- **Fix de código, independiente de la causa de Firebase:** el error de Google compartía
+  el mismo `AuthError.Unknown` → `auth_error_generic` que un fallo de email/contraseña,
+  visualmente pegado al formulario — confundía qué se había tocado. Nuevo caso
+  `AuthError.GoogleSignInFailed` con string propia (`auth_error_google`), propagado desde
+  `AuthScreen`'s catch de `CredentialManager` y desde el `token == null`. Actualizado el
+  `when` de `accountErrorMessage` en SettingsScreen (Kotlin habría marcado no-exhaustivo
+  sin este caso — el compilador protegió aquí).
