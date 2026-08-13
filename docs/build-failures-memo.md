@@ -772,3 +772,18 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Cronología completa del primer assembleRelease de la historia del proyecto:
   #32 `java` sombreado en .kts → #33 base64 con espacios → #33b guiones de silabeo →
   #34 dontwarn. Cuatro capas, cuatro lecciones, cero presentes en debug.
+
+### 2026-08-13 (Q3 — unit tests de negocio: huecos reales vs. huecos asumidos)
+- **Auditoría real antes de escribir código:** lo que el roadmap llamaba "huecos" de Q3
+  (RewardProgress, matriz Tier, Morse) ya tenían cobertura: `RewardProgressTest`,
+  `ModeAvailabilityTest`, `MorseTest`, `TemporaryUnlockTest`, `BeatDetectorTest`, etc.
+  La base es mejor de lo habitual para un indie.
+- **Hueco real encontrado:** `lastAdPending` (v0.9.3, el flag que decide el copy de los
+  diálogos de bloqueo) no tenía test. Es lógica pura — cero dependencias de Android/Compose
+  — y gobierna la experiencia de monetización en el momento de máxima conversión.
+  → Añadido `LastAdPendingTest` con 6 casos: 0/ADS, 1/ADS ("Ya casi"), umbral con/sin pro,
+  pro activo con cualquier contador, y contador negativo.
+- **Hueco LEGÍTIMAMENTE excluido:** `rasterize` del LED usa `android.graphics.Paint` y
+  `Bitmap` — no testable en JVM puro. Va a Q6 (Roborazzi o screenshot instrumented).
+- **Lección de proceso:** "audita antes de escribir" — el roadmap proyectado asumía huecos
+  que ya no existían. Escribir tests repetidos habría sido ruido sin valor.
