@@ -106,6 +106,11 @@ class MusicFlashService : Service() {
         scope.launch {
             configRepo.sensitivity.collect { detector.sensitivity = it }
         }
+        // Apagado EXTERNO (boton "Desactivar" del sistema): sin esto, el siguiente
+        // golpe detectado reencendia la luz sin saber que algo externo la habia
+        // apagado (QA 13-ago). stopSelf() dispara onDestroy(), que ya deja isOn/torch
+        // en su estado correcto.
+        scope.launch { torch.externalOffEvents.collect { stopSelf() } }
         requestAudioFocus()
         startListening()
     }

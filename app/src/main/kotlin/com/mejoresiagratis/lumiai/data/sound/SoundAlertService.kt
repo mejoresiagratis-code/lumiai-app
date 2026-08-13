@@ -70,6 +70,9 @@ class SoundAlertService : Service() {
             stopSelf()
             return
         }
+        // Apagado EXTERNO (boton "Desactivar" del sistema) durante un destello activo
+        // (QA 13-ago). stopSelf() dispara la limpieza normal del servicio.
+        scope.launch { torch.externalOffEvents.collect { stopSelf() } }
         scope.launch {
             val config = configRepo.config.first()
             currentConfig = config

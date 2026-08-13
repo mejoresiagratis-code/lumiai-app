@@ -29,6 +29,7 @@ class TorchService : Service() {
 
     @Inject lateinit var engine: FlashEngine
     @Inject lateinit var repo: FlashStateRepository
+    @Inject lateinit var torch: TorchController
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -46,6 +47,14 @@ class TorchService : Service() {
                         engine.play(mode, repo.settings)
                     }
                 }
+        }
+        // Apagado EXTERNO (boton "Desactivar" de Samsung, u otra app): la misma
+        // palanca que usa nuestro propio boton "Apagar" — repo.setOn(false) — hace el
+        // resto solo (el colector de arriba para el motor y llama stopSelf()). Sin
+        // esto, el motor seguia reencendiendo la luz en cada pulso de SOS/Estrobo y la
+        // notificacion de Samsung "revivia" en cada ciclo (QA 13-ago).
+        scope.launch {
+            torch.externalOffEvents.collect { if (repo.isOn.value) repo.setOn(false) }
         }
     }
 

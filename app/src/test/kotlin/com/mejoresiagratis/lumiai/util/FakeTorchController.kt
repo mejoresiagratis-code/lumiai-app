@@ -1,11 +1,16 @@
 package com.mejoresiagratis.lumiai.util
 
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 class FakeTorchController(
     override val hasFlash: Boolean = true,
     override val maxIntensityLevel: Int = 100
 ) : TorchController {
+    // Expuesto como MutableSharedFlow (no solo Flow) para que los tests puedan simular
+    // un apagado externo con `torch.externalOffEvents.tryEmit(Unit)`.
+    val externalOffEventsFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val externalOffEvents = externalOffEventsFlow
     var isOn: Boolean = false
         private set
     var lastIntensity: Int = 0

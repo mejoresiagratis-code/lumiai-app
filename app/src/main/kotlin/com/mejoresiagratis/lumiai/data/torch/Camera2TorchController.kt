@@ -4,8 +4,15 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import com.mejoresiagratis.lumiai.domain.flash.SelfOffWindow
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
@@ -21,6 +28,30 @@ class Camera2TorchController @Inject constructor(
     private val flashCameraId: String? by lazy { findFlashCamera() }
 
     override val hasFlash: Boolean get() = flashCameraId != null
+
+    // Ultima vez que ESTE controlador apago la linterna por su cuenta (turnOff, o el
+    // respaldo interno de pulseOff): ventana usada por el TorchCallback de mas abajo
+    // para descartar sus propios apagados y quedarse solo con los externos.
+    @Volatile private var lastSelfOffAtMs: Long = 0L
+
+    private val _externalOffEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val externalOffEvents: Flow<Unit> = _externalOffEvents.asSharedFlow()
+
+    init {
+        // Registrado UNA vez, vive con el proceso (Singleton) — no requiere unregister.
+        runCatching {
+            cameraManager.registerTorchCallback(
+                object : CameraManager.TorchCallback() {
+                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+                        if (enabled || cameraId != flashCameraId) return
+                        val isOwn = SelfOffWindow.isOwnOff(lastSelfOffAtMs, SystemClock.elapsedRealtime())
+                        if (!isOwn) _externalOffEvents.tryEmit(Unit)
+                    }
+                },
+                Handler(Looper.getMainLooper())
+            )
+        }
+    }
 
     override val maxIntensityLevel: Int by lazy {
         val id = flashCameraId ?: return@lazy 1
@@ -44,6 +75,7 @@ class Camera2TorchController @Inject constructor(
 
     override fun turnOff() {
         val id = flashCameraId ?: return
+        lastSelfOffAtMs = SystemClock.elapsedRealtime()
         runCatching { cameraManager.setTorchMode(id, false) }
     }
 

@@ -968,3 +968,33 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   tenían el canal "torch" antiguo (builds previas), quedará huérfano y visible en
   Ajustes > Apps > LumiAI > Notificaciones — solo ruido en esa pantalla del sistema,
   nunca en el uso normal de la app.
+
+### 2026-08-13 (bug real de Pablo — "Desactivar" de Samsung no apagaba nuestra app)
+- **Causa raíz:** el botón "Desactivar" de la notificación DEL SISTEMA de Samsung apaga
+  el hardware directamente vía su propio mecanismo — nuestra app nunca se entera. Con
+  SOS/Estrobo activo, el bucle de `FlashEngine` seguía llamando `torch.turnOn()` en cada
+  pulso, ignorante de que algo externo había apagado la luz: la notificación de Samsung
+  "revivía" en cada ciclo (`onTorchModeChanged` se volvía a disparar) y el botón de
+  nuestra UI quedaba pillado en "encendido" para siempre — exactamente lo reportado.
+- **Fix, aprovechando la arquitectura reactiva ya existente:** `TorchService` YA trataba
+  `repo.isOn` como única fuente de verdad (el propio botón "Apagar" solo escribe ese
+  flag; el colector existente para el motor y llama `stopSelf()` solo). Bastaba con
+  detectar el apagado externo y escribir esa MISMA palanca.
+- **Detección:** `Camera2TorchController` registra un `CameraManager.TorchCallback` una
+  única vez (Singleton, vive con el proceso) y expone `externalOffEvents: Flow<Unit>`.
+  El callback no dice QUIÉN apagó la luz — solo que se apagó — así que se filtra con una
+  VENTANA DE TIEMPO (`SelfOffWindow`, regla pura con 4 tests JVM): si nuestro propio
+  código llamó a `turnOff()` hace menos de 400ms, es nuestro y se descarta; si no, es
+  externo. Una ventana es más robusta que una bandera booleana con set/clear porque el
+  callback del sistema llega de forma ASÍNCRONA (Binder + Handler) en un hilo distinto
+  al que hizo la llamada — una bandera podría limpiarse antes de que el callback la lea.
+- **Caso sutil cubierto:** en hardware SIN intensidad variable, `pulseOff()` cae
+  internamente a `turnOff()` real en cada hueco del patrón — eso TAMBIÉN marca
+  `lastSelfOffAtMs`, así que esos dispositivos no generan falsos positivos de "apagado
+  externo" en cada pulso normal de su propio patrón.
+- **Aplicado a los 3 servicios que ciclan la linterna** (mismo problema, misma causa):
+  `TorchService` (`repo.setOn(false)`), `MusicFlashService` y `SoundAlertService`
+  (`stopSelf()`, que ya dispara su limpieza normal en `onDestroy`).
+- Sin test end-to-end del flujo completo (requiere Robolectric, aún no montado en el
+  proyecto — mismo hueco ya anotado para el arranque en frío). Cubierto en JVM puro: la
+  regla `SelfOffWindow` que decide propio-vs-externo, con 4 casos.
