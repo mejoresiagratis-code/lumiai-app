@@ -787,3 +787,13 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   `Bitmap` — no testable en JVM puro. Va a Q6 (Roborazzi o screenshot instrumented).
 - **Lección de proceso:** "audita antes de escribir" — el roadmap proyectado asumía huecos
   que ya no existían. Escribir tests repetidos habría sido ruido sin valor.
+
+### 2026-08-13 (Q4 — lint gate, correccion de 12 errores LocalContext)
+- 12 errores LocalContextGetResourceValueCall: context.getString dentro de lambdas onReward/
+  onUnavailable que no corren en el scope de Compose. Fix: capturar las strings ANTES del
+  callback en el scope Compose y cerrar sobre el valor. MusicFlashService: @Suppress
+  documentado porque el getString de un Service Android es el patron correcto.
+- Lint gate: abortOnError=true, warningsAsErrors=false. Silenciados con justificacion:
+  GradleDependency/NewerVersionAvailable (actualizaciones programadas), UnusedResources
+  (falsos positivos en Compose), AndroidGradlePluginVersion.
+- Job quality ahora corre en cada push a main (antes solo manual).

@@ -248,19 +248,25 @@ fun BeamHubScreen(
                     lockedDialogMode = null
                     val act = activity
                     if (act != null) {
+                        // Las strings se capturan ANTES del callback para evitar llamadas
+                        // a LocalContext.current.getString dentro de lambdas que no corren
+                        // en el scope de Compose (LocalContextGetResourceValueCall, Q4).
+                        val msgGranted = context.getString(R.string.pro_granted)
+                        val msgUnavailable = context.getString(R.string.pro_ad_unavailable)
+                        val msgProgressFmt = context.getString(R.string.pro_progress_more)
                         rewardedUnlockViewModel.watchAd(
                             activity = act,
                             onReward = { outcome ->
                                 if (outcome.grantsUnlock) {
-                                    Toast.makeText(context, context.getString(R.string.pro_granted), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, msgGranted, Toast.LENGTH_SHORT).show()
                                     viewModel.selectMode(mode)
                                 } else {
                                     val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                    Toast.makeText(context, context.getString(R.string.pro_progress_more, remaining), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, msgProgressFmt.format(remaining), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             onUnavailable = {
-                                Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                             }
                         )
                     }

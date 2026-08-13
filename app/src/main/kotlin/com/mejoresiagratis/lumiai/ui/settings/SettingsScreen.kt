@@ -441,20 +441,23 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         val act = activity
+                        val msgGranted = msgGranted
+                        val msgUnavailable = msgUnavailable
+                        val msgProgressFmt = context.getString(R.string.pro_progress_more)
                         if (act != null) {
                             rewardedUnlockViewModel.watchAd(
                                 activity = act,
                                 onReward = { outcome ->
                                     val msg = if (outcome.grantsUnlock) {
-                                        context.getString(R.string.pro_granted)
+                                        msgGranted
                                     } else {
                                         val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                        context.getString(R.string.pro_progress_more, remaining)
+                                        msgProgressFmt.format(remaining)
                                     }
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 },
                                 onUnavailable = {
-                                    Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                                 }
                             )
                         }
@@ -732,21 +735,24 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showSoundAlertLocked = false
+                val msgGranted = msgGranted
+                val msgUnavailable = msgUnavailable
+                val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = soundActivity
                 if (act != null) {
                     rewardedUnlockViewModel.watchAd(
                         activity = act,
                         onReward = { outcome ->
                             val msg = if (outcome.grantsUnlock) {
-                                context.getString(R.string.pro_granted)
+                                msgGranted
                             } else {
                                 val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                context.getString(R.string.pro_progress_more, remaining)
+                                msgProgressFmt.format(remaining)
                             }
                             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         },
                         onUnavailable = {
-                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
@@ -774,21 +780,24 @@ fun SettingsScreen(
             ),
             onPrimary = {
                 showLedLocked = false
+                val msgGranted = msgGranted
+                val msgUnavailable = msgUnavailable
+                val msgProgressFmt = context.getString(R.string.pro_progress_more)
                 val act = ledActivity
                 if (act != null) {
                     rewardedUnlockViewModel.watchAd(
                         activity = act,
                         onReward = { outcome ->
                             val msg = if (outcome.grantsUnlock) {
-                                context.getString(R.string.pro_granted)
+                                msgGranted
                             } else {
                                 val remaining = (RewardProgress.ADS_PER_GRANT - outcome.newCount).coerceAtLeast(1)
-                                context.getString(R.string.pro_progress_more, remaining)
+                                msgProgressFmt.format(remaining)
                             }
                             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         },
                         onUnavailable = {
-                            Toast.makeText(context, context.getString(R.string.pro_ad_unavailable), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, msgUnavailable, Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

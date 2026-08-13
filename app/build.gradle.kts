@@ -20,8 +20,8 @@ android {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 35
-        versionName = "0.9.6"
+        versionCode = 36
+        versionName = "0.9.7"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -84,6 +84,25 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    lint {
+        // Gate de calidad: solo los errores reales bloquean release (Q4).
+        // Warnings se reportan pero no bloquean; actualizar versiones de dependencias
+        // es trabajo de mantenimiento programado, no urgente.
+        warningsAsErrors = false
+        abortOnError = true
+        // Categorias silenciadas con justificacion:
+        // GradleDependency/NewerVersionAvailable: actualizaciones programadas en cada
+        //   toolchain bump, no en cada PR (leccion #18: separar compilador de libs).
+        // UnusedResources: falsos positivos frecuentes con Compose (strings en code-only,
+        //   drawables usados via stringResource/painterResource sin referencia XML).
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "UnusedResources",
+            "AndroidGradlePluginVersion")
+        // El informe XML lo consume el step de CI para subir el artefacto.
+        xmlReport = true
+        htmlReport = true
+        xmlOutput = file("build/reports/lint-results-debug.xml")
     }
 
     buildFeatures {

@@ -67,7 +67,7 @@ jobs:
   # duplicando setup de JDK+Gradle y ocupando runner sin bloquear nada.
   quality:
     name: Quality (no bloqueante, manual)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     continue-on-error: true
@@ -90,13 +90,12 @@ jobs:
           curl -sSLo ktlint https://github.com/pinterest/ktlint/releases/download/1.7.0/ktlint
           chmod +x ktlint
 
-      - name: ktlint (solo informe)
+      - name: ktlint
         continue-on-error: true
-        run: ./ktlint "app/src/**/*.kt" --reporter=plain --relative
+        run: ./ktlint "app/src/**/*.kt" --reporter=plain --relative || true
 
-      - name: Android Lint (solo informe)
-        continue-on-error: true
-        run: ./gradlew :app:lintDebug --stacktrace
+      - name: Android Lint (gate — abortOnError)
+        run: ./gradlew :app:lintDebug
 
       - name: Upload lint report
         uses: actions/upload-artifact@v4
