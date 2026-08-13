@@ -36,6 +36,9 @@ class SoundAlertViewModel @Inject constructor(
     /** Refleja si el SERVICIO esta vivo de verdad — no un tap optimista (QA 13-ago). */
     val listening: StateFlow<Boolean> = stateRepo.listening
 
+    /** Motivo de la ultima parada inesperada, para mostrarlo en pantalla (QA 14-ago). */
+    val stopReason: StateFlow<String?> = stateRepo.stopReason
+
     fun setEnabled(category: SoundCategory, enabled: Boolean) =
         viewModelScope.launch { repository.setEnabled(category, enabled) }
 

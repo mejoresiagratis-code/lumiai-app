@@ -18,4 +18,8 @@ class InMemorySoundAlertStateRepository @Inject constructor() : SoundAlertStateR
     private val _listening = MutableStateFlow(false)
     override val listening: StateFlow<Boolean> = _listening.asStateFlow()
     override fun setListening(value: Boolean) { _listening.value = value }
+
+    private val _stopReason = MutableStateFlow<String?>(null)
+    override val stopReason: StateFlow<String?> = _stopReason.asStateFlow()
+    override fun setStopReason(value: String?) { _stopReason.value = value }
 }

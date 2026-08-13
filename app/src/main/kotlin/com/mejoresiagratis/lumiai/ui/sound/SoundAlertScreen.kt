@@ -111,6 +111,7 @@ fun SoundAlertScreen(
     // Estado REAL del servicio (no un tap local optimista): si muere por cualquier
     // razon, el boton vuelve solo a "Iniciar" en vez de quedar pillado en "Parar" (QA 13-ago).
     val listening by viewModel.listening.collectAsStateWithLifecycle()
+    val stopReason by viewModel.stopReason.collectAsStateWithLifecycle()
 
     // Acordeon: nombre de la categoria expandida (sobrevive a rotacion).
     var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -132,6 +133,7 @@ fun SoundAlertScreen(
         bottomBar = {
             ListenBar(
                 listening = listening,
+                stopReason = stopReason,
                 micGranted = micGranted,
                 anyEnabled = config.anyEnabled,
                 onStart = {
@@ -274,6 +276,7 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
 @Composable
 private fun ListenBar(
     listening: Boolean,
+    stopReason: String?,
     micGranted: Boolean,
     anyEnabled: Boolean,
     onStart: () -> Unit,
@@ -304,6 +307,18 @@ private fun ListenBar(
                     enabled = micGranted && anyEnabled,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.sa_start)) }
+                // Diagnostico en el movil (QA 14-ago): si el servicio murio, aqui sale
+                // el motivo EXACTO (clase y mensaje de la excepcion) — se acabo adivinar.
+                if (stopReason != null) {
+                    Text(
+                        text = stringResource(R.string.sa_start_failed, stopReason),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = LumiSpacing.xs)
+                    )
+                }
             }
         }
     }

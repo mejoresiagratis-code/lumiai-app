@@ -64,26 +64,32 @@ class SoundAlertService : Service() {
             this, android.Manifest.permission.RECORD_AUDIO
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         if (!micGranted) {
+            listeningState.setStopReason("RECORD_AUDIO no concedido")
             stopSelf()
             return
         }
-        runCatching { startInForeground() }.onFailure {
+        runCatching { startInForeground() }.onFailure { e ->
             // Cinturon para OEMs con politicas FGS propias: parada suave, jamas crash.
+            listeningState.setStopReason("startForeground: ${e.javaClass.simpleName}: ${e.message}")
             stopSelf()
             return
         }
-        // Escucha REALMENTE arrancada (servicio vivo en primer plano): la pantalla deja
-        // de fiarse de un flag local optimista y refleja esto (QA 13-ago).
+        // Escucha REALMENTE arrancada: limpiar cualquier motivo de fallo anterior y
+        // reflejarlo (QA 13-ago). Si algo la mata despues, el motivo quedara registrado
+        // y la pantalla lo mostrara — diagnostico en el propio movil, no a ciegas.
+        listeningState.setStopReason(null)
         listeningState.setListening(true)
-        // Apagado EXTERNO (boton "Desactivar" del sistema) durante un destello activo
-        // (QA 13-ago). stopSelf() dispara la limpieza normal del servicio.
-        scope.launch { torch.externalOffEvents.collect { stopSelf() } }
+        // Apagado EXTERNO de la linterna (boton "Desactivar" del sistema): corta SOLO el
+        // destello en curso, NO la escucha entera — apagar la luz no es querer dejar de
+        // escuchar (correccion de diseno, QA 14-ago: el stopSelf() anterior era un
+        // candidato a matar el servicio entero por un evento que no lo justificaba).
+        scope.launch { torch.externalOffEvents.collect { flashJob?.cancel() } }
         scope.launch {
             // Cinturon de seguridad (QA 13-ago): SIN esto, cualquier fallo aqui dentro
             // (config corrupta, MediaPipe, lo que sea) tumbaba TODA LA APP — un
             // SupervisorJob sin manejador de excepciones no absorbe fallos de sus hijos,
-            // solo evita que se cancelen entre si. Ahora degrada: se para el servicio,
-            // la app sigue viva y la pantalla vuelve sola a "Iniciar".
+            // solo evita que se cancelen entre si. Ahora degrada CON DIAGNOSTICO: el
+            // motivo exacto (clase + mensaje de la excepcion) queda visible en pantalla.
             runCatching {
                 val config = configRepo.config.first()
                 currentConfig = config
@@ -97,7 +103,10 @@ class SoundAlertService : Service() {
                 )
                 this@SoundAlertService.classifier = classifier
                 classifier.start()
-            }.onFailure { stopSelf() }
+            }.onFailure { e ->
+                listeningState.setStopReason("clasificador: ${e.javaClass.simpleName}: ${e.message}")
+                stopSelf()
+            }
         }
     }
 

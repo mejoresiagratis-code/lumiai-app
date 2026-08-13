@@ -33,6 +33,11 @@
 # Alerta Sonora en release (QA 13/14-ago).
 -keep class com.google.mediapipe.** { *; }
 -dontwarn com.google.mediapipe.**
+# El runtime de protobuf-lite tambien entra en el baile de reflexion (mediapipe#6138
+# muestra fallos con clases protobuf ofuscadas tipo "j3.d"): mantenerlo entero es barato
+# (protobuf-lite es pequeno) y elimina la variable de una vez.
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
 -keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
     <fields>;
 }

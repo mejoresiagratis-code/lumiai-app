@@ -1076,3 +1076,30 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   usarlo (tocar el orbe en ese modo), no al abrir la app. Es el patrón que Android
   recomienda oficialmente: pedir permisos en contexto reduce denegaciones reflejas
   frente a pedirlos de golpe al arrancar sin que el usuario entienda para qué.
+
+### 2026-08-14 (lección #38 — diagnóstico en el dispositivo: se acabó adivinar a ciegas)
+- **Mandato de Pablo:** encontrar qué mata SoundAlertService al pulsar Iniciar (el botón
+  cambia y revierte AL INSTANTE) y arreglarlo de una vez sin romper nada. find-skills
+  ejecutado según protocolo: nada del ecosistema supera el listón de calidad para esto
+  (colecciones genéricas de prompts) — auditoría propia.
+- **Hechos verificados, no supuestos:** yamnet.tflite EXISTE (4,1 MB en assets); CI verde
+  en v0.9.22; el síntoma "cambia y revierte" acota los sospechosos a EXACTAMENTE dos
+  caminos (los únicos stopSelf posteriores a setListening(true)): el colector de
+  apagado externo y el onFailure del clasificador.
+- **Corrección de diseño que elimina al sospechoso ①:** el colector de apagado externo
+  hacía stopSelf() — matar la ESCUCHA entera porque el sistema apagó la LINTERNA era
+  desproporcionado (apagar la luz ≠ querer dejar de escuchar) y encima era un candidato
+  a matar el servicio por eventos espurios. Ahora solo cancela flashJob (el destello en
+  curso). Con esto, el ÚNICO camino que puede matar un servicio ya arrancado es el fallo
+  del clasificador.
+- **Observabilidad que cierra el diagnóstico:** `stopReason` en SoundAlertStateRepository
+  — cada muerte del servicio registra su motivo EXACTO (permiso / startForeground /
+  clasificador, con clase y mensaje de la excepción) y la pantalla lo muestra bajo el
+  botón Iniciar en color de error. El próximo test de Pablo YA NO es una adivinanza: si
+  revierte, el móvil dice literalmente qué lo mató. Un arranque exitoso limpia el motivo.
+- **Refuerzo R8 adicional:** `-keep com.google.protobuf.**` — mediapipe#6138 muestra
+  clases protobuf ofuscadas ("j3.d") en el crash; protobuf-lite es pequeño, mantenerlo
+  entero elimina esa variable de una vez.
+- **Nota:** el fix de MediaPipe de v0.9.22 (lección #37) podría YA haber resuelto el
+  fallo — Pablo aún no lo había probado al reportar. v0.9.23 lleva ambas cosas: el
+  posible fix Y el diagnóstico que lo confirma o desmiente en una sola prueba.

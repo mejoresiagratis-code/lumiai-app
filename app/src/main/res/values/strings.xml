@@ -291,4 +291,5 @@
     <string name="mode_locked_ai_sign_in">Create an account to try Pro for free (2 ads = 1 hour) or subscribe.</string>
     <string name="mode_locked_ai_verify">Verify your email to try Pro for free or subscribe.</string>
     <string name="mode_unlock_verify_email">Verify email</string>
+    <string name="sa_start_failed">Couldn\'t start listening — %1$s</string>
 </resources>

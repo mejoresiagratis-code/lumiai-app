@@ -291,4 +291,5 @@
     <string name="mode_locked_ai_sign_in">Crea una cuenta para probar Pro gratis (2 anuncios = 1 hora) o suscríbete.</string>
     <string name="mode_locked_ai_verify">Verifica tu correo para probar Pro gratis o suscríbete.</string>
     <string name="mode_unlock_verify_email">Verificar correo</string>
+    <string name="sa_start_failed">No se pudo iniciar la escucha — %1$s</string>
 </resources>

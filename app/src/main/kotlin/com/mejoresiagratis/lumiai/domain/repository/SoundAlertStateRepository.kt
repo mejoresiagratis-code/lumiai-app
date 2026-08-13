@@ -12,4 +12,13 @@ import kotlinx.coroutines.flow.StateFlow
 interface SoundAlertStateRepository {
     val listening: StateFlow<Boolean>
     fun setListening(value: Boolean)
+
+    /**
+     * Motivo de la ULTIMA parada inesperada del servicio, o null si no la hubo (o el
+     * servicio arranco bien despues). La pantalla lo muestra: convierte cada fallo en
+     * un diagnostico legible en el propio movil en vez de una adivinanza a ciegas
+     * (QA 14-ago — "el boton revierte al instante y nunca se sabe por que").
+     */
+    val stopReason: StateFlow<String?>
+    fun setStopReason(value: String?)
 }
