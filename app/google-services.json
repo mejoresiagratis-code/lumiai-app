@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1077957117267-d9b0q4he72nbhv93km1kgqcu93str3ki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mejoresiagratis.lumiai",
+            "certificate_hash": "a10a832fa41c0fc5c8ec38c96478cb67b6df799a"
+          }
+        },
+        {
           "client_id": "1077957117267-p2hh49kbfurm6rvbl6u3kqu2mvcg9fhi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

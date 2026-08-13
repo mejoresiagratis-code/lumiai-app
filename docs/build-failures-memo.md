@@ -862,3 +862,21 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   `AuthScreen`'s catch de `CredentialManager` y desde el `token == null`. Actualizado el
   `when` de `accountErrorMessage` en SettingsScreen (Kotlin habría marcado no-exhaustivo
   sin este caso — el compilador protegió aquí).
+
+### 2026-08-13 (fix real de Google Sign-In — hash del keystore de release faltante)
+- **Diagnóstico correcto tras corregir mi propio error de verificación (había mirado el
+  campo `client_info.android_client_info.certificate_hash`, que es secundario/legacy;
+  el que valida Google Sign-In es `oauth_client[].android_info.certificate_hash`):**
+  Firebase solo tenía registrado el SHA-1 del keystore de DEBUG
+  (`31:4B:32:98:8A:71:97:2D:6A:04:38:08:04:9B:54:8E:C4:7F:54:63`). El keystore de
+  RELEASE, generado la noche del Q1, tiene un SHA-1 distinto por definición
+  (`A1:0A:83:2F:A4:1C:0F:C5:C8:EC:38:C9:64:78:CB:67:B6:DF:79:9A`) y no estaba
+  registrado — cualquier `idToken` de Google Sign-In pedido desde el APK de release
+  era rechazado. Confirmado con la salida de `keytool -list -v` de Pablo.
+- **Fix:** Pablo añadió la segunda huella en Firebase Console sin borrar la de debug
+  (coexisten dos `oauth_client` de `client_type: 1`, uno por certificado). `google-services.json`
+  actualizado en el repo. El `web client_id` (type 3, el que usa `AuthViewModel.webClientId`)
+  no cambió — cero cambios de código necesarios.
+- **Lección de proceso:** verificar el campo EXACTO que consume el flujo en cuestión, no
+  el primero con nombre similar. `client_info.android_client_info.certificate_hash` está
+  casi siempre vacío en los JSON reales — no es el que usa Credential Manager/Google Sign-In.
