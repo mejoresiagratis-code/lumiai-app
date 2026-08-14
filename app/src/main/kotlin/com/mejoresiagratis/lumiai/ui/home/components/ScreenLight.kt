@@ -17,11 +17,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -32,6 +40,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -52,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -118,7 +128,6 @@ fun ScreenLight(
 ) {
     val cd = stringResource(R.string.screen_exit_cd)
     val lockCd = stringResource(R.string.screen_lock_cd)
-    val lockedTitle = stringResource(R.string.screen_locked_title)
     val lockedHint = stringResource(R.string.screen_locked_hint)
     val lockedCd = stringResource(R.string.screen_locked_cd)
     val window = (LocalContext.current as? Activity)?.window
@@ -174,7 +183,12 @@ fun ScreenLight(
     }
 
     val hue = remember(argb) { FloatArray(3).also { AndroidColor.colorToHSV(argb, it) }[0] }
-    val onColor = if (intimateEnabled || AndroidColor.luminance(argb) > 0.5f) Color.White else Color.Black
+    // Contraste AUTOMÁTICO (QA 14-ago): la línea anterior estaba INVERTIDA — fondo claro
+    // elegía texto BLANCO (invisible sobre blanco, la captura 1 de Pablo). Ahora: luminancia
+    // EFECTIVA (color × brillo) alta → chrome negro; baja → blanco. Íntimo siempre blanco
+    // (atmósferas oscuras por diseño).
+    val effectiveLuminance = AndroidColor.luminance(argb) * effectiveBrightness
+    val onColor = if (!intimateEnabled && effectiveLuminance > 0.55f) Color.Black else Color.White
     // Panel de ajustes ocultable: colapsado deja solo el asa superior para reabrirlo y
     // maximiza la superficie de luz; tocar fuera del panel sigue saliendo del modo.
     var panelExpanded by remember { mutableStateOf(true) }
@@ -184,6 +198,16 @@ fun ScreenLight(
     // Activity, dejando el modo bloqueado con un overlay blanco que tapaba el panel entero y
     // sin forma evidente de salir. La clave `autoLockScreen` fuerza reevaluar al reentrar.)
     var locked by remember(autoLockScreen) { mutableStateOf(autoLockScreen) }
+    // Pastilla transitoria al tocar estando bloqueado: sustituye al velo oscuro a pantalla
+    // completa (oscurecía justo la luz que el modo quiere dar — decisión aprobada en la
+    // maqueta, 14-ago). Se esconde sola a los 2,5 s.
+    var lockedPillVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(lockedPillVisible) {
+        if (lockedPillVisible) {
+            kotlinx.coroutines.delay(2500)
+            lockedPillVisible = false
+        }
+    }
 
     // --- Animaciones del Modo Íntimo (independientes del brillo de ventana) ---
     val transition = rememberInfiniteTransition(label = "intimateGlow")
@@ -240,21 +264,27 @@ fun ScreenLight(
                     Brush.verticalGradient(listOf(Color(argb), Color(argb)))
                 }
             )
-            .clickable(
+            .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onTap
+                // Desbloqueada: tocar fuera apaga (comportamiento de siempre).
+                // Bloqueada: tocar muestra la pista transitoria; MANTENER pulsado en
+                // cualquier punto desbloquea (aprobado en la maqueta, 14-ago).
+                onClick = { if (locked) lockedPillVisible = true else onTap() },
+                onLongClick = { if (locked) { locked = false; lockedPillVisible = false } }
             )
-            .semantics { contentDescription = cd }
+            .semantics { contentDescription = if (locked) lockedCd else cd }
     ) {
-        Text(
-            text = stringResource(R.string.screen_tap_off),
-            style = MaterialTheme.typography.bodyMedium,
-            color = onColor.copy(alpha = 0.7f),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = LumiSpacing.xxl)
-        )
+        if (!locked) {
+            Text(
+                text = stringResource(R.string.screen_tap_off),
+                style = MaterialTheme.typography.bodyMedium,
+                color = onColor.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = LumiSpacing.xxl)
+            )
+        }
 
         if (!locked) {
             Box(
@@ -280,241 +310,262 @@ fun ScreenLight(
             }
         }
 
-        Surface(
-            color = Color(0xF00B0E13),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        ) {
-            Column(
+        // Zona de gesto INVISIBLE en el borde inferior (solo con la hoja plegada y sin
+        // bloquear): deslizar hacia arriba despliega los ajustes. Lleva semántica de botón
+        // para que TalkBack pueda abrirla sin el gesto (aprobado en la maqueta, 14-ago).
+        if (!locked && !panelExpanded) {
+            val openLabel = stringResource(R.string.a11y_panel_toggle)
+            Box(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    // Absorbe toques para no apagar al ajustar.
+                    .heightIn(min = 56.dp)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount < -12f) panelExpanded = true
+                        }
+                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
-                    .padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md)
-                    .animateContentSize()
+                        indication = null
+                    ) { panelExpanded = true }
+                    .semantics {
+                        contentDescription = openLabel
+                        role = Role.Button
+                    }
+            )
+        }
+
+        // Hoja de ajustes: OCULTA del todo al plegar (cero píxeles — antes dejaba una
+        // franja con el asa). Se despliega con el gesto de arriba; el asa se arrastra
+        // hacia abajo (o se toca) para plegarla. Bloquear la esconde también.
+        AnimatedVisibility(
+            visible = panelExpanded && !locked,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Surface(
+                color = Color(0xF00B0E13),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Asa: toca para plegar/desplegar el panel de ajustes.
-                val panelToggleLabel = stringResource(R.string.a11y_panel_toggle)
-                val panelStateLabel = stringResource(
-                    if (panelExpanded) R.string.a11y_panel_expanded else R.string.a11y_panel_collapsed
-                )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp)
+                        .navigationBarsPadding()
+                        // Absorbe toques para no apagar al ajustar.
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { panelExpanded = !panelExpanded }
-                        .semantics {
-                            contentDescription = panelToggleLabel
-                            role = Role.Button
-                            stateDescription = panelStateLabel
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                            indication = null,
+                            onClick = {}
+                        )
+                        .padding(horizontal = LumiSpacing.lg)
+                        .padding(top = LumiSpacing.xs, bottom = LumiSpacing.lg)
+                        .animateContentSize()
                 ) {
+                    // Asa: arrastrar hacia abajo (o tocar) pliega la hoja por completo.
+                    val panelToggleLabel = stringResource(R.string.a11y_panel_toggle)
+                    val panelStateLabel = stringResource(R.string.a11y_panel_expanded)
                     Box(
                         modifier = Modifier
-                            .padding(vertical = LumiSpacing.sm)
-                            .size(width = 44.dp, height = 5.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.5f))
-                    )
-                    if (!panelExpanded) {
-                        Text(
-                            text = stringResource(R.string.screen_panel_expand),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(bottom = LumiSpacing.xs)
+                            .fillMaxWidth()
+                            .heightIn(min = 44.dp)
+                            .pointerInput(Unit) {
+                                detectVerticalDragGestures { _, dragAmount ->
+                                    if (dragAmount > 12f) panelExpanded = false
+                                }
+                            }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { panelExpanded = false }
+                            .semantics {
+                                contentDescription = panelToggleLabel
+                                role = Role.Button
+                                stateDescription = panelStateLabel
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 44.dp, height = 5.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.5f))
                         )
                     }
-                }
-                if (panelExpanded) {
+
                     Text(
                         text = stringResource(R.string.screen_panel_title),
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color.White
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = LumiSpacing.sm)
                     )
 
-                    // Chip "Modo Íntimo": alterna entre color sólido clásico y atmósferas animadas.
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = LumiSpacing.sm),
-                        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-                    ) {
-                        val intimateLabel = stringResource(R.string.screen_intimate_toggle)
-                        val intimateOnLabel = stringResource(R.string.a11y_state_on)
-                        val intimateOffLabel = stringResource(R.string.a11y_state_off)
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(
-                                    if (intimateEnabled) Color.White.copy(alpha = 0.20f)
-                                    else Color.White.copy(alpha = 0.06f)
-                                )
-                                .border(
-                                    width = if (intimateEnabled) 1.5.dp else 1.dp,
-                                    color = if (intimateEnabled) Color.White else Color.White.copy(alpha = 0.25f),
-                                    shape = RoundedCornerShape(50)
-                                )
-                                .clickable { onIntimateToggle(!intimateEnabled) }
-                                .semantics {
-                                    role = Role.Checkbox
-                                    stateDescription = if (intimateEnabled) intimateOnLabel else intimateOffLabel
-                                }
-                                .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
-                        ) {
-                            Text(
-                                text = intimateLabel,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = Color.White
+                    if (intimateEnabled) {
+                        // Íntimo activo: sus atmósferas sustituyen al color sólido — solo
+                        // su sección (chip para salir + controles propios).
+                        SheetSection(title = null, showDivider = false) {
+                            IntimateChip(
+                                enabled = true,
+                                onToggle = { onIntimateToggle(false) }
+                            )
+                            IntimateControls(
+                                atmosphere = intimateAtmosphere,
+                                animation = intimateAnimation,
+                                sleepMinutes = intimateSleepMinutes,
+                                remainingSec = remainingSec,
+                                brightness = brightness,
+                                onAtmosphereChange = onAtmosphereChange,
+                                onAnimationChange = onAnimationChange,
+                                onSleepMinutesChange = onSleepMinutesChange,
+                                onBrightnessChange = onBrightnessChange
                             )
                         }
-                    }
-
-                    if (intimateEnabled) {
-                        IntimateControls(
-                            atmosphere = intimateAtmosphere,
-                            animation = intimateAnimation,
-                            sleepMinutes = intimateSleepMinutes,
-                            remainingSec = remainingSec,
-                            brightness = brightness,
-                            onAtmosphereChange = onAtmosphereChange,
-                            onAnimationChange = onAnimationChange,
-                            onSleepMinutesChange = onSleepMinutesChange,
-                            onBrightnessChange = onBrightnessChange
-                        )
                     } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                                .padding(top = LumiSpacing.sm),
-                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                        // ── Sección 1: Preajustes (chips con nombre + círculos de color) ──
+                        SheetSection(
+                            title = stringResource(R.string.screen_section_presets),
+                            showDivider = false
                         ) {
-                            SCREEN_NAMED_PRESETS.forEach { preset ->
-                                val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .background(
-                                            if (sel) Color.White.copy(alpha = 0.18f)
-                                            else Color.White.copy(alpha = 0.06f)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                            ) {
+                                SCREEN_NAMED_PRESETS.forEach { preset ->
+                                    val sel = preset.argb == argb && abs(brightness - preset.brightness) < 0.02f
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(50))
+                                            .background(
+                                                if (sel) Color.White.copy(alpha = 0.18f)
+                                                else Color.White.copy(alpha = 0.06f)
+                                            )
+                                            .border(
+                                                width = if (sel) 1.5.dp else 1.dp,
+                                                color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
+                                                shape = RoundedCornerShape(50)
+                                            )
+                                            .clickable {
+                                                onColorChange(preset.argb)
+                                                onBrightnessChange(preset.brightness)
+                                            }
+                                            .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+                                    ) {
+                                        Text(
+                                            text = stringResource(preset.labelRes),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = Color.White
                                         )
-                                        .border(
-                                            width = if (sel) 1.5.dp else 1.dp,
-                                            color = if (sel) Color.White else Color.White.copy(alpha = 0.25f),
-                                            shape = RoundedCornerShape(50)
-                                        )
-                                        .clickable {
-                                            onColorChange(preset.argb)
-                                            onBrightnessChange(preset.brightness)
-                                        }
-                                        .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
-                                ) {
-                                    Text(
-                                        text = stringResource(preset.labelRes),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = Color.White
+                                    }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                            ) {
+                                SCREEN_PRESETS.forEach { preset ->
+                                    val selected = preset == argb
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(preset))
+                                            .border(
+                                                width = if (selected) 3.dp else 1.dp,
+                                                color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
+                                                shape = CircleShape
+                                            )
+                                            .clickable { onColorChange(preset) }
                                     )
                                 }
                             }
                         }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = LumiSpacing.md),
-                            horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
-                        ) {
-                            SCREEN_PRESETS.forEach { preset ->
-                                val selected = preset == argb
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(preset))
-                                        .border(
-                                            width = if (selected) 3.dp else 1.dp,
-                                            color = if (selected) Color.White else Color.White.copy(alpha = 0.25f),
-                                            shape = CircleShape
-                                        )
-                                        .clickable { onColorChange(preset) }
-                                )
-                            }
+
+                        // ── Sección 2: Color personalizado (pista con el ESPECTRO completo) ──
+                        SheetSection(title = stringResource(R.string.screen_section_custom)) {
+                            val colorLabel = stringResource(R.string.screen_color)
+                            Slider(
+                                value = hue,
+                                onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
+                                valueRange = 0f..360f,
+                                track = { _ ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 14.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        Color.Red, Color.Yellow, Color.Green,
+                                                        Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+                                                    )
+                                                )
+                                            )
+                                    )
+                                },
+                                modifier = Modifier.semantics { contentDescription = colorLabel }
+                            )
                         }
-                        val colorLabel = stringResource(R.string.screen_color)
-                        Text(
-                            text = colorLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White
-                        )
-                        Slider(
-                            value = hue,
-                            onValueChange = { h -> onColorChange(Color.hsv(h, 1f, 1f).toArgb()) },
-                            valueRange = 0f..360f,
-                            modifier = Modifier.semantics { contentDescription = colorLabel }
-                        )
-                        val brightnessLabel = stringResource(R.string.a11y_brightness)
-                        Text(
-                            text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White
-                        )
-                        Slider(
-                            value = brightness,
-                            onValueChange = onBrightnessChange,
-                            valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
-                            modifier = Modifier.semantics { contentDescription = brightnessLabel }
-                        )
+
+                        // ── Sección 3: Brillo ──
+                        SheetSection(title = null) {
+                            val brightnessLabel = stringResource(R.string.a11y_brightness)
+                            Text(
+                                text = stringResource(R.string.screen_brightness, (brightness * 100).toInt()),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
+                            Slider(
+                                value = brightness,
+                                onValueChange = onBrightnessChange,
+                                valueRange = FlashSettings.MIN_SCREEN_BRIGHTNESS..FlashSettings.MAX_SCREEN_BRIGHTNESS,
+                                modifier = Modifier.semantics { contentDescription = brightnessLabel }
+                            )
+                        }
+
+                        // ── Sección 4: Modo íntimo ──
+                        SheetSection(title = null) {
+                            IntimateChip(
+                                enabled = false,
+                                onToggle = { onIntimateToggle(true) }
+                            )
+                        }
                     }
                 }
             }
         }
 
-        if (locked) {
-            // Velo semitransparente oscuro (no opaco al color de pantalla) para que el candado y
-            // el texto "mantén pulsado para desbloquear" SIEMPRE se lean, sea cual sea el color.
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .combinedClickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {},
-                        onLongClick = { locked = false }
-                    )
-                    .semantics { contentDescription = lockedCd },
-                contentAlignment = Alignment.Center
+        // Pastilla transitoria del bloqueo (sustituye al velo oscuro a pantalla completa,
+        // que oscurecía la luz — aprobado en la maqueta, 14-ago).
+        AnimatedVisibility(
+            visible = locked && lockedPillVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Surface(
+                color = Color(0xD1141419),
+                shape = RoundedCornerShape(24.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                Row(
+                    modifier = Modifier.padding(horizontal = LumiSpacing.lg, vertical = LumiSpacing.md),
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_lock),
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Text(
-                        text = lockedTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White
+                        modifier = Modifier.size(18.dp)
                     )
                     Text(
                         text = lockedHint,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = Color.White
                     )
                 }
             }
@@ -528,6 +579,74 @@ fun ScreenLight(
                     .background(Color.Black.copy(alpha = fadeAlpha))
             )
         }
+    }
+}
+
+/**
+ * Sección de la hoja de ajustes con ritmo vertical CONSISTENTE (mandato de Pablo, 14-ago):
+ * separador superior (salvo la primera), título opcional, y espaciado uniforme entre los
+ * bloques internos — nada pegado, nada superpuesto.
+ */
+@Composable
+private fun SheetSection(
+    title: String?,
+    showDivider: Boolean = true,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (showDivider) {
+            HorizontalDivider(
+                color = Color.White.copy(alpha = 0.09f),
+                modifier = Modifier.padding(vertical = LumiSpacing.md)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(LumiSpacing.sm))
+        }
+        if (title != null) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color(0xFF9AA3B2),
+                modifier = Modifier.padding(bottom = LumiSpacing.sm)
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+        ) { content() }
+    }
+}
+
+/** Chip del Modo Íntimo (extraído para usarse igual en ambas ramas de la hoja). */
+@Composable
+private fun IntimateChip(enabled: Boolean, onToggle: () -> Unit) {
+    val intimateLabel = stringResource(R.string.screen_intimate_toggle)
+    val intimateOnLabel = stringResource(R.string.a11y_state_on)
+    val intimateOffLabel = stringResource(R.string.a11y_state_off)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(
+                if (enabled) Color.White.copy(alpha = 0.20f)
+                else Color.White.copy(alpha = 0.06f)
+            )
+            .border(
+                width = if (enabled) 1.5.dp else 1.dp,
+                color = if (enabled) Color.White else Color.White.copy(alpha = 0.25f),
+                shape = RoundedCornerShape(50)
+            )
+            .clickable { onToggle() }
+            .semantics {
+                role = Role.Checkbox
+                stateDescription = if (enabled) intimateOnLabel else intimateOffLabel
+            }
+            .padding(horizontal = LumiSpacing.md, vertical = LumiSpacing.sm)
+    ) {
+        Text(
+            text = intimateLabel,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White
+        )
     }
 }
 

@@ -294,4 +294,6 @@
     <string name="sa_start_failed">Couldn\'t start listening — %1$s</string>
     <string name="sa_live_window">Hearing: %1$s</string>
     <string name="sa_last_detection">Last alert: %1$s</string>
+    <string name="screen_section_presets">Presets</string>
+    <string name="screen_section_custom">Custom color</string>
 </resources>

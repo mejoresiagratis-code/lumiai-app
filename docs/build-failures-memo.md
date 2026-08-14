@@ -1209,3 +1209,27 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   el alivio (0.4 vs 0.5→efectivo 0.35; 0.5 vs BAJA 0.7→efectivo 0.49) — migrados a
   DESPERTADor (sostenida, sin alivio) ANTES de empujar, + 1 test nuevo que fija el
   alivio (transitoria dispara a 0.4 donde la sostenida no). CI verde a la primera esperado.
+
+### 2026-08-14 (modo Pantalla v2 — rediseño aprobado en maqueta, 4 mejoras + bug de contraste)
+- **Flujo respetado:** maqueta HTML interactiva primero → "Dale" de Pablo (con mandato
+  explícito de márgenes/paddings verticales consistentes, nada superpuesto) → Kotlin.
+- **① BUG REAL de contraste, un carácter:** `luminance(argb) > 0.5f → Color.White` estaba
+  INVERTIDO — fondo claro elegía texto BLANCO (invisible sobre blanco, captura de Pablo).
+  Ahora: luminancia EFECTIVA (color × brillo) > 0.55 → chrome negro; si no, blanco.
+- **② Bloqueo sin velo:** bloquear esconde TODO (aviso, candado, hoja); tocar muestra una
+  pastilla transitoria ("mantén pulsado para desbloquear", 2,5 s); mantener pulsado en
+  cualquier punto desbloquea. El velo negro 55% a pantalla completa (oscurecía justo la
+  luz que el modo da) se elimina — decisión aprobada explícitamente en la maqueta.
+- **③ Hoja de cero píxeles:** plegada no existe (antes dejaba franja con asa). Gesto de
+  deslizar ↑ desde el borde inferior la abre (solo desbloqueada); asa con arrastre ↓ o
+  toque la pliega. Zona de gesto invisible con semántica de botón (TalkBack la abre sin
+  gesto). AnimatedVisibility slide+fade.
+- **④ Secciones con ritmo vertical:** `SheetSection` (separador + título opcional +
+  spacedBy(md) interno) — Preajustes / Color personalizado / Brillo / Modo íntimo.
+  Slider de tono con la pista pintando el ESPECTRO completo (track lambda de M3 +
+  Brush.horizontalGradient). `IntimateChip` extraído para ambas ramas.
+- **Lección de empalme:** al usar un marcador de texto como ancla de fin de bloque y
+  luego borrar el bloque original, el ancla queda COLGANTE (llaves 124/123). Verificar
+  balance inmediatamente tras cada reemplazo estructural grande, no solo al final.
+- 2 strings nuevas EN/ES (secciones). `screen_locked_title`/`screen_panel_expand` quedan
+  definidas sin uso (inofensivo; el auditor exige usadas⊆definidas, no al revés).
