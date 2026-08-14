@@ -128,8 +128,11 @@ class MediaPipeSoundClassifier(
         private const val EXPECTED_INPUT_LENGTH = 0.975f
         private const val DEFAULT_OVERLAP = 2
         private const val MAX_RESULTS = 5
-        // Piso bajo; el umbral real lo aplica SoundDetectionEngine por categoria (min 0.3).
-        private const val MIN_SCORE = 0.3f
+        // Piso de ENTRADA, no de alerta: el umbral real lo aplica SoundDetectionEngine
+        // por categoria. Bajado 0.3 -> 0.15 (QA 14-ago): un golpe de ~0.2 s dentro de la
+        // ventana de ~1 s llega con el score DILUIDO y el piso 0.3 lo descartaba antes
+        // de que el motor (ni la pantalla de "Oyendo") pudiera verlo siquiera.
+        private const val MIN_SCORE = 0.15f
         private const val REQUIRE_INPUT_BUFFER_SIZE = SAMPLING_RATE_IN_HZ * EXPECTED_INPUT_LENGTH
         private const val BUFFER_SIZE_FACTOR = 2
         private val BUFFER_SIZE_IN_BYTES =

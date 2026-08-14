@@ -37,12 +37,21 @@ class SoundDetectionEngineTest {
     ) = SoundDetectionEngine(config, debounceWindows = debounce, cooldownMs = cooldown)
 
     @Test
-    fun `por debajo del umbral nunca dispara`() {
+    fun `por debajo del umbral nunca dispara (categoria sostenida)`() {
+        // DESPERTADOR (sostenido, sin alivio): 0.4 < umbral MEDIA 0.5, nunca dispara.
         val e = engine()
-        // TIMBRE umbral MEDIA = 0.5
         repeat(5) { i ->
-            assertTrue(e.onWindow(mapOf("Doorbell" to 0.4f), nowMs = i * 1000L).isEmpty())
+            assertTrue(e.onWindow(mapOf("Alarm clock" to 0.4f), nowMs = i * 1000L).isEmpty())
         }
+    }
+
+    @Test
+    fun `un transitorio dispara con score aliviado que a una sostenida no le bastaria`() {
+        // Alivio del 30% para transitorios (QA 14-ago): un golpe de ~0.2 s llega con el
+        // score diluido dentro de la ventana de ~1 s. TIMBRE umbral MEDIA 0.5 ->
+        // efectivo 0.35: un 0.4 SI dispara (arriba, la sostenida con 0.4 no).
+        val e = engine()
+        assertEquals(listOf(SoundCategory.TIMBRE), e.onWindow(mapOf("Doorbell" to 0.4f), 0L))
     }
 
     @Test
@@ -99,15 +108,16 @@ class SoundDetectionEngineTest {
     }
 
     @Test
-    fun `mas sensibilidad baja el umbral necesario`() {
+    fun `mas sensibilidad baja el umbral necesario (categoria sostenida)`() {
+        // DESPERTADOR (sostenido, sin alivio) con debounce=1 para aislar el umbral.
         // Con sensibilidad BAJA (umbral 0.7) un 0.5 no dispara...
-        val baja = SoundAlertConfig().withSensitivity(SoundCategory.TIMBRE, Sensitivity.BAJA)
+        val baja = SoundAlertConfig().withSensitivity(SoundCategory.DESPERTADOR, Sensitivity.BAJA)
         val e1 = engine(config = baja, debounce = 1)
-        assertTrue(e1.onWindow(mapOf("Doorbell" to 0.5f), 0L).isEmpty())
+        assertTrue(e1.onWindow(mapOf("Alarm clock" to 0.5f), 0L).isEmpty())
         // ...pero con sensibilidad ALTA (umbral 0.3) si.
-        val alta = SoundAlertConfig().withSensitivity(SoundCategory.TIMBRE, Sensitivity.ALTA)
+        val alta = SoundAlertConfig().withSensitivity(SoundCategory.DESPERTADOR, Sensitivity.ALTA)
         val e2 = engine(config = alta, debounce = 1)
-        assertEquals(listOf(SoundCategory.TIMBRE), e2.onWindow(mapOf("Doorbell" to 0.5f), 0L))
+        assertEquals(listOf(SoundCategory.DESPERTADOR), e2.onWindow(mapOf("Alarm clock" to 0.5f), 0L))
     }
 
     @Test

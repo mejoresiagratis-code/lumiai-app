@@ -27,6 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -91,25 +92,32 @@ class SoundAlertService : Service() {
             // solo evita que se cancelen entre si. Ahora degrada CON DIAGNOSTICO: el
             // motivo exacto (clase + mensaje de la excepcion) queda visible en pantalla.
             runCatching {
-                val config = configRepo.config.first()
-                currentConfig = config
-                val engine = SoundDetectionEngine(config)
-                val classifier = MediaPipeSoundClassifier(
-                    context = applicationContext,
-                    engine = engine,
-                    allowedLabels = config.activeLabels().toList(),
-                    onDetected = { category -> onDetected(category) },
-                    onError = { /* sin modelo o sin permiso: sigue sin avisos */ },
-                    onWindow = { scores ->
-                        // Top-3 de la ventana, legible en pantalla: decide en una prueba
-                        // si el clasificador oye (scores fluyen) o los umbrales bloquean.
-                        val top = scores.entries.sortedByDescending { it.value }.take(3)
-                            .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
-                        listeningState.setLastWindow(top.ifEmpty { null })
-                    }
-                )
-                this@SoundAlertService.classifier = classifier
-                classifier.start()
+                // CONFIG EN VIVO (QA 14-ago, captura de Pablo: con Telefono desactivado
+                // seguia oyendo "Telephone" — la config se congelaba en un .first() al
+                // arrancar y los interruptores tocados DURANTE la escucha no llegaban al
+                // clasificador; activar Golpes en marcha no metia "Knock" en la allowlist).
+                // Cada cambio de config reconstruye clasificador+motor con la foto nueva.
+                configRepo.config.collectLatest { config ->
+                    currentConfig = config
+                    this@SoundAlertService.classifier?.stop()
+                    val engine = SoundDetectionEngine(config)
+                    val classifier = MediaPipeSoundClassifier(
+                        context = applicationContext,
+                        engine = engine,
+                        allowedLabels = config.activeLabels().toList(),
+                        onDetected = { category -> onDetected(category) },
+                        onError = { /* sin modelo o sin permiso: sigue sin avisos */ },
+                        onWindow = { scores ->
+                            // Top-3 de la ventana, legible en pantalla: decide en una prueba
+                            // si el clasificador oye (scores fluyen) o los umbrales bloquean.
+                            val top = scores.entries.sortedByDescending { it.value }.take(3)
+                                .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
+                            listeningState.setLastWindow(top.ifEmpty { null })
+                        }
+                    )
+                    this@SoundAlertService.classifier = classifier
+                    classifier.start()
+                }
             }.onFailure { e ->
                 listeningState.setStopReason("clasificador: ${describeThrowable(e)}")
                 stopSelf()

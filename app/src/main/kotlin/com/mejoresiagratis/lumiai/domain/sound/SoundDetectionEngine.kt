@@ -41,7 +41,12 @@ class SoundDetectionEngine(
                 continue
             }
             val score = best[category] ?: 0f
-            if (score >= config.threshold(category)) {
+            // Los transitorios llegan con el score DILUIDO (un golpe de ~0.2 s pesa poco
+            // dentro de una ventana de ~1 s): su umbral efectivo se alivia un 30%. El
+            // cooldown sigue conteniendo falsos positivos encadenados (QA 14-ago).
+            val effectiveThreshold = config.threshold(category) *
+                (if (category.transientSound) TRANSIENT_THRESHOLD_RELIEF else 1f)
+            if (score >= effectiveThreshold) {
                 val newStreak = (streak[category] ?: 0) + 1
                 streak[category] = newStreak
                 val last = lastFiredAtMs[category]
@@ -59,6 +64,10 @@ class SoundDetectionEngine(
             }
         }
         return fired
+    }
+
+    private companion object {
+        const val TRANSIENT_THRESHOLD_RELIEF = 0.7f
     }
 
     /** Reinicia el estado interno (al parar o reconfigurar la escucha). */

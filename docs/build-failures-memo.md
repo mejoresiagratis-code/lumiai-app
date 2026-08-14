@@ -1188,3 +1188,24 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Tests de FlashEngine reescritos a la semántica real (2 reescritos, 1 de fallback
   eliminado por redundante). Barrido #41 aplicado: ningún otro test usa
   pulseOff/lastIntensity.
+
+### 2026-08-14 (lección #43 — la config congelada en .first(): los interruptores no llegaban al clasificador)
+- **Capturas de Pablo (la observabilidad paga por cuarta vez):** con Teléfono DESACTIVADO
+  la pantalla seguía mostrando "Oyendo: Telephone 0,80" — delator inequívoco: el servicio
+  tomaba UNA foto de la config (`configRepo.config.first()`) al arrancar y los toggles
+  tocados DURANTE la escucha jamás llegaban al clasificador. Activar "Golpes en la
+  puerta" en marcha no metía "Knock" en la allowlist → "no detecta nada", literal.
+- **Fix ①:** `collectLatest` sobre la config — cada cambio reconstruye clasificador+motor
+  con la foto nueva (stop del viejo primero; el rebuild de MediaPipe es ~100 ms, un
+  toggle = una escritura de DataStore = una emisión, sin necesidad de debounce).
+- **Fix ② (física del golpe):** un golpe dura ~0,2 s dentro de la ventana de ~1 s — su
+  score llega DILUIDO. El piso de ENTRADA del clasificador (MIN_SCORE 0.3) lo descartaba
+  antes de que el motor ni la pantalla lo vieran. Bajado a 0.15 (es piso de entrada, no
+  de alerta: el umbral real sigue en el motor por categoría).
+- **Fix ③:** alivio del 30% en el umbral efectivo de los TRANSITORIOS
+  (`TRANSIENT_THRESHOLD_RELIEF = 0.7f` en el motor) — misma física; el cooldown de 4 s
+  sigue conteniendo falsos positivos encadenados.
+- **Barrido #41 aplicado A PRIORI esta vez:** 2 tests de umbral quedaban invalidados por
+  el alivio (0.4 vs 0.5→efectivo 0.35; 0.5 vs BAJA 0.7→efectivo 0.49) — migrados a
+  DESPERTADor (sostenida, sin alivio) ANTES de empujar, + 1 test nuevo que fija el
+  alivio (transitoria dispara a 0.4 donde la sostenida no). CI verde a la primera esperado.
