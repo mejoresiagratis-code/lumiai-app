@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -260,28 +261,37 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
                         ) {
-                            Text(
-                                text = email ?: user?.uid.orEmpty(),
-                                style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (email != null) {
-                                if (user?.isEmailVerified == true) {
-                                    StatusPill(
-                                        iconRes = R.drawable.ic_check,
-                                        textRes = R.string.account_email_verified,
-                                        container = MaterialTheme.colorScheme.secondaryContainer,
-                                        onContainer = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                } else {
-                                    StatusPill(
-                                        iconRes = R.drawable.ic_info,
-                                        textRes = R.string.account_email_unverified,
-                                        container = MaterialTheme.colorScheme.errorContainer,
-                                        onContainer = MaterialTheme.colorScheme.onErrorContainer
+                            // Verificado = solo un check junto al correo (rediseño 14-ago);
+                            // el texto completo vive en la semantica para TalkBack. El estado
+                            // SIN verificar conserva su pill: es accionable y debe verse.
+                            val verifiedCd = stringResource(R.string.account_email_verified)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
+                            ) {
+                                Text(
+                                    text = email ?: user?.uid.orEmpty(),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                if (email != null && user?.isEmailVerified == true) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_check),
+                                        contentDescription = verifiedCd,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
+                            }
+                            if (email != null && user?.isEmailVerified != true) {
+                                StatusPill(
+                                    iconRes = R.drawable.ic_info,
+                                    textRes = R.string.account_email_unverified,
+                                    container = MaterialTheme.colorScheme.errorContainer,
+                                    onContainer = MaterialTheme.colorScheme.onErrorContainer
+                                )
                             }
                         }
                     }
@@ -310,26 +320,15 @@ fun SettingsScreen(
                         onClick = { accountViewModel.signOut() },
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) { Text(stringResource(R.string.account_sign_out)) }
-                    TextButton(
-                        onClick = { showDeleteConfirm = true },
-                        modifier = Modifier.heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.account_delete),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
 
-            // --- Datos de facturación: listo para Play Billing (Fase 5). Google procesa el
-            // cobro y emite el recibo; la app nunca ve ni guarda datos de tarjeta. ---
-            if (!isGuest) {
-                SettingsSection(R.string.billing_section) {
+                    // ── "Mis datos" (rediseño 14-ago): el perfil de facturacion vive DENTRO
+                    // de Cuenta como desplegable, y "Borrar cuenta" se muda a su interior —
+                    // accesible pero fuera del primer nivel, como toda accion destructiva. ──
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     val chev by animateFloatAsState(
                         targetValue = if (billingOpen) 180f else 0f,
                         animationSpec = LumiMotion.emphasized(),
-                        label = "billingChevron"
+                        label = "misDatosChevron"
                     )
                     Row(
                         modifier = Modifier
@@ -339,22 +338,12 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.billing_profile_row),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = stringResource(R.string.billing_profile_support),
-                                style = MaterialTheme.typography.bodySmall,
-                                lineHeight = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.misdatos_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
                         Icon(
                             painter = painterResource(R.drawable.ic_chevron_down),
                             contentDescription = null,
@@ -366,38 +355,40 @@ fun SettingsScreen(
                     }
                     AnimatedVisibility(visible = billingOpen) {
                         Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
-
-                    Text(
-                        text = stringResource(R.string.billing_explainer),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    PersistedTextField(
-                        persistedValue = billingProfile.fullName,
-                        onPersist = accountViewModel::setFullName,
-                        label = stringResource(R.string.billing_full_name)
-                    )
-                    PersistedTextField(
-                        persistedValue = billingProfile.billingCountry,
-                        onPersist = accountViewModel::setBillingCountry,
-                        label = stringResource(R.string.billing_country)
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            val i = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("https://play.google.com/store/account/subscriptions")
+                            Text(
+                                text = stringResource(R.string.billing_explainer),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            runCatching { context.startActivity(i) }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.billing_payment_method)) }
-                    Text(
-                        text = stringResource(R.string.billing_payment_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                
+                            PersistedTextField(
+                                persistedValue = billingProfile.fullName,
+                                onPersist = accountViewModel::setFullName,
+                                label = stringResource(R.string.billing_full_name)
+                            )
+                            PersistedTextField(
+                                persistedValue = billingProfile.billingCountry,
+                                onPersist = accountViewModel::setBillingCountry,
+                                label = stringResource(R.string.billing_country)
+                            )
+                            OutlinedButton(
+                                onClick = {
+                                    val i = Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse("https://play.google.com/store/account/subscriptions")
+                                    )
+                                    runCatching { context.startActivity(i) }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text(stringResource(R.string.billing_payment_method)) }
+                            TextButton(
+                                onClick = { showDeleteConfirm = true },
+                                modifier = Modifier.heightIn(min = 48.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.account_delete),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -406,35 +397,26 @@ fun SettingsScreen(
             // --- Tema ---
             // --- Acceso Pro temporal ---
             SettingsSection(R.string.pro_section) {
+                // UNA sola linea (rediseño 14-ago, principios del skill de copywriting:
+                // ultra-especifico, beneficio primero) — mata la triple redundancia anterior.
+                // La barra es el unico indicador de progreso; el boton lleva el contador.
                 Text(
                     text = if (proUi.active) {
                         stringResource(R.string.pro_remaining, formatProDuration(proUi.remainingMillis))
                     } else {
-                        stringResource(R.string.pro_explainer)
+                        stringResource(R.string.pro_one_liner)
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Medium
                 )
-                // Progreso persistente y visible hacia el desbloqueo: barra + mensaje dinámico.
-                // Solo se muestra cuando NO hay Pro activo (si ya está activo, el contador no aporta).
                 if (!proUi.active) {
                     val watched = proUi.adsWatched.coerceIn(0, proUi.adsPerGrant)
                     val total = proUi.adsPerGrant.coerceAtLeast(1)
-                    val oneLeft = watched == total - 1
                     LinearProgressIndicator(
                         progress = { watched.toFloat() / total.toFloat() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = LumiSpacing.xs)
-                    )
-                    Text(
-                        text = when {
-                            oneLeft -> stringResource(R.string.pro_progress_one_left)
-                            else -> stringResource(R.string.pro_progress_start, watched, total)
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = LumiSpacing.xs)
                     )
                 }
                 val activity = remember(context) { context.findActivity() }
@@ -446,7 +428,10 @@ fun SettingsScreen(
                 // Ver anuncios exige cuenta CON correo verificado (13-ago): sin eso, el
                 // boton se sustituye por el aviso correspondiente en vez de ofrecerlo.
                 if (!proUi.active && proUi.canTryPro) {
-                    Button(
+                    // Jerarquia de CTAs corregida (principio de producto que estaba
+                    // invertido en pantalla): tonal = anuncio/herramienta; el relleno
+                    // queda reservado para la conversion Pro de abajo.
+                    FilledTonalButton(
                         onClick = {
                             val act = activity
                             if (act != null) {
@@ -475,7 +460,11 @@ fun SettingsScreen(
                                 !proUi.adReady -> stringResource(R.string.pro_watch_ad_loading)
                                 proUi.adsWatched >= proUi.adsPerGrant - 1 ->
                                     stringResource(R.string.pro_watch_ad_last)
-                                else -> stringResource(R.string.pro_watch_ad)
+                                else -> stringResource(
+                                    R.string.pro_watch_ad_count,
+                                    proUi.adsWatched + 1,
+                                    proUi.adsPerGrant
+                                )
                             }
                         )
                     }
@@ -493,7 +482,7 @@ fun SettingsScreen(
                     )
                 }
                 if (!proUi.hasSubscription) {
-                    OutlinedButton(
+                    Button(
                         onClick = {
                             // Regla de producto: SUSCRIBIRSE exige cuenta con sesión iniciada
                             // (a diferencia del desbloqueo temporal por anuncios, que no la exige).
@@ -513,12 +502,39 @@ fun SettingsScreen(
                 }
             }
 
-            SettingsSection(R.string.theme_section) {
-                ThemeSegmented(selected = themeMode, onSelect = onSelectTheme)
+            // ── Herramientas Pro (rediseño 14-ago): Alerta Sonora + Letrero LED unidas —
+            // compartían patrón idéntico en dos secciones; ahora dos filas compactas,
+            // colocadas bajo Acceso Pro a propósito: son lo que el Pro desbloquea. ──
+            SettingsSection(R.string.tools_pro_section) {
+                ToolRow(
+                    titleRes = R.string.sa_title,
+                    descRes = R.string.sound_alert_explainer,
+                    buttonTextRes = if (proUi.proUnlocked) R.string.action_open else R.string.mode_unlock_watch_ad,
+                    onClick = { if (proUi.proUnlocked) onOpenSoundAlert() else showSoundAlertLocked = true }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ToolRow(
+                    titleRes = R.string.led_title,
+                    descRes = R.string.led_explainer,
+                    buttonTextRes = if (proUi.proUnlocked) R.string.action_open else R.string.mode_unlock_watch_ad,
+                    onClick = { if (proUi.proUnlocked) onOpenLedBanner() else showLedLocked = true }
+                )
             }
 
-            // --- Apariencia: color de acento ---
-            SettingsSection(R.string.accent_section) {
+            // ── Apariencia (rediseño 14-ago): Tema + Acento + Estilo, antes en 2
+            // secciones separadas, ahora una tarjeta con controles etiquetados. ──
+            SettingsSection(R.string.appearance_section) {
+                Text(
+                    text = stringResource(R.string.theme_section),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                ThemeSegmented(selected = themeMode, onSelect = onSelectTheme)
+                Text(
+                    text = stringResource(R.string.accent_section),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 AccentSwatches(
                     selected = accentColor,
                     hasAccount = !isGuest,
@@ -529,7 +545,7 @@ fun SettingsScreen(
                 )
                 Text(
                     text = stringResource(R.string.accent_style_label),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 AccentStyleSegmented(selected = accentStyle, onSelect = onSelectAccentStyle)
@@ -537,6 +553,38 @@ fun SettingsScreen(
 
             // --- Accesibilidad (Capa B) ---
             SettingsSection(R.string.a11y_section) {
+                // Plegable, plegada por defecto (rediseño 14-ago): 4 toggles compactos.
+                var a11yOpen by remember { mutableStateOf(false) }
+                val a11yChev by animateFloatAsState(
+                    targetValue = if (a11yOpen) 180f else 0f,
+                    animationSpec = LumiMotion.emphasized(),
+                    label = "a11yChevron"
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { a11yOpen = !a11yOpen }
+                        .padding(vertical = LumiSpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    Text(
+                        text = stringResource(R.string.a11y_expand),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_down),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .rotate(a11yChev)
+                    )
+                }
+                AnimatedVisibility(visible = a11yOpen) {
+                    Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
                 SettingsToggle(
                     titleRes = R.string.a11y_reduce_motion_title,
                     descRes = R.string.a11y_reduce_motion_desc,
@@ -563,45 +611,12 @@ fun SettingsScreen(
                         onCheckedChange = onSetHaptics
                     )
                 }
-            }
-
-            SettingsSection(R.string.sound_alert_section) {
-                Text(
-                    text = stringResource(R.string.sound_alert_explainer),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (proUi.proUnlocked) {
-                    FilledTonalButton(onClick = onOpenSoundAlert, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.sound_alert_open))
                     }
-                } else {
-                    FilledTonalButton(
-                        onClick = { showSoundAlertLocked = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
                 }
             }
 
-            SettingsSection(R.string.led_section) {
-                Text(
-                    text = stringResource(R.string.led_explainer),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (proUi.proUnlocked) {
-                    FilledTonalButton(onClick = onOpenLedBanner, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.led_open))
-                    }
-                } else {
-                    FilledTonalButton(
-                        onClick = { showLedLocked = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.mode_unlock_watch_ad)) }
-                }
-            }
-
-            SettingsSection(R.string.language_section) {
+            // ── General (rediseño 14-ago): Idioma + Acerca de en filas uniformes. ──
+            SettingsSection(R.string.general_section) {
                 SettingsRow(
                     titleRes = R.string.language_row_title,
                     subtitle = stringResource(R.string.language_row_subtitle),
@@ -612,9 +627,6 @@ fun SettingsScreen(
                         runCatching { context.startActivity(i) }
                     }
                 )
-            }
-
-            SettingsSection(R.string.about_section) {
                 SettingsRow(
                     titleRes = R.string.about_version,
                     subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
@@ -1366,6 +1378,41 @@ private fun accountErrorMessage(error: AuthError): String = when (error) {
     AuthError.RecentLoginRequired -> stringResource(R.string.auth_error_generic)
     AuthError.GoogleSignInFailed -> stringResource(R.string.auth_error_google)
     AuthError.Unknown -> stringResource(R.string.auth_error_generic)
+}
+
+/**
+ * Fila compacta de herramienta Pro (rediseño 14-ago): titulo + descripcion de una linea
+ * a la izquierda, boton tonal a la derecha — dos secciones enteras reducidas a dos filas.
+ */
+@Composable
+private fun ToolRow(
+    titleRes: Int,
+    descRes: Int,
+    buttonTextRes: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = stringResource(descRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        FilledTonalButton(onClick = onClick) { Text(stringResource(buttonTextRes)) }
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

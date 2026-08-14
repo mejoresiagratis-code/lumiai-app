@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -44,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -109,30 +112,11 @@ fun AuthScreen(
         ) {
             Spacer(modifier = Modifier.height(LumiSpacing.sm))
 
-            // --- Cabecera de marca ---
-            Box(
-                modifier = Modifier
-                    .size(76.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_mode_continuous),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
+            // Cabecera compacta (rediseño 14-ago aprobado en maqueta): sin icono de marca
+            // ni subtitulo — Google sube a la cabecera y todo cabe sin scroll.
             Text(
                 text = stringResource(R.string.auth_welcome_title),
                 style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(R.string.account_guest_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
@@ -145,6 +129,72 @@ fun AuthScreen(
                         onClick = { isRegister = index == 1 },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = tabs.size)
                     ) { Text(stringResource(labelRes)) }
+                }
+            }
+
+            if (webClientId != null) {
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            runCatching {
+                                val option = GetSignInWithGoogleOption.Builder(webClientId)
+                                    .build()
+                                val request = GetCredentialRequest.Builder()
+                                    .addCredentialOption(option)
+                                    .build()
+                                val response = CredentialManager.create(context)
+                                    .getCredential(context, request)
+                                val cred = response.credential
+                                if (cred is CustomCredential &&
+                                    cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                                ) {
+                                    GoogleIdTokenCredential.createFrom(cred.data).idToken
+                                } else {
+                                    null
+                                }
+                            }.onSuccess { token ->
+                                if (token != null) {
+                                    viewModel.signInWithGoogle(token)
+                                } else {
+                                    viewModel.reportFailure(AuthError.GoogleSignInFailed)
+                                }
+                            }.onFailure { e ->
+                                Log.w("LumiAuth", "Google sign-in failed", e)
+                                viewModel.reportFailure(AuthError.GoogleSignInFailed)
+                            }
+                        }
+                    },
+                    enabled = !state.loading,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                ) {
+                    // Estilo oficial de la industria: "G" multicolor + texto neutro
+                    // sobre superficie clara con borde fino (maqueta aprobada, 14-ago).
+                    Icon(
+                        painter = painterResource(R.drawable.ic_google_g),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(LumiSpacing.sm))
+                    Text(stringResource(R.string.auth_google))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text(
+                        text = stringResource(R.string.auth_or),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f))
                 }
             }
 
@@ -219,57 +269,6 @@ fun AuthScreen(
             }
 
             // --- Google ---
-            if (webClientId != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
-                ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                    Text(
-                        text = stringResource(R.string.auth_or),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                }
-                OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            runCatching {
-                                val option = GetSignInWithGoogleOption.Builder(webClientId)
-                                    .build()
-                                val request = GetCredentialRequest.Builder()
-                                    .addCredentialOption(option)
-                                    .build()
-                                val response = CredentialManager.create(context)
-                                    .getCredential(context, request)
-                                val cred = response.credential
-                                if (cred is CustomCredential &&
-                                    cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                                ) {
-                                    GoogleIdTokenCredential.createFrom(cred.data).idToken
-                                } else {
-                                    null
-                                }
-                            }.onSuccess { token ->
-                                if (token != null) {
-                                    viewModel.signInWithGoogle(token)
-                                } else {
-                                    viewModel.reportFailure(AuthError.GoogleSignInFailed)
-                                }
-                            }.onFailure { e ->
-                                Log.w("LumiAuth", "Google sign-in failed", e)
-                                viewModel.reportFailure(AuthError.GoogleSignInFailed)
-                            }
-                        }
-                    },
-                    enabled = !state.loading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                ) { Text(stringResource(R.string.auth_google)) }
-            }
 
             if (state.loading) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = LumiSpacing.sm))

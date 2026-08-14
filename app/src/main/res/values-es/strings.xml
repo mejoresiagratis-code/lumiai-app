@@ -17,13 +17,13 @@
     <string name="a11y_panel_collapsed">Ajustes ocultos</string>
     <string name="a11y_section">Accesibilidad</string>
     <string name="a11y_reduce_motion_title">Reducir movimiento</string>
-    <string name="a11y_reduce_motion_desc">Atenúa pulsos y animaciones. También se respeta el ajuste del sistema.</string>
+    <string name="a11y_reduce_motion_desc">Atenúa pulsos y animaciones.</string>
     <string name="a11y_high_contrast_title">Alto contraste</string>
-    <string name="a11y_high_contrast_desc">Refuerza el contraste de colores y bordes.</string>
+    <string name="a11y_high_contrast_desc">Refuerza colores y bordes.</string>
     <string name="a11y_haptics_title">Vibración</string>
     <string name="a11y_haptics_desc">Vibra al encender o apagar la luz.</string>
     <string name="a11y_auto_lock_title">Bloquear pantalla automáticamente</string>
-    <string name="a11y_auto_lock_desc">Al activar el modo Pantalla se bloquea para evitar apagados accidentales. Mantén pulsado para desbloquear.</string>
+    <string name="a11y_auto_lock_desc">Mantén pulsado para desbloquear en modo Pantalla.</string>
     <string name="a11y_brightness">Brillo de pantalla</string>
     <string name="a11y_intensity">Intensidad del LED</string>
     <string name="a11y_interval">Intervalo de la baliza</string>
@@ -154,12 +154,12 @@
     <string name="pro_explainer">Desbloquea 1 hora de todos los modos Pro — gratis. Solo mira 2 anuncios cortos.</string>
     <string name="pro_remaining">Pro activo · te queda %1$s</string>
     <string name="sound_alert_section">Alerta sonora</string>
-    <string name="sound_alert_explainer">Avisa con destellos del flash o parpadeo de pantalla cuando reconoce sonidos importantes (timbre, alarma, llanto…). Todo en el dispositivo. Función Pro.</string>
+    <string name="sound_alert_explainer">Avisa con luz al oír timbre, alarma o llanto.</string>
     <string name="sound_alert_open">Abrir alerta sonora</string>
     <string name="sound_alert_locked">Disponible con Pro, o desbloqueando tiempo al ver un anuncio en “Acceso Pro”.</string>
     <string name="led_section">Letrero LED</string>
     <string name="led_title">Letrero LED</string>
-    <string name="led_explainer">Convierte tu pantalla en un letrero LED con texto en movimiento — escribe lo que quieras, emojis incluidos.</string>
+    <string name="led_explainer">Tu texto en pantalla como letrero luminoso.</string>
     <string name="led_open">Abrir letrero LED</string>
     <string name="led_locked">Disponible con Pro, o desbloqueando tiempo al ver 2 anuncios.</string>
     <string name="led_input_label">Tu mensaje</string>
@@ -296,4 +296,12 @@
     <string name="sa_last_detection">Última alerta: %1$s</string>
     <string name="screen_section_presets">Preajustes</string>
     <string name="screen_section_custom">Color personalizado</string>
+    <string name="misdatos_title">Mis datos</string>
+    <string name="pro_one_liner">2 anuncios cortos = 1 hora de Pro gratis.</string>
+    <string name="pro_watch_ad_count">Ver anuncio (%1$d de %2$d)</string>
+    <string name="tools_pro_section">Herramientas Pro</string>
+    <string name="appearance_section">Apariencia</string>
+    <string name="general_section">General</string>
+    <string name="action_open">Abrir</string>
+    <string name="a11y_expand">Ver opciones</string>
 </resources>

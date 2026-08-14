@@ -1240,3 +1240,39 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   Foundation. Con `abortOnError`, un experimental sin opt-in es error, no warning.
 - Regla: al usar cualquier parámetro/overload nuevo de M3 (track, thumb, etc.), añadir el
   OptIn de Material3 en la misma pasada — comprobar SIEMPRE si la firma es experimental.
+
+### 2026-08-14 (login + drawer completo — rediseño en 2 pantallas, flujo maqueta→Dale→Kotlin)
+- **Login (AuthScreen):** icono de marca y subtítulo eliminados; bloque de Google subido
+  ARRIBA (antes de la tarjeta de email) con el estilo oficial de la industria — icono
+  `ic_google_g.xml` vectorial de 4 colores (tint=Unspecified) + `ButtonDefaults
+  .outlinedButtonColors(containerColor=surface)`. Todo cabe sin scroll en un móvil normal.
+- **Drawer, reordenación completa** (find-skills → kostja94/marketing-skills@copywriting
+  instalado y aplicado a los textos de Pro/Herramientas):
+  - **Cuenta:** pill "Correo verificado" → check compacto junto al email (texto completo
+    conservado en semántica para TalkBack); "Mis datos" nuevo desplegable DENTRO de
+    Cuenta (absorbe el antiguo "Perfil de facturación" + "Borrar cuenta", que se muda de
+    primer nivel a dentro — acción destructiva, no debe ser lo primero que se ve).
+  - **Acceso Pro:** triple redundancia → una sola línea ("2 anuncios cortos = 1 hora de
+    Pro gratis."); jerarquía de CTAs CORREGIDA (estaba invertida): botón de anuncio pasa
+    a `FilledTonalButton` con contador integrado ("Ver anuncio X de Y"), Suscribirse pasa
+    a `Button` relleno — el relleno es la conversión Pro real, el tonal es la herramienta.
+  - **Herramientas Pro** (sección NUEVA): Alerta Sonora + Letrero LED, que compartían
+    patrón idéntico en 2 secciones separadas, ahora 2 `ToolRow` compactas (título +
+    descripción de una línea + botón) en una sola tarjeta, insertada justo bajo Acceso
+    Pro — es lo que el Pro desbloquea, colocado donde refuerza el porqué de comprar.
+  - **Apariencia** (fusión): Tema + Acento + Estilo, antes 2 secciones, ahora 1 con
+    labels internos (`labelMedium`) por control.
+  - **Accesibilidad:** plegable, PLEGADA por defecto (antes 4 toggles siempre visibles).
+  - **General** (fusión): Idioma + Acerca de (versión/novedades/valorar) en una tarjeta.
+- Textos acortados con el skill (beneficio directo, sin relleno): explicativos de
+  Alerta/LED y las 4 descripciones de Accesibilidad, todas a una línea.
+- 8 strings nuevas EN/ES; strings ahora huérfanas (definidas sin uso, inofensivo):
+  billing_section/billing_profile_row/-support/-hint, sound_alert_open, led_open,
+  sound_alert_section, led_section, language_section, about_section. pro_explainer y
+  pro_progress_start/-one_left NO se tocaron (esta última sigue viva en diálogos de
+  BeamHub/Settings).
+- Lección operativa: tras un corte de turno con llamadas duplicadas/abortadas, verificar
+  el estado REAL del working tree (git status + grep de marcadores) antes de repetir
+  nada — todo lo previsto ya se había aplicado; solo faltó UN import (HorizontalDivider,
+  usado 3 veces en el código nuevo) que el auditor no detecta por sí solo salvo al
+  compilar — revisar imports de cada símbolo nuevo usado, no solo los ya recurrentes.

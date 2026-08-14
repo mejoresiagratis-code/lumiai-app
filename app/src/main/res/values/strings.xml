@@ -17,13 +17,13 @@
     <string name="a11y_panel_collapsed">Settings hidden</string>
     <string name="a11y_section">Accessibility</string>
     <string name="a11y_reduce_motion_title">Reduce motion</string>
-    <string name="a11y_reduce_motion_desc">Softens pulses and animations. The system setting is also respected.</string>
+    <string name="a11y_reduce_motion_desc">Softens pulses and animations.</string>
     <string name="a11y_high_contrast_title">High contrast</string>
-    <string name="a11y_high_contrast_desc">Boosts colour and edge contrast.</string>
+    <string name="a11y_high_contrast_desc">Stronger colors and edges.</string>
     <string name="a11y_haptics_title">Vibration</string>
     <string name="a11y_haptics_desc">Vibrates when the light turns on or off.</string>
     <string name="a11y_auto_lock_title">Lock screen automatically</string>
-    <string name="a11y_auto_lock_desc">When Screen mode is on, it locks to prevent accidental turn-offs. Long-press to unlock.</string>
+    <string name="a11y_auto_lock_desc">Hold to unlock in Screen mode.</string>
     <string name="a11y_brightness">Screen brightness</string>
     <string name="a11y_intensity">LED intensity</string>
     <string name="a11y_interval">Beacon interval</string>
@@ -154,12 +154,12 @@
     <string name="pro_explainer">Unlock 1 hour of every Pro mode — free. Just watch 2 short ads.</string>
     <string name="pro_remaining">Pro active · %1$s left</string>
     <string name="sound_alert_section">Sound alert</string>
-    <string name="sound_alert_explainer">Alerts you with flash bursts or screen blinks when it recognises important sounds (doorbell, alarm, crying…). All on-device. Pro feature.</string>
+    <string name="sound_alert_explainer">Flashes the light when it hears a doorbell, alarm, or crying.</string>
     <string name="sound_alert_open">Open sound alert</string>
     <string name="sound_alert_locked">Available with Pro, or after unlocking time by watching an ad in “Pro access”.</string>
     <string name="led_section">LED banner</string>
     <string name="led_title">LED banner</string>
-    <string name="led_explainer">Turn your screen into a scrolling LED sign — write anything, emojis included.</string>
+    <string name="led_explainer">Your text as a glowing screen banner.</string>
     <string name="led_open">Open LED banner</string>
     <string name="led_locked">Available with Pro, or after unlocking time by watching 2 ads.</string>
     <string name="led_input_label">Your message</string>
@@ -296,4 +296,12 @@
     <string name="sa_last_detection">Last alert: %1$s</string>
     <string name="screen_section_presets">Presets</string>
     <string name="screen_section_custom">Custom color</string>
+    <string name="misdatos_title">My details</string>
+    <string name="pro_one_liner">2 short ads = 1 hour of Pro, free.</string>
+    <string name="pro_watch_ad_count">Watch ad (%1$d of %2$d)</string>
+    <string name="tools_pro_section">Pro tools</string>
+    <string name="appearance_section">Appearance</string>
+    <string name="general_section">General</string>
+    <string name="action_open">Open</string>
+    <string name="a11y_expand">Show options</string>
 </resources>
