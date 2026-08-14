@@ -80,17 +80,15 @@ class Camera2TorchController @Inject constructor(
     }
 
     override fun pulseOff() {
-        val id = flashCameraId ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maxIntensityLevel > 1) {
-            // Nivel 1 = minimo LEGAL de la API (nunca 0); se mantiene "encendida" para
-            // el sistema, solo cambia la intensidad -> onTorchStrengthLevelChanged, no
-            // onTorchModeChanged. Si el HAL rechaza el nivel minimo por cualquier razon,
-            // apagado real de respaldo: nunca nos quedamos con la luz a medias.
-            runCatching { cameraManager.turnOnTorchWithStrengthLevel(id, 1) }
-                .onFailure { turnOff() }
-        } else {
-            turnOff()
-        }
+        // REVERTIDO (QA 14-ago): el experimento de "apagar" bajando al nivel minimo
+        // (v0.9.17) dejaba un resplandor residual que difuminaba el contraste on/off de
+        // los patrones (SOS/Estrobo/Baliza/Morse/Musica) — fidelidad del patron gana a
+        // la estetica de la notificacion del sistema de Samsung, que volvera a parpadear
+        // al ritmo del flash (inevitable: la genera el SO con cada apagado real, sin
+        // API). El metodo se conserva como gancho semantico "hueco intra-patron" por si
+        // algun dia se afina por dispositivo. turnOff() marca la ventana de SelfOffWindow,
+        // asi que la deteccion de apagados EXTERNOS sigue sin falsos positivos por pulso.
+        turnOff()
     }
 
     private fun scaleToDevice(logical: Int): Int {

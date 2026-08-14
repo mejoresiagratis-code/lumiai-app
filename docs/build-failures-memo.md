@@ -1169,3 +1169,22 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Regla operativa nueva: cambio de comportamiento en regla de dominio ⇒ grep de TODOS los
   tests por los INPUTS afectados (etiquetas, categorías) antes de empujar, no solo por los
   nombres de test que aparecen en el rango visible.
+
+### 2026-08-14 (lección #42 — revert del experimento pulseOff: fidelidad del patrón > estética)
+- **QA de Pablo:** en SOS/Estrobo/Baliza/Morse/Música el flash "no llega a encenderse y
+  apagarse del todo". Causa: el parche EXPERIMENTAL de v0.9.17 (pulseOff = atenuar al
+  nivel mínimo en vez de apagar, para que la notificación del sistema de Samsung no
+  parpadeara). El riesgo de resplandor residual quedó documentado como reversible en un
+  solo punto — y el QA en dispositivo lo confirmó: difumina el contraste on/off.
+- **Decisión de producto:** fidelidad del patrón GANA. Revertido en el punto único
+  (Camera2TorchController.pulseOff() = turnOff() real). Trade-off asumido y comunicado:
+  la notificación del sistema de Samsung VOLVERÁ a parpadear al ritmo del flash — la
+  genera el SO con cada apagado real y no hay API para evitarlo. Nuestra notificación
+  sigue en canal MIN en Samsung (invisible en barra), así que el ruido es solo el
+  indicador del sistema.
+- pulseOff() se CONSERVA como gancho semántico "hueco intra-patrón" (afinable por
+  dispositivo en el futuro sin tocar el engine). turnOff() marca SelfOffWindow, así que
+  la detección de apagados EXTERNOS sigue sin falsos positivos por pulso — verificado.
+- Tests de FlashEngine reescritos a la semántica real (2 reescritos, 1 de fallback
+  eliminado por redundante). Barrido #41 aplicado: ningún otro test usa
+  pulseOff/lastIntensity.

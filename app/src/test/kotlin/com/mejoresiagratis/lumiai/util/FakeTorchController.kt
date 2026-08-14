@@ -32,12 +32,7 @@ class FakeTorchController(
 
     override fun pulseOff() {
         pulseOffCalls++
-        // Espeja Camera2TorchController: con intensidad variable, se queda ENCENDIDA
-        // al minimo (isOn NO cambia); sin ella, cae a un apagado real identico a turnOff().
-        if (maxIntensityLevel > 1) {
-            lastIntensity = 1
-        } else {
-            turnOff()
-        }
+        // Espeja Camera2TorchController tras el revert (QA 14-ago): apagado REAL siempre.
+        turnOff()
     }
 }
