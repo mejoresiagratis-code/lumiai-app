@@ -108,7 +108,7 @@ val INTIMATE_SLEEP_OPTIONS: List<Int> = listOf(0, 15, 30, 60)
  * Modo Pantalla, con el Modo Íntimo como extensión conmutable (mismo bloqueo, wakelock
  * y control de brillo de ventana ya probados; solo cambia el fondo y el rango de brillo).
  */
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ScreenLight(
     argb: Int,

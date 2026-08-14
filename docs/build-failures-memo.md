@@ -1233,3 +1233,10 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   balance inmediatamente tras cada reemplazo estructural grande, no solo al final.
 - 2 strings nuevas EN/ES (secciones). `screen_locked_title`/`screen_panel_expand` quedan
   definidas sin uso (inofensivo; el auditor exige usadas⊆definidas, no al revés).
+
+### 2026-08-14 (lección #44 — el parámetro `track` de Slider M3 es ExperimentalMaterial3Api)
+- CI rojo en c50c6b2: `ScreenLight.kt:490` — el `track` lambda del Slider (pista arcoíris)
+  requiere `@OptIn(ExperimentalMaterial3Api::class)`; el fichero solo tenía el OptIn de
+  Foundation. Con `abortOnError`, un experimental sin opt-in es error, no warning.
+- Regla: al usar cualquier parámetro/overload nuevo de M3 (track, thumb, etc.), añadir el
+  OptIn de Material3 en la misma pasada — comprobar SIEMPRE si la firma es experimental.
