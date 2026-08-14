@@ -99,7 +99,14 @@ class SoundAlertService : Service() {
                     engine = engine,
                     allowedLabels = config.activeLabels().toList(),
                     onDetected = { category -> onDetected(category) },
-                    onError = { /* sin modelo o sin permiso: sigue sin avisos */ }
+                    onError = { /* sin modelo o sin permiso: sigue sin avisos */ },
+                    onWindow = { scores ->
+                        // Top-3 de la ventana, legible en pantalla: decide en una prueba
+                        // si el clasificador oye (scores fluyen) o los umbrales bloquean.
+                        val top = scores.entries.sortedByDescending { it.value }.take(3)
+                            .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
+                        listeningState.setLastWindow(top.ifEmpty { null })
+                    }
                 )
                 this@SoundAlertService.classifier = classifier
                 classifier.start()
@@ -135,6 +142,7 @@ class SoundAlertService : Service() {
 
     override fun onDestroy() {
         listeningState.setListening(false)
+        listeningState.setLastWindow(null)
         flashJob?.cancel()
         classifier?.stop()
         classifier = null
@@ -144,6 +152,7 @@ class SoundAlertService : Service() {
     }
 
     private fun onDetected(category: SoundCategory) {
+        listeningState.setLastDetection(getString(category.labelRes()))
         notifyDetection(category)
         val channel = currentConfig.channel(category)
         val flashed = channel.usesFlash && torch.hasFlash
@@ -217,19 +226,23 @@ class SoundAlertService : Service() {
 
     private fun notifyDetection(category: SoundCategory) {
         val mgr = getSystemService(NotificationManager::class.java)
+        // ID PROPIO (QA 14-ago): antes usaba NOTIF_ID — el MISMO de la notificacion del
+        // servicio en primer plano — y la MACHACABA en vez de crear una alerta nueva.
+        // La deteccion es un evento puntual: autoCancel, no ongoing.
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.sa_notif_detected))
             .setContentText(getString(category.labelRes()))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOngoing(true)
+            .setAutoCancel(true)
             .build()
-        mgr.notify(NOTIF_ID, notif)
+        mgr.notify(DETECTION_NOTIF_ID, notif)
     }
 
     companion object {
         private const val CHANNEL_ID = "sound_alert"
         private const val NOTIF_ID = 2
         private const val SCREEN_NOTIF_ID = 3
+        private const val DETECTION_NOTIF_ID = 4
 
         fun start(context: Context) {
             ensureChannel(context)

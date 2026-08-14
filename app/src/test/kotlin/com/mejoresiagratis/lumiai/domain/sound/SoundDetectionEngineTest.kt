@@ -46,19 +46,29 @@ class SoundDetectionEngineTest {
     }
 
     @Test
-    fun `dispara solo tras alcanzar el debounce`() {
+    fun `dispara solo tras alcanzar el debounce (categoria sostenida)`() {
+        // DESPERTADOR no es transitorio: sigue exigiendo el debounce completo.
         val e = engine(debounce = 2)
-        assertTrue(e.onWindow(mapOf("Doorbell" to 0.9f), 0L).isEmpty())
-        assertEquals(listOf(SoundCategory.TIMBRE), e.onWindow(mapOf("Doorbell" to 0.9f), 500L))
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 0L).isEmpty())
+        assertEquals(listOf(SoundCategory.DESPERTADOR), e.onWindow(mapOf("Alarm clock" to 0.9f), 500L))
     }
 
     @Test
-    fun `una ventana por debajo rompe la racha`() {
+    fun `una ventana por debajo rompe la racha (categoria sostenida)`() {
         val e = engine(debounce = 2)
-        assertTrue(e.onWindow(mapOf("Doorbell" to 0.9f), 0L).isEmpty())
-        assertTrue(e.onWindow(mapOf("Doorbell" to 0.1f), 500L).isEmpty()) // reset
-        assertTrue(e.onWindow(mapOf("Doorbell" to 0.9f), 1000L).isEmpty()) // racha 1
-        assertEquals(listOf(SoundCategory.TIMBRE), e.onWindow(mapOf("Doorbell" to 0.9f), 1500L))
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 0L).isEmpty())
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.1f), 500L).isEmpty()) // reset
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 1000L).isEmpty()) // racha 1
+        assertEquals(listOf(SoundCategory.DESPERTADOR), e.onWindow(mapOf("Alarm clock" to 0.9f), 1500L))
+    }
+
+    @Test
+    fun `un transitorio dispara con UNA sola ventana aunque el debounce sea mayor`() {
+        // QA 14-ago: un ladrido/golpe/timbre dura menos que 2 ventanas (~1 s) — con el
+        // debounce estandar jamas disparaba. Los transitorios exigen solo 1 ventana.
+        val e = engine(debounce = 2)
+        assertEquals(listOf(SoundCategory.TIMBRE), e.onWindow(mapOf("Doorbell" to 0.9f), 0L))
+        assertEquals(listOf(SoundCategory.PERRO), e.onWindow(mapOf("Bark" to 0.9f), 100L))
     }
 
     @Test

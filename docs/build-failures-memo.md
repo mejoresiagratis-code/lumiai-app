@@ -1128,3 +1128,32 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - **Meta-lección:** invertir una iteración en observabilidad (stopReason en pantalla)
   convirtió un ciclo infinito de adivinanzas en UNA captura con el nombre exacto del
   asesino. Patrón a repetir ante cualquier fallo no reproducible en el sandbox.
+
+### 2026-08-14 (lección #40 — detección muda: 3 bugs reales + observabilidad en vivo + allowBackup)
+- **QA de Pablo:** escucha activa ✓ (fix #39 funcionó) pero no detecta nada ni notifica.
+  Etiquetas YAMNet validadas una a una contra el mapa oficial del modelo: correctas.
+  Canal ya en IMPORTANCE_HIGH. Tres bugs reales encontrados:
+- **① Los sonidos TRANSITORIOS jamás podían disparar.** El motor exige 2 ventanas
+  consecutivas (~1 s sostenido) sobre el umbral; un ladrido, un golpe o un timbre duran
+  MENOS — cruzaban una ventana y morían en el debounce, matemáticamente incapaces de
+  alertar. Nuevo flag `transientSound` en SoundCategory (TIMBRE, GOLPES_PUERTA, PERRO):
+  1 ventana basta; el cooldown de 4 s sigue conteniendo el spam. 2 tests del motor
+  migrados a DESPERTADOR (sostenido) + 1 test nuevo del transitorio.
+- **② La notificación de detección MACHACABA la del servicio** — usaba el mismo
+  NOTIF_ID=2 que la notificación del foreground, sustituyéndola en vez de crear una
+  alerta nueva, y con setOngoing(true) (un evento puntual quedaba clavado como
+  permanente). DETECTION_NOTIF_ID=4 propio + autoCancel.
+- **③ POST_NOTIFICATIONS solo se pedía al acabar el onboarding** — si se denegó ahí (o
+  el diálogo pasó desapercibido), las alertas quedaban bloqueadas para siempre sin que
+  nada lo volviera a pedir. Ahora también se pide EN CONTEXTO al pulsar Iniciar si falta
+  (Android 13+); la escucha arranca igual — el flash avisa aunque se deniegue.
+- **Observabilidad en vivo (patrón de #38/#39, tercera vez que paga):** la pantalla
+  muestra "Oyendo: <top-3 scores>" en tiempo real mientras escucha y "Última alerta:".
+  Si la próxima prueba siguiera muda, los scores en pantalla dirán si el clasificador
+  no oye (no fluyen) o si los umbrales bloquean (fluyen bajos) — y se tunean con datos
+  reales del S26, no a ciegas.
+- **allowBackup="false" (petición de desinstalación limpia):** los PERMISOS los resetea
+  el SO al desinstalar SIEMPRE (nada que hacer ahí) — lo que hacía que una reinstalación
+  no pareciera "de cero" era Auto Backup restaurando los DATOS (DataStore con tema/
+  contadores/config y la sesión de Firebase Auth). Con false, desinstalar = borrado
+  total real: reinstalar vuelve a pedir todo, onboarding incluido.

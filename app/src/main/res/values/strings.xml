@@ -292,4 +292,6 @@
     <string name="mode_locked_ai_verify">Verify your email to try Pro for free or subscribe.</string>
     <string name="mode_unlock_verify_email">Verify email</string>
     <string name="sa_start_failed">Couldn\'t start listening — %1$s</string>
+    <string name="sa_live_window">Hearing: %1$s</string>
+    <string name="sa_last_detection">Last alert: %1$s</string>
 </resources>

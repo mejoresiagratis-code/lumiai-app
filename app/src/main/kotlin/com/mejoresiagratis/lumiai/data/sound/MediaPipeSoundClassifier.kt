@@ -33,7 +33,9 @@ class MediaPipeSoundClassifier(
     private val engine: SoundDetectionEngine,
     private val allowedLabels: List<String>,
     private val onDetected: (SoundCategory) -> Unit,
-    private val onError: (String) -> Unit = {}
+    private val onError: (String) -> Unit = {},
+    /** Scores de cada ventana clasificada — para la observabilidad en pantalla (QA 14-ago). */
+    private val onWindow: (Map<String, Float>) -> Unit = {}
 ) {
     private var recorder: AudioRecord? = null
     private var executor: ScheduledThreadPoolExecutor? = null
@@ -96,6 +98,7 @@ class MediaPipeSoundClassifier(
             ?.categories().orEmpty()
         if (categories.isEmpty()) return
         val scores = categories.associate { it.categoryName() to it.score() }
+        onWindow(scores)
         val fired = engine.onWindow(scores, SystemClock.uptimeMillis())
         fired.forEach(onDetected)
     }

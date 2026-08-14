@@ -20,12 +20,19 @@ enum class SoundReliability { ALTA, MEDIA }
 enum class SoundCategory(
     val labels: Set<String>,
     val reliability: SoundReliability,
-    val safetyRelated: Boolean = false
+    val safetyRelated: Boolean = false,
+    /**
+     * Sonido TRANSITORIO (QA 14-ago): dura menos que las ~2 ventanas de clasificacion
+     * (~1 s) que exige el debounce estandar — un ladrido o un golpe en la puerta cruzan
+     * UNA ventana y morian en el debounce sin disparar jamas. Para estos, el motor exige
+     * solo 1 ventana; el cooldown sigue conteniendo el spam.
+     */
+    val transientSound: Boolean = false
 ) {
-    TIMBRE(setOf("Doorbell", "Ding-dong"), SoundReliability.ALTA),
-    GOLPES_PUERTA(setOf("Knock"), SoundReliability.ALTA),
+    TIMBRE(setOf("Doorbell", "Ding-dong"), SoundReliability.ALTA, transientSound = true),
+    GOLPES_PUERTA(setOf("Knock"), SoundReliability.ALTA, transientSound = true),
     TELEFONO(setOf("Telephone", "Telephone bell ringing", "Ringtone"), SoundReliability.ALTA),
-    PERRO(setOf("Dog", "Bark"), SoundReliability.ALTA),
+    PERRO(setOf("Dog", "Bark"), SoundReliability.ALTA, transientSound = true),
     BEBE(setOf("Baby cry, infant cry", "Crying, sobbing"), SoundReliability.MEDIA),
     DESPERTADOR(setOf("Alarm clock", "Alarm"), SoundReliability.MEDIA),
     SIRENA(setOf("Siren", "Civil defense siren", "Emergency vehicle"), SoundReliability.MEDIA),

@@ -39,6 +39,10 @@ class SoundAlertViewModel @Inject constructor(
     /** Motivo de la ultima parada inesperada, para mostrarlo en pantalla (QA 14-ago). */
     val stopReason: StateFlow<String?> = stateRepo.stopReason
 
+    /** Scores en vivo de la ultima ventana y ultima alerta disparada (QA 14-ago). */
+    val lastWindow: StateFlow<String?> = stateRepo.lastWindow
+    val lastDetection: StateFlow<String?> = stateRepo.lastDetection
+
     fun setEnabled(category: SoundCategory, enabled: Boolean) =
         viewModelScope.launch { repository.setEnabled(category, enabled) }
 

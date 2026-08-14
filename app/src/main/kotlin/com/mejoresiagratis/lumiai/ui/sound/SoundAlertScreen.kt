@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.sound
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -105,6 +106,9 @@ fun SoundAlertScreen(
                 PackageManager.PERMISSION_GRANTED
         )
     }
+    val notifLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
     val micLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> micGranted = granted }
@@ -112,6 +116,8 @@ fun SoundAlertScreen(
     // razon, el boton vuelve solo a "Iniciar" en vez de quedar pillado en "Parar" (QA 13-ago).
     val listening by viewModel.listening.collectAsStateWithLifecycle()
     val stopReason by viewModel.stopReason.collectAsStateWithLifecycle()
+    val lastWindow by viewModel.lastWindow.collectAsStateWithLifecycle()
+    val lastDetection by viewModel.lastDetection.collectAsStateWithLifecycle()
 
     // Acordeon: nombre de la categoria expandida (sobrevive a rotacion).
     var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -134,6 +140,8 @@ fun SoundAlertScreen(
             ListenBar(
                 listening = listening,
                 stopReason = stopReason,
+                lastWindow = lastWindow,
+                lastDetection = lastDetection,
                 micGranted = micGranted,
                 anyEnabled = config.anyEnabled,
                 onStart = {
@@ -144,6 +152,15 @@ fun SoundAlertScreen(
                     ) {
                         // Ya no se asume listening=true aqui: lo confirma el propio
                         // servicio via listeningState cuando arranca de verdad (QA 13-ago).
+                        // Las alertas se entregan por notificacion: si aun no esta concedido
+                        // (Android 13+), se pide EN CONTEXTO — la escucha arranca igual y
+                        // el flash avisa aunque se deniegue (QA 14-ago).
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                            PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
                         SoundAlertService.start(context)
                     } else {
                         micGranted = false
@@ -277,6 +294,8 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
 private fun ListenBar(
     listening: Boolean,
     stopReason: String?,
+    lastWindow: String?,
+    lastDetection: String?,
     micGranted: Boolean,
     anyEnabled: Boolean,
     onStart: () -> Unit,
@@ -293,14 +312,31 @@ private fun ListenBar(
                 OutlinedButton(onClick = onStop, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.sa_stop))
                 }
+                // Observabilidad en vivo (QA 14-ago): que oye el clasificador AHORA
+                // (top-3 scores) — decide en una prueba si el clasificador no oye o si
+                // los umbrales bloquean. Sustituye al "Escuchando..." fijo: mas util.
                 Text(
-                    stringResource(R.string.sa_listening),
+                    text = if (lastWindow != null) {
+                        stringResource(R.string.sa_live_window, lastWindow)
+                    } else {
+                        stringResource(R.string.sa_listening)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = LumiSpacing.xs),
                 )
+                if (lastDetection != null) {
+                    Text(
+                        text = stringResource(R.string.sa_last_detection, lastDetection),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = LumiSpacing.xs),
+                    )
+                }
             } else {
                 Button(
                     onClick = onStart,

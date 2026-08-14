@@ -46,7 +46,10 @@ class SoundDetectionEngine(
                 streak[category] = newStreak
                 val last = lastFiredAtMs[category]
                 val cooled = last == null || nowMs - last >= cooldownMs
-                if (newStreak >= debounceWindows && cooled) {
+                // Transitorios (ladrido, golpe, timbre): 1 ventana basta — duran menos
+                // que el debounce estandar y jamas dispararian con el (QA 14-ago).
+                val required = if (category.transientSound) 1 else debounceWindows
+                if (newStreak >= required && cooled) {
                     fired += category
                     lastFiredAtMs[category] = nowMs
                     streak[category] = 0

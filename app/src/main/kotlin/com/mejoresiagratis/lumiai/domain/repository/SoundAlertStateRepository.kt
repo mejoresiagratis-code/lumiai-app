@@ -21,4 +21,15 @@ interface SoundAlertStateRepository {
      */
     val stopReason: StateFlow<String?>
     fun setStopReason(value: String?)
+
+    /**
+     * Lo que el clasificador esta oyendo AHORA (top de scores de la ultima ventana) y la
+     * ultima alerta disparada. Observabilidad en el movil (QA 14-ago): "no detecta nada"
+     * tiene dos causas posibles indistinguibles a ciegas — el clasificador no oye, o los
+     * umbrales no dejan pasar. Con los scores en vivo en pantalla, una prueba lo decide.
+     */
+    val lastWindow: StateFlow<String?>
+    fun setLastWindow(value: String?)
+    val lastDetection: StateFlow<String?>
+    fun setLastDetection(value: String?)
 }
