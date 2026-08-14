@@ -1157,3 +1157,15 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   no pareciera "de cero" era Auto Backup restaurando los DATOS (DataStore con tema/
   contadores/config y la sesión de Firebase Auth). Con false, desinstalar = borrado
   total real: reinstalar vuelve a pedir todo, onboarding incluido.
+
+### 2026-08-14 (lección #41 — al cambiar una regla de dominio, barrer TODOS sus tests, no los visibles)
+- CI rojo en v0.9.25: `SoundDetectionEngineTest > reset limpia rachas y cooldown` — usaba
+  Doorbell (TIMBRE, ahora transitorio → dispara a la primera ventana) y su aserción de
+  "racha por acumular" quedó invalidada. Al introducir `transientSound` migré los DOS
+  tests que tenía a la vista y no barrí el fichero entero: el de reset estaba más abajo.
+- Fix: migrado a "Alarm clock"/DESPERTADOR (sostenido) como los otros dos. Barrido
+  exhaustivo hecho esta vez: de todas las aserciones isEmpty con etiquetas transitorias,
+  SOLO esa dependía del debounce (las demás prueban umbral/cooldown/desactivada — inmunes).
+- Regla operativa nueva: cambio de comportamiento en regla de dominio ⇒ grep de TODOS los
+  tests por los INPUTS afectados (etiquetas, categorías) antes de empujar, no solo por los
+  nombres de test que aparecen en el rango visible.

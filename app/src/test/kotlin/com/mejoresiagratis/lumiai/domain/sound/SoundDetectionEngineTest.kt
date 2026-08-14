@@ -112,11 +112,12 @@ class SoundDetectionEngineTest {
 
     @Test
     fun `reset limpia rachas y cooldown`() {
+        // DESPERTADOR (sostenido): TIMBRE ahora es transitorio y dispararia a la primera.
         val e = engine(debounce = 2)
-        e.onWindow(mapOf("Doorbell" to 0.9f), 0L) // racha 1
+        e.onWindow(mapOf("Alarm clock" to 0.9f), 0L) // racha 1
         e.reset()
         // tras reset hay que volver a acumular la racha completa
-        assertTrue(e.onWindow(mapOf("Doorbell" to 0.9f), 100L).isEmpty())
-        assertEquals(listOf(SoundCategory.TIMBRE), e.onWindow(mapOf("Doorbell" to 0.9f), 200L))
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 100L).isEmpty())
+        assertEquals(listOf(SoundCategory.DESPERTADOR), e.onWindow(mapOf("Alarm clock" to 0.9f), 200L))
     }
 }
