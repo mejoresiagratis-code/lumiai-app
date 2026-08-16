@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -86,7 +89,14 @@ fun LumiDialog(
                     text = body,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    // Cuerpo desplazable (16-ago): el diálogo de Novedades crece con cada
+                    // versión y en pantallas pequeñas se cortaba. Con heightIn(max) el scroll
+                    // solo entra en juego cuando el texto no cabe — los diálogos cortos, que
+                    // son la mayoría, se ven exactamente igual que antes.
+                    modifier = Modifier
+                        .heightIn(max = 360.dp)
+                        .verticalScroll(rememberScrollState())
                 )
                 Column(
                     modifier = Modifier

@@ -1345,3 +1345,21 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   3. Dejar App Check en modo **monitorización** unos días antes de activar *enforcement*: así se
      ve el porcentaje de peticiones verificadas sin romper a nadie. Activar la aplicación forzada
      solo cuando el ratio sea alto.
+
+### 2026-08-16 (CONVENCIÓN PERMANENTE — el changelog se actualiza en cada novedad reseñable)
+- **Regla nueva pedida por Pablo, aplicable a partir de ahora:** toda novedad que el USUARIO note
+  debe añadir su entrada a `about_changelog_body` (EN y ES) en el mismo commit que la implementa.
+  No es una tarea de "ya lo actualizaré antes de publicar": se hace en el momento o se olvida —
+  prueba de ello es que estaba congelado en **v0.4.1 mientras la app iba por v0.9.34**.
+- **Criterio de qué entra:** solo lo que el usuario percibe (funciones nuevas, rediseños, cambios
+  de reglas de acceso, correcciones visibles). NO entran los cambios internos: reglas de R8,
+  lecciones del memo, refactorizaciones, arreglos de CI. El changelog es de producto, no técnico.
+- **Redacción:** una línea por versión, en presente y desde el beneficio para el usuario
+  ("ahora reconoce golpes y timbres cortos"), no desde la implementación ("añadido flag
+  transientSound al motor"). Máximo dos líneas por entrada.
+- **Poda:** las versiones antiguas se agrupan al final en una sola línea (`v0.4.x — ...`) para que
+  la lista no crezca sin límite.
+- **Fix asociado:** `LumiDialog` no permitía desplazar el cuerpo, así que un changelog largo se
+  cortaba en pantallas pequeñas. Añadido `heightIn(max = 360.dp)` + `verticalScroll`: el scroll
+  solo aparece cuando el texto no cabe, de modo que los diálogos cortos (la mayoría) se ven
+  exactamente igual que antes. Sin esto, la convención se habría roto sola al crecer la lista.
