@@ -127,6 +127,10 @@ fun SettingsScreen(
     onOpenGod: () -> Unit,
     onOpenSoundAlert: () -> Unit,
     onOpenLedBanner: () -> Unit,
+    // WebView interno (14-ago): antes Intent.ACTION_VIEW al navegador del sistema, sacaba al
+    // usuario de la app — ahora navegación dentro de LumiAI, patrón de la mayoría de apps.
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenTerms: () -> Unit,
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     rewardedUnlockViewModel: RewardedUnlockViewModel = hiltViewModel(),
@@ -654,17 +658,11 @@ fun SettingsScreen(
             SettingsSection(R.string.legal_section) {
                 SettingsRow(
                     titleRes = R.string.legal_privacy,
-                    onClick = {
-                        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://mejoresiagratis.com/lumiai/privacy-policy.html"))
-                        runCatching { context.startActivity(i) }
-                    }
+                    onClick = onOpenPrivacyPolicy
                 )
                 SettingsRow(
                     titleRes = R.string.legal_terms,
-                    onClick = {
-                        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://mejoresiagratis.com/lumiai/terms.html"))
-                        runCatching { context.startActivity(i) }
-                    }
+                    onClick = onOpenTerms
                 )
                 SettingsRow(
                     titleRes = R.string.about_licenses,

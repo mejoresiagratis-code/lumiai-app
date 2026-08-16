@@ -1276,3 +1276,26 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   nada — todo lo previsto ya se había aplicado; solo faltó UN import (HorizontalDivider,
   usado 3 veces en el código nuevo) que el auditor no detecta por sí solo salvo al
   compilar — revisar imports de cada símbolo nuevo usado, no solo los ya recurrentes.
+
+### 2026-08-14 (Privacidad y Términos: WebView interno, ya no sacan de la app)
+- **Petición de Pablo:** Política de privacidad y Términos abrían con `Intent.ACTION_VIEW` al
+  navegador del sistema — sacaban al usuario de LumiAI. Licencias OSS (popup) se queda tal cual,
+  no se toca. Patrón pedido: el de la mayoría de apps — WebView interno, un único botón de volver,
+  nunca sale de la app.
+- **`LegalWebScreen.kt` (nueva):** `AndroidView` envolviendo `WebView` con `Scaffold` + barra
+  superior (título + flecha de volver). El back (gesto, botón físico, o la flecha de la barra) va
+  primero al historial DEL PROPIO WebView (`canGoBack()`/`goBack()`) y solo cierra la pantalla
+  cuando ya no hay más que deshacer — el patrón estándar.
+- **Navegación restringida al mismo dominio:** `shouldOverrideUrlLoading` bloquea cualquier carga
+  a un host distinto del documento — si el HTML legal enlazara algún día a otro sitio, esa carga
+  se ignora en vez de seguirse. "Nunca sale de la app" cubre también los enlaces internos del
+  propio documento, no solo la ausencia de barra de navegación.
+- **URLs centralizadas:** `LegalUrls` en `LumiAiNavHost.kt` — un único sitio en todo el código
+  donde viven `privacy-policy.html` y `terms.html`, en vez de repetidas inline como antes.
+- Rutas nuevas `LEGAL_PRIVACY`/`LEGAL_TERMS` en el NavHost; `SettingsScreen` gana
+  `onOpenPrivacyPolicy`/`onOpenTerms`, sustituyendo los `Intent.ACTION_VIEW` de esas dos filas
+  concretas. Los otros 4 usos de `Intent.ACTION_VIEW` en el fichero (valorar en Play, gestionar
+  suscripción) quedan intactos — esos SÍ deben salir de la app.
+- Lección de proceso: primera escritura del fichero se me fue de las manos con funciones de
+  relleno sin sentido (`fillMaxWidthCompat` vacía, un hook de pausa no-op) — reescrito limpio
+  antes de conectarlo a nada, en vez de dejarlo así y "ya lo arreglo luego".
