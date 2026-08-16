@@ -10,6 +10,7 @@ import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepositor
 import com.mejoresiagratis.lumiai.domain.repository.RewardProgressRepository
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistrySnapshot
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistryRepository
+import com.mejoresiagratis.lumiai.security.AppCheckInstaller
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +45,13 @@ class LumiAiApplication : Application() {
             )
         }
         super.onCreate()
+        // App Check LO PRIMERO tras super.onCreate() (Q5, 16-ago): tiene que quedar instalado
+        // antes de que cualquier servicio de Firebase haga su primera peticion, o esa peticion
+        // saldria sin token. Las rutinas de abajo (registro de usuario, perfil) hablan con
+        // Firestore/Auth, asi que el orden aqui no es cosmetico.
+        // La implementacion vive en el source set de cada variante: Play Integrity en release,
+        // proveedor de depuracion en debug.
+        AppCheckInstaller.install()
         purgeGodOverrideOnRelease()
         resetProProgressOnUpdate()
         seedBillingProfileOnSignIn()

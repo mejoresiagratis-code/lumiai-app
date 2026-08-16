@@ -1310,3 +1310,38 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Regla operativa: al crear una pantalla nueva, copiar el patrón de iconografía de una pantalla
   hermana ANTES de escribir imports de memoria. Barrido posterior: cero usos de `Icons.` en todo
   el proyecto, este era el único.
+
+### 2026-08-16 (Q5 — Firebase App Check con Play Integrity, implementación robusta)
+- **Qué protege:** el `google-services.json` viaja dentro del APK y es trivial de extraer. Sin
+  App Check, cualquiera con ese fichero puede hablar con Auth y Firestore haciéndose pasar por
+  LumiAI. App Check acredita que la petición viene de una copia legítima instalada desde Play.
+- **API verificada contra la documentación oficial de Firebase (actualizada 13-ago-2026)**, no de
+  memoria: `FirebaseAppCheck.getInstance().installAppCheckProviderFactory(...)`. find-skills
+  ejecutado: el único skill de App Check del ecosistema es de Flutter, inservible para Kotlin
+  nativo — implementación propia.
+- **Decisión de robustez ①: separación por SOURCE SET, no por `if (BuildConfig.DEBUG)`.**
+  `firebase-appcheck-debug` se declara como `debugImplementation`, y cada variante tiene su
+  propio `AppCheckInstaller` (`src/debug/...` y `src/release/...`) con firma idéntica. Resultado:
+  la clase del proveedor permisivo **ni siquiera está en el APK de release** — no hay ruta de
+  código, ni siquiera por reflexión, que pueda activarlo en producción. Un `if` de BuildConfig
+  habría dejado la clase dentro del binario.
+- **Decisión de robustez ②: no puede tumbar la app JAMÁS.** Play Integrity depende de Google Play
+  Services: en dispositivos sin ellos, ROMs alternativas o Play Services corrupto, la
+  inicialización puede lanzar. Una linterna que no abre por una comprobación de integridad sería
+  mucho peor que el ataque del que protege. Todo va en `runCatching`; si falla, App Check queda
+  inactivo y la app sigue funcionando. El fallo se registra en Crashlytics como no-fatal para
+  poder detectar si ocurre de forma masiva en algún modelo concreto.
+- **Orden de arranque (no es cosmético):** `AppCheckInstaller.install()` es lo PRIMERO tras
+  `super.onCreate()`, antes de `purgeGodOverrideOnRelease`/`syncUserRegistryOnChange`, que hablan
+  con Firestore y Auth. Instalarlo después dejaría esas primeras peticiones sin token.
+- **Parámetro `context` eliminado:** la API no lo necesita (Firebase se auto-inicializa por
+  ContentProvider antes de `Application.onCreate`). Dejarlo habría sido ruido que además el lint
+  gate de Q4 podría marcar.
+- **PASOS MANUALES PENDIENTES DE PABLO** (sin ellos App Check no protege nada):
+  1. Firebase Console → App Check → registrar LumiAI con **Play Integrity** (pide el SHA-256 de
+     release, el mismo del keystore).
+  2. Ejecutar una build debug y copiar del Logcat el token de `DebugAppCheckProvider` → darlo de
+     alta en App Check → Gestionar tokens de depuración.
+  3. Dejar App Check en modo **monitorización** unos días antes de activar *enforcement*: así se
+     ve el porcentaje de peticiones verificadas sin romper a nadie. Activar la aplicación forzada
+     solo cuando el ratio sea alto.

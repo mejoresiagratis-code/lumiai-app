@@ -20,8 +20,8 @@ android {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 62
-        versionName = "0.9.33"
+        versionCode = 63
+        versionName = "0.9.34"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -178,6 +178,12 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     // Solo debug: detector de fugas de memoria. Con servicios foreground de linterna y
     // microfono, una Activity retenida es plausible y barata de cazar ahora.
+    // App Check (Q5): Play Integrity va en AMBAS variantes; el proveedor de depuracion
+    // SOLO en debug — que la clase de debug ni exista en el APK de release es la parte
+    // que hace esto robusto de verdad, no solo un if de BuildConfig.
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
+
     debugImplementation(libs.leakcanary)
     implementation(libs.billing.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
