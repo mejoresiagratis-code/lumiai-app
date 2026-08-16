@@ -1299,3 +1299,14 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - Lección de proceso: primera escritura del fichero se me fue de las manos con funciones de
   relleno sin sentido (`fillMaxWidthCompat` vacía, un hook de pausa no-op) — reescrito limpio
   antes de conectarlo a nada, en vez de dejarlo así y "ya lo arreglo luego".
+
+### 2026-08-16 (lección #46 — no asumir material-icons-extended: el proyecto usa drawables propios)
+- CI rojo en v0.9.32: `LegalWebScreen.kt` usaba `Icons.AutoMirrored.Filled.ArrowBack`, pero
+  **`material-icons-extended` no es dependencia de este proyecto** — todas las pantallas usan
+  drawables vectoriales propios (`ic_back`, `ic_chevron_down`...) con `painterResource`.
+- Fix: mismo patrón que `SoundAlertScreen` — `painterResource(R.drawable.ic_back)` +
+  `contentDescription = stringResource(R.string.back_cd)`, que además da la etiqueta de
+  accesibilidad que la versión con `Icons` tenía a `null`.
+- Regla operativa: al crear una pantalla nueva, copiar el patrón de iconografía de una pantalla
+  hermana ANTES de escribir imports de memoria. Barrido posterior: cero usos de `Icons.` en todo
+  el proyecto, este era el único.

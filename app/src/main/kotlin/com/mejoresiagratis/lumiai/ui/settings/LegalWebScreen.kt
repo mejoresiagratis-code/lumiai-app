@@ -8,8 +8,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,8 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import com.mejoresiagratis.lumiai.R
 
 /**
  * Política de privacidad y Términos: WebView INTERNO, no un Intent al navegador (14-ago, petición
@@ -60,7 +61,10 @@ fun LegalWebScreen(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = { handleBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_back),
+                            contentDescription = stringResource(R.string.back_cd)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors()
