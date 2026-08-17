@@ -1421,3 +1421,16 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
 - `photoUrl` con valor por defecto: la llamada del invitado (`Avatar(letter = "?")`) sigue válida
   sin tocarla.
 - Changelog: entrada v0.9.38 en el mismo commit (convención).
+
+### 2026-08-17 (correos de Auth en el idioma del usuario)
+- **Captura de Pablo:** el correo de verificación llegaba en INGLÉS (enlace con `lang=en`) y Gmail
+  se lo traducía automáticamente — señal inequívoca de que el idioma estaba mal.
+- Fix de una línea: `auth.useAppLanguage()` en el init de `FirebaseAuthRepository`. Firebase pasa
+  a enviar verificación y recuperación de contraseña en el idioma del dispositivo. Envuelto en
+  `runCatching`: nunca debe impedir que el repositorio de auth se construya.
+- **Verificado de paso (y contradice una suposición):** el alta con GOOGLE **no** dispara correo
+  de verificación — `sendEmailVerification()` solo se llama en `register()` (email/contraseña), y
+  Firebase marca las cuentas de Google como verificadas de origen. El comportamiento actual es el
+  correcto; no hacía falta tocarlo.
+- El resto de la personalización (remitente, asunto, cuerpo, dominio propio) es configuración de
+  la CONSOLA de Firebase, no código. Guía entregada aparte.

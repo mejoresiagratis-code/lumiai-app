@@ -36,6 +36,11 @@ class FirebaseAuthRepository @Inject constructor(
     override val currentUser: Flow<AuthUser?> = _currentUser.asStateFlow()
 
     init {
+        // Correos de Auth en el IDIOMA DEL DISPOSITIVO (17-ago). Sin esto, Firebase los envía
+        // siempre en inglés (el enlace de verificación llegaba con `lang=en` y Gmail se los
+        // traducía al usuario, que es justo la señal de que algo va mal). Afecta a
+        // verificación de correo y a recuperación de contraseña, sin tocar nada más.
+        runCatching { auth.useAppLanguage() }
         auth.addAuthStateListener { fa ->
             _currentUser.value = fa.currentUser?.toAuthUser()
         }
