@@ -910,7 +910,9 @@ fun SettingsScreen(
             onDismiss = { showLicenses = false },
             iconRes = R.drawable.ic_info,
             title = stringResource(R.string.about_licenses),
-            body = stringResource(R.string.about_licenses_soon),
+            // Lista real (17-ago): sustituye al marcador "próximamente". Cada licencia se
+            // verificó en el POM publicado del artefacto, no de memoria.
+            bodyContent = { LicensesContent() },
             dismissLabel = stringResource(R.string.dialog_close)
         )
     }

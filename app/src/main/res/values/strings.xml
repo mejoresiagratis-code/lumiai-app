@@ -312,4 +312,7 @@
     <string name="changelog_older">Intimate mode, Music mode and user accounts.</string>
     <string name="changelog_multicolor_led">The multicolour accent now unlocks with Pro access, ads included. The LED banner opens in landscape on its own.</string>
     <string name="changelog_avatar">Your Google profile picture now appears in Settings when you sign in with Google.</string>
+    <string name="licenses_intro">LumiAI is built with the following open-source software. Thanks to everyone who maintains it.</string>
+    <string name="licenses_footer">Apache 2.0 and MIT licence texts are available at apache.org/licenses and opensource.org. The Google libraries listed last are distributed under the Android SDK terms, not as open source.</string>
+    <string name="changelog_licenses">Open-source licences are now listed in full, and verification emails arrive in your language.</string>
 </resources>

@@ -33,6 +33,7 @@ private data class ChangelogEntry(
 )
 
 private val CHANGELOG = listOf(
+    ChangelogEntry("v0.9.40", R.string.changelog_licenses),
     ChangelogEntry("v0.9.38", R.string.changelog_avatar),
     ChangelogEntry("v0.9.37", R.string.changelog_multicolor_led),
     ChangelogEntry("v0.9.34", R.string.changelog_security),

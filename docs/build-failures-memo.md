@@ -1434,3 +1434,20 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   correcto; no hacía falta tocarlo.
 - El resto de la personalización (remitente, asunto, cuerpo, dominio propio) es configuración de
   la CONSOLA de Firebase, no código. Guía entregada aparte.
+
+### 2026-08-17 (licencias de código abierto: lista real, verificada en origen)
+- El diálogo decía "Lista de licencias, próximamente" — marcador desde el principio del proyecto.
+  Requisito legal real para publicar, no un adorno.
+- **Cada licencia se verificó consultando el POM publicado del artefacto** (Maven Central y el
+  repositorio Maven de Google), no de memoria. Y ahí saltó el motivo por el que merecía la pena:
+  **MaterialKolor es MIT, no Apache 2.0** como todo lo demás. Haberlo supuesto habría metido una
+  afirmación legal falsa dentro de la app.
+- **Distinción importante que la lista deja explícita:** Play Billing, Anuncios, Mensajes al
+  usuario e Identidad NO son código abierto — se distribuyen bajo la Android Software Development
+  Kit License (verificado en el POM de billing-ktx). Van agrupadas al final y señaladas como
+  tales, en vez de colarlas entre las Apache como si lo fueran.
+- Implementación con el mismo patrón que el changelog: `Licenses.kt` con datos estructurados +
+  `LicensesContent()` en el slot `bodyContent` de `LumiDialog` (formato con biblioteca en negrita
+  y scroll ya resuelto).
+- `about_licenses_soon` queda definida sin uso (huérfana inofensiva; el auditor exige
+  usadas ⊆ definidas, no al revés).
