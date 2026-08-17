@@ -164,7 +164,7 @@
     <string name="led_locked">Available with Pro, or after unlocking time by watching 2 ads.</string>
     <string name="led_input_label">Your message</string>
     <string name="led_start">Start</string>
-    <string name="led_hint">Tap the screen to exit. Once running, turn your phone sideways for a wider sign.</string>
+    <string name="led_hint">Tap the screen to exit. The banner opens in landscape automatically.</string>
     <string name="led_speed_label">Speed: %1$d/%2$d</string>
     <string name="led_dir_left_cd">Scroll left</string>
     <string name="led_dir_right_cd">Scroll right</string>
@@ -310,4 +310,5 @@
     <string name="changelog_sound_alert">Sound Alert now recognises knocks and short doorbells, and changes to the sounds you watch apply instantly.</string>
     <string name="changelog_access_theme">The free Pro trial now requires a verified account, and the theme follows your system by default.</string>
     <string name="changelog_older">Intimate mode, Music mode and user accounts.</string>
+    <string name="changelog_multicolor_led">The multicolour accent now unlocks with Pro access, ads included. The LED banner opens in landscape on its own.</string>
 </resources>

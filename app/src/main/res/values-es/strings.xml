@@ -164,7 +164,7 @@
     <string name="led_locked">Disponible con Pro, o desbloqueando tiempo al ver 2 anuncios.</string>
     <string name="led_input_label">Tu mensaje</string>
     <string name="led_start">Iniciar</string>
-    <string name="led_hint">Toca la pantalla para salir. Ya en marcha, gira el móvil para un letrero más ancho.</string>
+    <string name="led_hint">Toca la pantalla para salir. El letrero se abre apaisado automáticamente.</string>
     <string name="led_speed_label">Velocidad: %1$d/%2$d</string>
     <string name="led_dir_left_cd">Desplazar a la izquierda</string>
     <string name="led_dir_right_cd">Desplazar a la derecha</string>
@@ -310,4 +310,5 @@
     <string name="changelog_sound_alert">La Alerta sonora reconoce golpes y timbres cortos, y los cambios de sonidos vigilados se aplican al instante.</string>
     <string name="changelog_access_theme">La prueba Pro gratuita requiere cuenta verificada, y el tema sigue al sistema por defecto.</string>
     <string name="changelog_older">Modo Íntimo, modo Música y cuentas de usuario.</string>
+    <string name="changelog_multicolor_led">El acento multicolor se desbloquea con acceso Pro, anuncios incluidos. El Letrero LED se abre apaisado solo.</string>
 </resources>

@@ -166,8 +166,11 @@ fun SettingsScreen(
 
     // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
     // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
-    LaunchedEffect(accentColor, isGuest, proUi.hasSubscription) {
-        if (!accentColor.isUnlocked(hasAccount = !isGuest, hasSubscription = proUi.hasSubscription)) {
+    // Usa el acceso Pro EFECTIVO (17-ago), igual que los swatches: con multicolor
+    // desbloqueable por anuncios, al agotarse la hora el acento debe revertir solo.
+    // La clave del efecto incluye proUnlocked para que ese momento se detecte.
+    LaunchedEffect(accentColor, isGuest, proUi.proUnlocked) {
+        if (!accentColor.isUnlocked(hasAccount = !isGuest, hasPro = proUi.proUnlocked)) {
             onSelectAccent(AccentColor.BLUE)
         }
     }
@@ -542,7 +545,10 @@ fun SettingsScreen(
                 AccentSwatches(
                     selected = accentColor,
                     hasAccount = !isGuest,
-                    hasSubscription = proUi.hasSubscription,
+                    // Acceso Pro EFECTIVO (17-ago): incluye el desbloqueo temporal por
+                    // anuncios, no solo la suscripción — multicolor se comporta ya como
+                    // el resto de herramientas Pro.
+                    hasPro = proUi.proUnlocked,
                     onSelect = onSelectAccent,
                     onLockedAccount = { accentLockDialog = AccentLock.ACCOUNT },
                     onLockedPro = { accentLockDialog = AccentLock.PRO }
@@ -1240,7 +1246,7 @@ private enum class AccentLock { ACCOUNT, PRO }
 private fun AccentSwatches(
     selected: AccentColor,
     hasAccount: Boolean,
-    hasSubscription: Boolean,
+    hasPro: Boolean,
     onSelect: (AccentColor) -> Unit,
     onLockedAccount: () -> Unit,
     onLockedPro: () -> Unit
@@ -1252,7 +1258,7 @@ private fun AccentSwatches(
             verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
         ) {
             AccentColor.entries.forEach { ac ->
-                val locked = !ac.isUnlocked(hasAccount = hasAccount, hasSubscription = hasSubscription)
+                val locked = !ac.isUnlocked(hasAccount = hasAccount, hasPro = hasPro)
                 AccentSwatch(
                     accent = ac,
                     selected = selected == ac,
@@ -1260,7 +1266,7 @@ private fun AccentSwatches(
                     onClick = {
                         when {
                             !locked -> onSelect(ac)
-                            ac.requiresSubscription -> onLockedPro()
+                            ac.requiresPro -> onLockedPro()
                             else -> onLockedAccount()
                         }
                     }

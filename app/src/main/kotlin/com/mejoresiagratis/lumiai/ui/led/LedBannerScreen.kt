@@ -299,10 +299,13 @@ private fun LedBannerDisplay(config: LedBannerConfig, onExit: () -> Unit) {
             it.attributes = lp
         }
         // La app está bloqueada en vertical (manifest), pero un letrero se lee mucho mejor
-        // apaisado: liberamos la orientación SOLO mientras dura el display y la restauramos
-        // al salir, para no exponer el resto de la UI (no diseñada para landscape).
+        // apaisado. Antes se LIBERABA la orientación y el usuario tenía que girar el móvil a
+        // mano; ahora se FUERZA apaisado al iniciar (petición de Pablo, 17-ago): el letrero
+        // aparece ya ancho, sin pasos intermedios. Al salir se restaura vertical.
+        // SENSOR_LANDSCAPE y no LANDSCAPE a secas: admite las DOS orientaciones apaisadas,
+        // así el letrero queda derecho sostengas el móvil como lo sostengas.
         val prevOrientation = activity?.requestedOrientation
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         onDispose {
             window?.let {
                 it.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

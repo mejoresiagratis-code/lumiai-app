@@ -9,8 +9,8 @@ class AccentColorTest {
 
     @Test
     fun `azul y naranja libres para todos incluso sin cuenta`() {
-        assertTrue(AccentColor.BLUE.isUnlocked(hasAccount = false, hasSubscription = false))
-        assertTrue(AccentColor.ORANGE.isUnlocked(hasAccount = false, hasSubscription = false))
+        assertTrue(AccentColor.BLUE.isUnlocked(hasAccount = false, hasPro = false))
+        assertTrue(AccentColor.ORANGE.isUnlocked(hasAccount = false, hasPro = false))
     }
 
     @Test
@@ -20,16 +20,24 @@ class AccentColorTest {
             AccentColor.RED, AccentColor.VIOLET, AccentColor.WHITE
         )
         gated.forEach { ac ->
-            assertFalse(ac.name, ac.isUnlocked(hasAccount = false, hasSubscription = false))
-            assertTrue(ac.name, ac.isUnlocked(hasAccount = true, hasSubscription = false))
-            assertTrue(ac.name, ac.isUnlocked(hasAccount = false, hasSubscription = true))
+            assertFalse(ac.name, ac.isUnlocked(hasAccount = false, hasPro = false))
+            assertTrue(ac.name, ac.isUnlocked(hasAccount = true, hasPro = false))
+            assertTrue(ac.name, ac.isUnlocked(hasAccount = false, hasPro = true))
         }
     }
 
     @Test
-    fun `multicolor exclusivo de suscripcion pro`() {
-        assertFalse(AccentColor.MULTICOLOR.isUnlocked(hasAccount = true, hasSubscription = false))
-        assertTrue(AccentColor.MULTICOLOR.isUnlocked(hasAccount = false, hasSubscription = true))
+    fun `multicolor exige acceso pro, no basta con tener cuenta`() {
+        assertFalse(AccentColor.MULTICOLOR.isUnlocked(hasAccount = true, hasPro = false))
+        assertTrue(AccentColor.MULTICOLOR.isUnlocked(hasAccount = false, hasPro = true))
+    }
+
+    @Test
+    fun `multicolor se desbloquea con el acceso pro TEMPORAL, no solo con suscripcion`() {
+        // Revisión del 17-ago: hasPro es el acceso EFECTIVO — suscripción o desbloqueo
+        // temporal por anuncios. La regla pura no distingue de dónde viene el Pro, que es
+        // justo lo que hace que multicolor se comporte ya como el Letrero LED.
+        assertTrue(AccentColor.MULTICOLOR.isUnlocked(hasAccount = true, hasPro = true))
     }
 
     @Test

@@ -1383,3 +1383,24 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   documenta el desarrollo. Quedan 7 entradas, todas funciones, rediseños o reglas de acceso.
 - Regla de la sesión anterior reforzada: al añadir una novedad reseñable, añadir su
   `ChangelogEntry` + sus dos strings en el MISMO commit.
+
+### 2026-08-17 (multicolor deja de ser solo-suscripción + Letrero LED apaisado directo)
+- **① REVERSIÓN DELIBERADA de regla de producto:** el acento MULTICOLOR estaba reservado a
+  suscriptores de pago, con el desbloqueo temporal por anuncios explícitamente excluido. Pablo
+  decide que se comporte como el Letrero LED y la Alerta sonora: **acceso Pro efectivo**, venga
+  de suscripción o de la hora ganada con anuncios (que ya exige cuenta con correo verificado).
+  - `AccentColor.requiresSubscription` → `requiresPro`; `isUnlocked(hasAccount, hasSubscription)`
+    → `isUnlocked(hasAccount, hasPro)`. Renombrado a propósito: el nombre viejo mentía sobre la
+    semántica nueva y habría inducido al error en el futuro.
+  - Barrido #41 aplicado: apareció un segundo uso NO obvio en `SettingsScreen:170` — la
+    reconciliación que revierte el acento a azul si queda bloqueado. Sin alinearlo, multicolor NO
+    habría revertido al caducar la hora de Pro. Su `LaunchedEffect` ahora depende de
+    `proUnlocked` (antes `hasSubscription`), o el momento del vencimiento no se detectaría.
+- **② Letrero LED: apaisado FORZADO al iniciar** (antes: `SCREEN_ORIENTATION_FULL_USER`, que solo
+  liberaba la orientación y obligaba al usuario a girar el móvil a mano). Ahora
+  `SCREEN_ORIENTATION_SENSOR_LANDSCAPE` — apaisado directo y con las DOS orientaciones válidas,
+  así el letrero queda derecho se sostenga el móvil como se sostenga. Al salir del display se
+  restaura vertical, comportamiento que ya existía y no se toca.
+  - `led_hint` reescrita en EN/ES: pedía "gira el móvil", que ya no aplica.
+- Convención de changelog aplicada en el mismo commit: entrada v0.9.37 añadida (ambos cambios son
+  visibles para el usuario: regla de acceso + comportamiento de una función).
