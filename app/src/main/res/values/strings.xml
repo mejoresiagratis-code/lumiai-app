@@ -265,7 +265,6 @@
     <string name="about_section">About</string>
     <string name="about_version">Version</string>
     <string name="about_changelog">What\'s new</string>
-    <string name="about_changelog_body">v0.9.34 — Stronger security: the app now verifies its own authenticity when connecting.\nv0.9.32 — Privacy Policy and Terms now open inside the app.\nv0.9.31 — Redesigned sign-in and Settings: Google sign-in front and centre, clearer sections, and \"My details\" gathered in one place.\nv0.9.29 — Screen mode refreshed: text stays readable over any colour, distraction-free lock, settings that open with a swipe, and a full-spectrum colour slider.\nv0.9.28 — Sound Alert: now recognises knocks and short doorbells, and changes to the watched sounds apply instantly without restarting.\nv0.9.27 — Sharper flashes in SOS, Strobe, Beacon, Morse and Music.\nv0.9.25 — Uninstalling now clears all data: reinstalling starts fresh.\nv0.9.20 — The ad-based Pro trial now requires an account with a verified email. The theme follows your system by default.\nv0.4.x — Intimate mode, Music mode and user roles.</string>
     <string name="about_rate">Rate us on Google Play</string>
     <string name="about_licenses">Open-source licences</string>
     <string name="about_licenses_soon">Licence list coming soon.</string>
@@ -304,4 +303,11 @@
     <string name="general_section">General</string>
     <string name="action_open">Open</string>
     <string name="a11y_expand">Show options</string>
+    <string name="changelog_security">The app now verifies its own authenticity when connecting, protecting your account.</string>
+    <string name="changelog_legal_inapp">Privacy Policy and Terms now open inside the app, without sending you to a browser.</string>
+    <string name="changelog_redesign">Redesigned sign-in and Settings: Google sign-in front and centre, clearer sections, and your details gathered in one place.</string>
+    <string name="changelog_screen_mode">Screen mode renewed: readable text over any colour, a distraction-free lock, settings that open with a swipe up, and a full-spectrum colour picker.</string>
+    <string name="changelog_sound_alert">Sound Alert now recognises knocks and short doorbells, and changes to the sounds you watch apply instantly.</string>
+    <string name="changelog_access_theme">The free Pro trial now requires a verified account, and the theme follows your system by default.</string>
+    <string name="changelog_older">Intimate mode, Music mode and user accounts.</string>
 </resources>

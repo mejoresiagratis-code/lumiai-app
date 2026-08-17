@@ -887,7 +887,9 @@ fun SettingsScreen(
             onDismiss = { showChangelog = false },
             iconRes = R.drawable.ic_info,
             title = stringResource(R.string.about_changelog),
-            body = stringResource(R.string.about_changelog_body),
+            // Cuerpo con formato propio: versión en negrita, texto a la izquierda y aire
+            // entre entradas (16-ago). La lista vive en Changelog.kt.
+            bodyContent = { ChangelogContent() },
             dismissLabel = stringResource(R.string.dialog_close)
         )
     }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -42,7 +43,14 @@ fun LumiDialog(
     onDismiss: () -> Unit,
     @DrawableRes iconRes: Int,
     title: String,
-    body: String,
+    /** Cuerpo simple. Se ignora si se pasa [bodyContent]. */
+    body: String? = null,
+    /**
+     * Cuerpo con formato propio (16-ago): lo usa Novedades, que necesita versiones en negrita,
+     * alineado a la izquierda y aire entre entradas. Con `body` plano no se puede expresar eso
+     * y duplicar el diálogo entero por un caso sería peor. Si viene, sustituye a [body].
+     */
+    bodyContent: (@Composable ColumnScope.() -> Unit)? = null,
     primaryLabel: String? = null,
     onPrimary: (() -> Unit)? = null,
     secondaryLabel: String? = null,
@@ -85,6 +93,15 @@ fun LumiDialog(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
+                if (bodyContent != null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 380.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(LumiSpacing.md)
+                    ) { bodyContent() }
+                } else if (body != null) {
                 Text(
                     text = body,
                     style = MaterialTheme.typography.bodyMedium,
@@ -98,6 +115,7 @@ fun LumiDialog(
                         .heightIn(max = 360.dp)
                         .verticalScroll(rememberScrollState())
                 )
+                }
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

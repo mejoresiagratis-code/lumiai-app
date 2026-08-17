@@ -1363,3 +1363,23 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   cortaba en pantallas pequeñas. Añadido `heightIn(max = 360.dp)` + `verticalScroll`: el scroll
   solo aparece cuando el texto no cabe, de modo que los diálogos cortos (la mayoría) se ven
   exactamente igual que antes. Sin esto, la convención se habría roto sola al crecer la lista.
+
+### 2026-08-16 (Novedades con formato profesional + criterio de curación endurecido)
+- **QA de Pablo (captura):** el diálogo salía centrado, sin jerarquía y sin aire — un párrafo
+  continuo ilegible. Pedido: versión en negrita, alineado a la izquierda, separación entre
+  entradas, y SOLO novedades de interés para el usuario.
+- **Cambio de modelo de datos:** el changelog deja de ser un string monolítico con `\n` y pasa a
+  ser una **lista estructurada** (`Changelog.kt`): `ChangelogEntry(version, descRes)`. Ventajas
+  reales: cada entrada puede llevar formato propio, añadir una novedad es UNA línea en la lista
+  en vez de editar un párrafo gigante en dos idiomas, y la versión no se traduce (no tiene por
+  qué estar en strings.xml).
+- **`LumiDialog` gana un slot `bodyContent`** opcional: `body` pasa a nullable y si viene
+  `bodyContent` se usa ese, con scroll y `spacedBy(md)`. Las 15 llamadas existentes con texto
+  plano siguen intactas — no se duplicó el diálogo por un solo caso.
+- **Curación endurecida (criterio de producto):** eliminadas las entradas que eran CORRECCIONES,
+  no novedades — "destellos más nítidos" (era el revert de pulseOff) y "al desinstalar se borran
+  los datos" (comportamiento interno). Razonamiento: si el usuario nunca supo que algo estaba
+  roto, enterarse por el changelog solo resta confianza. El changelog vende el producto, no
+  documenta el desarrollo. Quedan 7 entradas, todas funciones, rediseños o reglas de acceso.
+- Regla de la sesión anterior reforzada: al añadir una novedad reseñable, añadir su
+  `ChangelogEntry` + sus dos strings en el MISMO commit.
