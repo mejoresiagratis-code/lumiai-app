@@ -311,4 +311,5 @@
     <string name="changelog_access_theme">La prueba Pro gratuita requiere cuenta verificada, y el tema sigue al sistema por defecto.</string>
     <string name="changelog_older">Modo Íntimo, modo Música y cuentas de usuario.</string>
     <string name="changelog_multicolor_led">El acento multicolor se desbloquea con acceso Pro, anuncios incluidos. El Letrero LED se abre apaisado solo.</string>
+    <string name="changelog_avatar">Tu foto de perfil de Google aparece en Ajustes al entrar con Google.</string>
 </resources>

@@ -20,8 +20,8 @@ android {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 66
-        versionName = "0.9.37"
+        versionCode = 67
+        versionName = "0.9.38"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -181,6 +181,9 @@ dependencies {
     // App Check (Q5): Play Integrity va en AMBAS variantes; el proveedor de depuracion
     // SOLO en debug — que la clase de debug ni exista en el APK de release es la parte
     // que hace esto robusto de verdad, no solo un if de BuildConfig.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network)
+
     implementation(libs.firebase.appcheck.playintegrity)
     debugImplementation(libs.firebase.appcheck.debug)
 

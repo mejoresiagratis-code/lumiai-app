@@ -17,6 +17,7 @@ mockk = "1.13.12"
 turbine = "1.1.0"
 googleServices = "4.4.2"
 firebaseBom = "33.5.1"
+coil = "3.2.0"
 crashlyticsPlugin = "3.0.5"
 leakcanary = "2.14"
 credentials = "1.3.0"
@@ -64,6 +65,10 @@ firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashly
 # App Check (Q5): la version la fija el BOM de Firebase, igual que el resto.
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
+# Coil (17-ago): unica finalidad es la foto de perfil de Google en Ajustes. coil-network-okhttp
+# es obligatorio en Coil 3 — sin el, cargar por URL no funciona (en Coil 2 iba incluido).
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billingClient" }
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }

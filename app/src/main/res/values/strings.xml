@@ -311,4 +311,5 @@
     <string name="changelog_access_theme">The free Pro trial now requires a verified account, and the theme follows your system by default.</string>
     <string name="changelog_older">Intimate mode, Music mode and user accounts.</string>
     <string name="changelog_multicolor_led">The multicolour accent now unlocks with Pro access, ads included. The LED banner opens in landscape on its own.</string>
+    <string name="changelog_avatar">Your Google profile picture now appears in Settings when you sign in with Google.</string>
 </resources>

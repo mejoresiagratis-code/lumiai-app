@@ -1404,3 +1404,20 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   - `led_hint` reescrita en EN/ES: pedía "gira el móvil", que ya no aplica.
 - Convención de changelog aplicada en el mismo commit: entrada v0.9.37 añadida (ambos cambios son
   visibles para el usuario: regla de acceso + comportamiento de una función).
+
+### 2026-08-17 (foto de perfil de Google en el avatar de Ajustes)
+- **Petición:** al entrar con Google, mostrar su foto de perfil en vez de la inicial.
+- `AuthUser` gana `photoUrl: String?` y `FirebaseAuthRepository.toAuthUser()` la mapea desde
+  `FirebaseUser.photoUrl`. Se guarda la URL como String, no la imagen: el dominio no debe saber
+  nada de cómo se carga.
+- **Coil 3.2.0** añadido (no había NINGUNA librería de carga de imágenes en el proyecto). Versión
+  verificada contra Maven Central antes de escribirla, no de memoria. **Ojo con Coil 3**: exige
+  `coil-network-okhttp` como artefacto SEPARADO — sin él, cargar por URL falla en silencio. En
+  Coil 2 iba incluido, y ese es el error clásico al migrar.
+- **Degradación cuidada:** la inicial se pinta SIEMPRE de fondo y la foto encima. Así el círculo
+  nunca está vacío mientras la imagen carga, y si no hay red, la URL es nula o la descarga falla,
+  se ve exactamente lo que había antes en vez de un hueco gris. Con email/contraseña `photoUrl`
+  es null y el comportamiento es el de siempre.
+- `photoUrl` con valor por defecto: la llamada del invitado (`Avatar(letter = "?")`) sigue válida
+  sin tocarla.
+- Changelog: entrada v0.9.38 en el mismo commit (convención).

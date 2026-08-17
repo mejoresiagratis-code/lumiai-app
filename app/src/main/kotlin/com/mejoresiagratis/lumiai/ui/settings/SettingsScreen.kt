@@ -61,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -88,6 +89,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import coil3.compose.AsyncImage
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.AccentColor
 import com.mejoresiagratis.lumiai.domain.model.AccentStyle
@@ -263,7 +265,10 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(LumiSpacing.md)
                     ) {
-                        Avatar(letter = (email ?: user?.uid.orEmpty()).take(1).uppercase().ifBlank { "?" })
+                        Avatar(
+                            letter = (email ?: user?.uid.orEmpty()).take(1).uppercase().ifBlank { "?" },
+                            photoUrl = user?.photoUrl
+                        )
                         Column(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
@@ -1024,8 +1029,14 @@ private fun SettingsSection(
     }
 }
 
+/**
+ * Avatar de la cuenta. Si el proveedor aporta foto (Google) se carga desde su URL (17-ago);
+ * si no hay foto, o falla la descarga, o aún está cargando, se mantiene la inicial de siempre.
+ * La inicial se pinta SIEMPRE detrás: así el círculo nunca aparece vacío mientras llega la
+ * imagen, y una caída de red degrada a lo que había antes en vez de a un hueco gris.
+ */
 @Composable
-private fun Avatar(letter: String) {
+private fun Avatar(letter: String, photoUrl: String? = null) {
     Box(
         modifier = Modifier
             .size(48.dp)
@@ -1038,6 +1049,16 @@ private fun Avatar(letter: String) {
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer
         )
+        if (!photoUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(CircleShape)
+            )
+        }
     }
 }
 
