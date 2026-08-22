@@ -126,13 +126,21 @@ class FirebaseAuthRepository @Inject constructor(
             u.reauthenticate(GoogleAuthProvider.getCredential(idToken, null)).await(); Unit
         }.toAuthResult()
 
+    /**
+     * Borra la cuenta y deja el estado observable en "sin usuario" DE INMEDIATO (22-ago).
+     *
+     * Antes, tras borrar se llamaba a `ensureAnonymous()` —una peticion de RED— y solo despues
+     * se actualizaba `_currentUser`. Si esa segunda llamada se atascaba, la pantalla seguia
+     * mostrando la cuenta ya borrada, con su correo y su check de verificado: el usuario veia
+     * "cuenta borrada" y su cuenta delante. Ahora el estado se limpia primero y la sesion
+     * anonima la restablece quien llama, con su propio tiempo limite.
+     */
     override suspend fun deleteAccount(): Result<Unit> =
         runCatching {
             val u = auth.currentUser ?: throw AuthException(AuthError.Unknown)
             u.delete().await(); Unit
         }.toAuthResult().onSuccess {
-            ensureAnonymous()
-            _currentUser.value = auth.currentUser?.toAuthUser()
+            _currentUser.value = null
         }
 
     override fun currentUid(): String? = auth.currentUser?.uid

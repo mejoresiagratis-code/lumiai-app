@@ -1555,3 +1555,26 @@ de privacidad ya publicada en mejoresiagratis.com.
 - **Lección transversal:** toda llamada de red dentro de un flujo con «punto de no retorno» debe
   tener tiempo límite. Sin él, el modo de fallo no es un error visible sino una interfaz
   congelada, que es el peor de los dos: el usuario no sabe si esperar, reintentar o irse.
+
+### 2026-08-22 (lección #50 — "cuenta borrada" con la cuenta aún en pantalla)
+- **QA de Pablo (v0.9.44):** el diagnóstico del timeout FUNCIONÓ — mensaje en pantalla: «no se
+  pudo eliminar nuestro registro de soporte (sin respuesta del servidor)». Pero apareció un
+  segundo defecto: el mensaje decía «tu cuenta se ha borrado» **con el correo y el check de
+  verificado todavía visibles**.
+- **Causa:** `deleteAccount()` hacía, en este orden: borrar en Auth → `ensureAnonymous()` (una
+  petición de RED) → actualizar `_currentUser`. Si esa segunda llamada se atascaba —y sabemos que
+  el tráfico hacia Firebase estaba dando problemas, porque Firestore acababa de agotar su tiempo
+  límite— **la actualización del estado nunca se ejecutaba** y la pantalla seguía mostrando una
+  cuenta que ya no existía.
+- **Fix:** el repositorio pone `_currentUser = null` INMEDIATAMENTE tras borrar, sin depender de
+  ninguna red. La sesión anónima la restablece el caso de uso, con su propio `withTimeout`, y si
+  falla no pasa nada: el usuario ya consta como invitado y la sesión anónima se creará sola en el
+  siguiente arranque.
+- **Principio:** nunca hacer depender la actualización de un estado ya CONFIRMADO de una llamada
+  de red posterior. El hecho («la cuenta ya no existe») es cierto en cuanto el borrado responde;
+  atarlo a lo que venga después convierte cualquier lentitud en una mentira en pantalla.
+- **HALLAZGO DE ENTORNO para Pablo (no es código):** que Firestore agote el tiempo mientras Auth
+  responde bien apunta a que **Firestore está bloqueado, casi seguro por App Check**: si se activó
+  la aplicación forzada en la consola sin registrar el token de depuración, las peticiones a
+  Firestore se rechazan mientras Auth sigue funcionando. Esto además rompe en silencio
+  `userRegistry.sync()`, que va envuelto en `runCatching`.

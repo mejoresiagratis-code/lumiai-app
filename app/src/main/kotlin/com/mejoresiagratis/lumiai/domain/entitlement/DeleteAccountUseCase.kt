@@ -78,8 +78,10 @@ class DeleteAccountUseCase @Inject constructor(
             }
         deleted.exceptionOrNull()?.let { return Result.failure(it) }
 
-        // Paso 4 — la app queda usable como invitado.
-        runCatching { auth.ensureAnonymous() }
+        // Paso 4 — la app queda usable como invitado. Con tiempo limite y sin bloquear: si la
+        // red no responde, el usuario ya consta como "sin cuenta" —el repositorio lo dejo asi
+        // nada mas borrar— y la sesion anonima se creara sola en el proximo arranque.
+        runCatching { withTimeout(NETWORK_TIMEOUT_MS) { auth.ensureAnonymous() } }
         return Result.success(DeleteAccountReport(registryDeleted, registryFailure))
     }
 
