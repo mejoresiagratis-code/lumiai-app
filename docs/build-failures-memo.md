@@ -1614,3 +1614,27 @@ de privacidad ya publicada en mejoresiagratis.com.
   propósito** antes de darla por buena, en vez de confiar en que la expresión regular funcionaba.
 - Regla: cada vez que el CI caiga por algo que la auditoría estática no vio, ampliar la auditoría
   en el mismo commit. El script cubría Kotlin; ahora también recursos.
+
+### 2026-08-22 (bloque C — los servicios revocan el acceso Pro por sí mismos)
+- **Defecto (auditoría P0-3):** el control de permisos vivía SOLO en la interfaz. Si caducaba la
+  hora de Pro, se cerraba sesión o se borraba la cuenta **con Música o Alerta sonora en marcha**,
+  los servicios seguían usando micrófono y flash indefinidamente. Ocultar un botón no revoca una
+  ejecución en curso.
+- **`ProAccessMonitor` (nuevo, `@Singleton`):** extrae la combinación permisos + desbloqueo
+  temporal + reloj de 1 s que vivía dentro de `FlashViewModel`. Ahora pantallas y servicios
+  evalúan el acceso con LA MISMA regla; si cambia, cambia para todos y no puede haber
+  discrepancia entre lo que la interfaz muestra y lo que los servicios permiten.
+- **Dos sutilezas que evitan bugs nuevos, ambas deliberadas:**
+  1. `distinctUntilChanged` sobre `hasAiAccess` es obligatorio: el ticker emite cada segundo y un
+     servicio que reaccionara a cada emisión se pararía y arrancaría en bucle.
+  2. **Solo se para en la TRANSICIÓN de "tenía acceso" a "ya no"**, nunca ante un simple `false`.
+     La primera emisión puede llegar en falso mientras Firebase Auth resuelve la sesión, y
+     reaccionar a eso mataría el servicio nada más arrancar. Si nunca tuvo acceso, la interfaz no
+     debería haberlo dejado empezar.
+- El usuario ve POR QUÉ se paró: `stopReason` en Alerta sonora y texto propio en la notificación
+  de Música, en vez de que la luz muera sin explicación.
+- `FlashViewModel` adelgaza: pierde su ticker y dos dependencias, y su test se adapta envolviendo
+  los mismos dobles en el monitor.
+- **NO se ha construido el "coordinador de sesiones" completo** que propone la auditoría externa:
+  es la arquitectura correcta a medio plazo, pero reescribir la orquestación de tres servicios a
+  nueve días del plazo introduce más riesgo del que elimina. Queda en Fase 2 del roadmap.

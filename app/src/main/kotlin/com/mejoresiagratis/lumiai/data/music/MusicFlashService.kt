@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.music.BeatDetector
 import com.mejoresiagratis.lumiai.domain.music.BeatFlashMapper
@@ -53,6 +54,7 @@ class MusicFlashService : Service() {
     @Inject lateinit var configRepo: MusicConfigRepository
     @Inject lateinit var flashState: FlashStateRepository
     @Inject lateinit var engine: EngineController
+    @Inject lateinit var proAccess: ProAccessMonitor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var audioJob: Job? = null
@@ -112,8 +114,28 @@ class MusicFlashService : Service() {
         // apagado (QA 13-ago). stopSelf() dispara onDestroy(), que ya deja isOn/torch
         // en su estado correcto.
         scope.launch { torch.externalOffEvents.collect { stopSelf() } }
+        // REVOCACION EN EL SERVICIO (22-ago): ver stopWhenAccessLost().
+        scope.launch { stopWhenAccessLost() }
         requestAudioFocus()
         startListening()
+    }
+
+    /**
+     * Para el servicio cuando el acceso Pro se PIERDE (caducidad, logout, borrado de cuenta).
+     * Solo actua en la TRANSICION de "tenia acceso" a "ya no": la primera emision puede llegar
+     * en `false` mientras los permisos se cargan, y reaccionar a eso mataria el modo nada mas
+     * empezar a sonar.
+     */
+    private suspend fun stopWhenAccessLost() {
+        var hadAccess = false
+        proAccess.hasAiAccess.collect { has ->
+            if (has) {
+                hadAccess = true
+            } else if (hadAccess) {
+                updateNotification(R.string.music_notif_no_pro)
+                stopSelf()
+            }
+        }
     }
 
     private fun requestAudioFocus() {

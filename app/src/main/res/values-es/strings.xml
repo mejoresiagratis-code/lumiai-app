@@ -321,4 +321,7 @@
     <string name="billing_msg_already_owned">Ya tenías la suscripción activa.</string>
     <string name="billing_msg_pending">Pago pendiente de confirmación.</string>
     <string name="billing_msg_error">No se pudo completar la compra.</string>
+    <string name="sa_stopped_no_pro">Escucha detenida: tu acceso Pro ha terminado.</string>
+    <string name="music_notif_no_pro">Detenido: tu acceso Pro ha terminado.</string>
+    <string name="changelog_pro_revoke">Música y Alerta sonora se detienen solas cuando termina tu acceso Pro, en vez de seguir corriendo.</string>
 </resources>

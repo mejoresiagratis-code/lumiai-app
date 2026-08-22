@@ -8,10 +8,7 @@ import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
 import com.mejoresiagratis.lumiai.domain.model.DeviceCapabilities
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
-import com.mejoresiagratis.lumiai.domain.entitlement.AccessState
-import com.mejoresiagratis.lumiai.domain.entitlement.TemporaryUnlock
-import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
-import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
+import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -19,7 +16,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,8 +24,7 @@ import javax.inject.Inject
 class FlashViewModel @Inject constructor(
     private val repo: FlashStateRepository,
     private val engine: EngineController,
-    entitlementRepo: EntitlementRepository,
-    temporaryUnlock: TemporaryUnlockRepository,
+    private val proAccess: ProAccessMonitor,
     torch: TorchController,
     deviceFeatures: DeviceFeatures
 ) : ViewModel() {
@@ -40,22 +35,10 @@ class FlashViewModel @Inject constructor(
         hasMicrophone = deviceFeatures.hasMicrophone
     )
 
-    // Ticker de 1 s: reevalúa la caducidad del Pro temporal para re-bloquear en vivo.
-    private val ticker = flow {
-        while (true) {
-            emit(System.currentTimeMillis())
-            delay(1000L)
-        }
-    }
-
-    // Acceso efectivo: permisos permanentes combinados con el Pro temporal activo ahora.
-    private val accessFlow = combine(
-        entitlementRepo.entitlements,
-        temporaryUnlock.proUntilMillis,
-        ticker
-    ) { ent, proUntil, now ->
-        AccessState(entitlements = ent, temporaryProActive = TemporaryUnlock.isActive(proUntil, now))
-    }
+    // Acceso efectivo desde la fuente COMPARTIDA (22-ago): esta combinación vivía aquí, es
+    // decir, solo en la interfaz — por eso los servicios seguían corriendo tras caducar el Pro.
+    // Ahora la regla es una sola para pantallas y servicios; si cambia, cambia para todos.
+    private val accessFlow = proAccess.access
 
     val uiState: StateFlow<FlashUiState> =
         combine(repo.isOn, repo.mode, repo.settings, accessFlow) { on, mode, settings, access ->

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.capability.DeviceFeatures
 import com.mejoresiagratis.lumiai.domain.entitlement.Entitlements
+import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementRepository
@@ -41,7 +42,11 @@ class FlashViewModelTest {
         override val hasMicrophone = true
     }
 
-    private fun vm() = FlashViewModel(repo, engine, entitlementRepo, temporaryUnlock, torch, deviceFeatures)
+    // El acceso efectivo pasa por ProAccessMonitor (22-ago): los dobles de permisos y
+    // desbloqueo temporal siguen siendo los mismos, solo cambia quien los combina.
+    private val proAccess = ProAccessMonitor(entitlementRepo, temporaryUnlock)
+
+    private fun vm() = FlashViewModel(repo, engine, proAccess, torch, deviceFeatures)
 
     @Test
     fun `toggle on starts engine and reflects state`() = runTest {

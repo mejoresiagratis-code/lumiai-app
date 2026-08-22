@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertStateRepository
@@ -48,6 +49,7 @@ class SoundAlertService : Service() {
     @Inject lateinit var torch: TorchController
     @Inject lateinit var configRepo: SoundAlertConfigRepository
     @Inject lateinit var listeningState: SoundAlertStateRepository
+    @Inject lateinit var proAccess: ProAccessMonitor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var classifier: MediaPipeSoundClassifier? = null
@@ -85,6 +87,10 @@ class SoundAlertService : Service() {
         // escuchar (correccion de diseno, QA 14-ago: el stopSelf() anterior era un
         // candidato a matar el servicio entero por un evento que no lo justificaba).
         scope.launch { torch.externalOffEvents.collect { flashJob?.cancel() } }
+        // REVOCACION EN EL SERVICIO (22-ago): si caduca la hora de Pro, se cierra sesion o se
+        // borra la cuenta con la escucha en marcha, el servicio se para SOLO. Antes el control
+        // vivia unicamente en la interfaz y esto seguia usando microfono indefinidamente.
+        scope.launch { stopWhenAccessLost() }
         scope.launch {
             // Cinturon de seguridad (QA 13-ago): SIN esto, cualquier fallo aqui dentro
             // (config corrupta, MediaPipe, lo que sea) tumbaba TODA LA APP — un
@@ -146,6 +152,26 @@ class SoundAlertService : Service() {
             depth++
         }
         return parts.joinToString(" <- ")
+    }
+
+    /**
+     * Para el servicio cuando el acceso Pro se PIERDE, no cuando simplemente falta.
+     *
+     * El matiz es importante: la primera emision puede llegar en `false` mientras los permisos
+     * aun se estan cargando (Firebase Auth tarda un instante en resolver la sesion). Reaccionar
+     * a eso mataria el servicio nada mas arrancar. Por eso solo se actua en la TRANSICION de
+     * "tenia acceso" a "ya no": si nunca lo tuvo, la interfaz no deberia haberlo dejado empezar.
+     */
+    private suspend fun stopWhenAccessLost() {
+        var hadAccess = false
+        proAccess.hasAiAccess.collect { has ->
+            if (has) {
+                hadAccess = true
+            } else if (hadAccess) {
+                listeningState.setStopReason(getString(R.string.sa_stopped_no_pro))
+                stopSelf()
+            }
+        }
     }
 
     override fun onDestroy() {
