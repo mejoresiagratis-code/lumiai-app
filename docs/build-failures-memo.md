@@ -1451,3 +1451,30 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   y scroll ya resuelto).
 - `about_licenses_soon` queda definida sin uso (huérfana inofensiva; el auditor exige
   usadas ⊆ definidas, no al revés).
+
+### 2026-08-17 (lección #47 — colisión de IDs de notificación: el MISMO bug, dos veces)
+- **Bug real, y es mío:** el 14-ago di ID propio a la notificación de detección de sonido para que
+  dejara de machacar la del servicio de Alerta (ID 2). Elegí el **4 mirando solo las constantes de
+  ESE fichero** — y `MusicFlashService` ya usaba el 4 para su notificación de primer plano.
+  Consecuencia: con la Alerta escuchando y el modo Música activo, cada detección **borraba la
+  notificación obligatoria del servicio de Música**.
+- Los IDs de notificación son **globales al paquete**, no por servicio. Cada servicio los declaraba
+  como constante local, así que era imposible verlos juntos y la colisión era cuestión de tiempo.
+- **Fix estructural, no parche:** `data/system/NotificationIds.kt` reúne los cinco IDs de la app en
+  un único sitio, con nombre y propósito. Los tres servicios ahora los referencian. Regla nueva:
+  cualquier notificación futura se declara ahí, nunca como constante local. Verificado tras el
+  cambio: cero `NOTIF_ID = <número>` sueltos en todo el proyecto.
+- **Comentarios que MENTÍAN sobre el código** (detectados al revisar los ficheros; importan el
+  doble ahora que otro asistente va a leerlos como fuente de verdad):
+  1. KDoc de `SoundAlertService` afirmaba que la config *no* se recarga en vivo — se cambió a
+     `collectLatest` el 14-ago y sí lo hace.
+  2. Dos comentarios (`SoundAlertService.flash()` y `MusicFlashService.pulse()`) describían
+     `pulseOff()` como el experimento de atenuar sin apagar, **revertido el 14-ago**. Uno incluso
+     prometía "un ligero resplandor entre golpes", justo lo que el QA hizo eliminar.
+  3. `import kotlinx.coroutines.flow.first` quedó muerto tras el paso a `collectLatest`.
+- **HALLAZGO DE CI, no corregido a propósito:** el job `quality` tiene `continue-on-error: true` a
+  nivel de JOB, y el paso de ktlint termina en `|| true`. Es decir, **el "lint gate" de Q4 no
+  bloquea nada**: si `lintDebug` falla, el workflow sigue en verde. Documentado en el roadmap como
+  Q4 "básica"; ahora se confirma que además el gate es decorativo. NO se activa ahora: a 14 días
+  del deadline, endurecer el CI puede bloquear pushes por deuda preexistente. Tarea para después
+  de publicar.

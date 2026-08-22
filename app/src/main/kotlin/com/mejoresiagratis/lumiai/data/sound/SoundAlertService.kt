@@ -12,6 +12,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
@@ -28,7 +29,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,8 +38,8 @@ import javax.inject.Inject
  * por ritmo), parpadeo de pantalla (ScreenFlashActivity via full-screen-intent) o ambos. Si se
  * pidio flash pero el dispositivo no tiene, cae a pantalla para no dejar sin aviso.
  *
- * Lee la configuracion persistida (DataStore) al arrancar; los cambios de categorias/sensibilidad
- * /canal se aplican al reiniciar la escucha (el clasificador no se reconstruye en vivo). Requiere
+ * La configuracion se aplica EN VIVO (14-ago): cada cambio de categorias, sensibilidad o canal
+ * reconstruye clasificador y motor sin que el usuario tenga que parar y volver a iniciar. Requiere
  * RECORD_AUDIO y el modelo yamnet.tflite en assets: sin ellos sigue vivo pero no avisa.
  */
 @AndroidEntryPoint
@@ -205,9 +205,10 @@ class SoundAlertService : Service() {
                 while (i < pattern.size) {
                     torch.turnOn(level)
                     delay(pattern[i])
-                    // Hueco DENTRO del patron (sigue "avisando"): pulseOff experimental
-                    // (QA 13-ago) — evita el parpadeo del indicador del sistema en cada
-                    // destello. El apagado real solo llega al terminar todo el patron.
+                    // Hueco DENTRO del patron. pulseOff() es hoy un apagado REAL: el
+                    // experimento de atenuar en vez de apagar se revirtio el 14-ago porque
+                    // difuminaba el contraste del patron. Se conserva como gancho semantico
+                    // "hueco intra-patron", por si algun dia se afina por dispositivo.
                     torch.pulseOff()
                     if (i + 1 < pattern.size) delay(pattern[i + 1])
                     i += 2
@@ -248,9 +249,12 @@ class SoundAlertService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "sound_alert"
-        private const val NOTIF_ID = 2
-        private const val SCREEN_NOTIF_ID = 3
-        private const val DETECTION_NOTIF_ID = 4
+        // IDs centralizados (17-ago): DETECTION_NOTIF_ID valia 4 y CHOCABA con la
+        // notificacion de primer plano de MusicFlashService — al detectar un sonido con
+        // Musica activa, la borraba. Ver NotificationIds.
+        private const val NOTIF_ID = NotificationIds.SOUND_ALERT_FOREGROUND
+        private const val SCREEN_NOTIF_ID = NotificationIds.SOUND_ALERT_SCREEN
+        private const val DETECTION_NOTIF_ID = NotificationIds.SOUND_ALERT_DETECTION
 
         fun start(context: Context) {
             ensureChannel(context)

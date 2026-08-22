@@ -19,6 +19,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.music.BeatDetector
@@ -217,10 +218,10 @@ class MusicFlashService : Service() {
     }
 
     /**
-     * Un destello por golpe: brillo y duracion proporcionales a su fuerza. Entre golpes
-     * usa pulseOff (experimental, QA 13-ago) en vez de apagado real: con ritmos rapidos
-     * evita el parpadeo del indicador de Samsung en cada destello, y de paso deja un
-     * ligero resplandor entre golpes en vez de un corte seco — a confirmar si gusta.
+     * Un destello por golpe: brillo y duracion proporcionales a su fuerza. Entre golpes,
+     * pulseOff() hace un apagado REAL — el experimento de dejar un resplandor tenue se
+     * revirtio el 14-ago tras el QA: difuminaba el contraste entre golpe y silencio. El
+     * precio asumido es que el indicador del sistema de Samsung vuelve a parpadear.
      */
     private fun pulse(strength: Float) {
         flashJob?.cancel()
@@ -293,7 +294,7 @@ class MusicFlashService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "music_flash"
-        private const val NOTIF_ID = 4
+        private const val NOTIF_ID = NotificationIds.MUSIC_FOREGROUND
         // Watchdog de lectura de audio.
         private const val MAX_READ_ERRORS = 20       // ~ errores seguidos antes de rendirse
         private const val READ_ERROR_BACKOFF_MS = 50L

@@ -11,6 +11,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.ManufacturerInfo
+import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.domain.flash.FlashEngine
 import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -109,7 +110,7 @@ class TorchService : Service() {
         // pero sin icono en la barra de estado, "por debajo del pliegue" en el panel).
         // En el resto de fabricantes sigue en IMPORTANCE_LOW: es la unica fuente visible.
         private val CHANNEL_ID = if (ManufacturerInfo.isSamsung) "torch_samsung" else "torch"
-        private const val NOTIF_ID = 1
+        private const val NOTIF_ID = NotificationIds.TORCH
 
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
