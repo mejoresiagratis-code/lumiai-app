@@ -25,7 +25,7 @@ import javax.inject.Inject
 class SoundAlertViewModel @Inject constructor(
     private val repository: SoundAlertConfigRepository,
     torch: TorchController,
-    stateRepo: SoundAlertStateRepository
+    private val stateRepo: SoundAlertStateRepository
 ) : ViewModel() {
 
     val hasFlash: Boolean = torch.hasFlash
@@ -38,6 +38,9 @@ class SoundAlertViewModel @Inject constructor(
 
     /** Motivo de la ultima parada inesperada, para mostrarlo en pantalla (QA 14-ago). */
     val stopReason: StateFlow<String?> = stateRepo.stopReason
+
+    /** Borra el motivo de parada al detener a mano: no es un fallo (QA 22-ago). */
+    fun clearStopReason() = stateRepo.setStopReason(null)
 
     /** Scores en vivo de la ultima ventana y ultima alerta disparada (QA 14-ago). */
     val lastWindow: StateFlow<String?> = stateRepo.lastWindow

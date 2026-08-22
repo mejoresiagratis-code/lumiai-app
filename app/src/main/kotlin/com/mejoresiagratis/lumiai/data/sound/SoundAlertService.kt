@@ -23,6 +23,7 @@ import com.mejoresiagratis.lumiai.domain.sound.SoundAlertFlash
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import com.mejoresiagratis.lumiai.domain.sound.SoundDetectionEngine
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,6 +56,13 @@ class SoundAlertService : Service() {
     private var classifier: MediaPipeSoundClassifier? = null
     @Volatile private var currentConfig: SoundAlertConfig = SoundAlertConfig()
     private var flashJob: Job? = null
+
+    /**
+     * Apagado en curso. El clasificador puede emitir un error MIENTRAS se cierra —el stream de
+     * audio se corta bajo sus pies— y eso no es un fallo que mostrar al usuario, es el ruido
+     * normal de una parada. Sin esta marca, pulsar "Parar" dejaba un mensaje rojo (QA 22-ago).
+     */
+    @Volatile private var stopping = false
 
     override fun onCreate() {
         super.onCreate()
@@ -116,9 +124,12 @@ class SoundAlertService : Service() {
                             // ANTES SE IGNORABA (22-ago): si el clasificador fallaba EN MARCHA,
                             // la pantalla seguia diciendo "Escuchando" y el usuario creia estar
                             // protegido sin estarlo. Una promesa falsa de aviso es peor que no
-                            // ofrecerlo. Ahora se para y se dice por que.
-                            listeningState.setStopReason(motivo)
-                            stopSelf()
+                            // ofrecerlo. Ahora se para y se dice por que — salvo si ya estamos
+                            // apagando, donde el error es consecuencia del propio apagado.
+                            if (!stopping) {
+                                listeningState.setStopReason(motivo)
+                                stopSelf()
+                            }
                         },
                         onWindow = { scores ->
                             // Top-3 de la ventana, legible en pantalla: decide en una prueba
@@ -132,6 +143,11 @@ class SoundAlertService : Service() {
                     classifier.start()
                 }
             }.onFailure { e ->
+                // Parar la escucha CANCELA este scope, y `runCatching` traga tambien la
+                // cancelacion — por eso al pulsar "Parar" salia siempre "JobCancellationException:
+                // Job was cancelled" como si algo hubiera reventado (QA 22-ago). Una parada
+                // pedida por el usuario no es un error y no debe dejar rastro rojo en pantalla.
+                if (e is CancellationException) return@onFailure
                 listeningState.setStopReason("clasificador: ${describeThrowable(e)}")
                 stopSelf()
             }
@@ -182,6 +198,7 @@ class SoundAlertService : Service() {
     }
 
     override fun onDestroy() {
+        stopping = true
         listeningState.setListening(false)
         listeningState.setLastWindow(null)
         flashJob?.cancel()
@@ -226,11 +243,25 @@ class SoundAlertService : Service() {
         return runCatching { mgr.canUseFullScreenIntent() }.getOrDefault(false)
     }
 
+    /**
+     * Aviso de pantalla. Se emite por DOS vias porque ninguna cubre todos los casos (QA 22-ago):
+     *
+     * - **Intent a pantalla completa**: es la unica via permitida para "despertar" el movil, y
+     *   funciona con la pantalla APAGADA o bloqueada — el escenario principal de esta funcion.
+     *   Pero con el movil desbloqueado y en uso, Android lo degrada DELIBERADAMENTE a una
+     *   notificacion flotante que hay que tocar. No es un fallo nuestro: es la regla del sistema.
+     * - **Arranque directo de la actividad**: solo se permite si la app esta en primer plano, y
+     *   cubre justo el hueco anterior. Se intenta ademas de la notificacion, no en su lugar.
+     */
     private fun screenFlash(category: SoundCategory) {
         val intent = Intent(this, ScreenFlashActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(ScreenFlashActivity.EXTRA_PATTERN, SoundAlertFlash.patternFor(category))
         }
+        // Con la app visible, el arranque directo SI esta permitido y el aviso aparece al
+        // instante, sin tocar nada. Si la app esta en segundo plano el sistema lo ignora en
+        // silencio (no lanza), y queda la notificacion de abajo como via.
+        runCatching { startActivity(intent) }
         val pending = PendingIntent.getActivity(
             this,
             category.ordinal,

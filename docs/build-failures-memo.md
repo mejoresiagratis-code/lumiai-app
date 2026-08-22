@@ -1736,3 +1736,25 @@ de privacidad ya publicada en mejoresiagratis.com.
   (`bash pre_push_audit.sh --all > /tmp/audit.txt; [ $? -ne 0 ] && abortar`), NUNCA canalizarlo a
   `tail`/`grep` y encadenar con `&&`. Si se necesita ver solo el final, leer el fichero DESPUÉS
   de comprobar el código.
+
+### 2026-08-22 (lección #55 — `runCatching` traga la CANCELACIÓN, y eso convirtió "Parar" en un error)
+- **QA de Pablo:** al pulsar «Parar» en Alerta sonora salía SIEMPRE
+  «clasificador: JobCancellationException: Job was cancelled», como si algo hubiera reventado.
+- **Causa, mía y de anoche:** parar el servicio cancela su scope, y `runCatching` **captura
+  también `CancellationException`** — es un fallo clásico de Kotlin: `runCatching` atrapa
+  `Throwable`, cancelación incluida. Una parada pedida por el usuario acababa pintada como error.
+  Fix: `if (e is CancellationException) return@onFailure`.
+- **Segundo frente del mismo síntoma:** el clasificador puede emitir `onError` MIENTRAS se apaga
+  (su stream de audio se cierra bajo sus pies). Marca `@Volatile stopping`, activada en
+  `onDestroy`, para no pintar como fallo el ruido normal de una parada. Y al pulsar «Parar» se
+  limpia el motivo anterior: no debe quedar rastro rojo de una sesión pasada.
+- **② Aviso de pantalla que no saltaba solo.** El intent a pantalla completa es la única vía para
+  despertar el móvil y funciona con la pantalla apagada o bloqueada —el escenario principal de
+  esta función—, pero **con el móvil desbloqueado y en uso Android lo degrada deliberadamente a
+  notificación flotante** que hay que tocar. No es un fallo nuestro: es la regla del sistema.
+  - Fix: se emite por DOS vías. Se mantiene la notificación con intent a pantalla completa, y
+    ADEMÁS se intenta `startActivity` directo — permitido solo con la app en primer plano, que es
+    justo el hueco que faltaba. Si la app está en segundo plano el sistema lo ignora en silencio
+    y queda la notificación como vía.
+- Regla transversal: **`runCatching` alrededor de código de corrutinas necesita siempre excluir
+  `CancellationException`**, o se convierte una parada normal en un error visible.

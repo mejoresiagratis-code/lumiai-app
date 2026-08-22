@@ -167,7 +167,12 @@ fun SoundAlertScreen(
                         micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     }
                 },
-                onStop = { SoundAlertService.stop(context) }
+                onStop = {
+                    // Parada PEDIDA por el usuario: se limpia cualquier motivo anterior para
+                    // que no quede un mensaje rojo de una sesion pasada (QA 22-ago).
+                    viewModel.clearStopReason()
+                    SoundAlertService.stop(context)
+                }
             )
         }
     ) { padding ->
