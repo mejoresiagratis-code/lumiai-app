@@ -19,6 +19,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import com.mejoresiagratis.lumiai.domain.model.FlashMode
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -57,6 +61,41 @@ class TorchService : Service() {
         scope.launch {
             torch.externalOffEvents.collect { if (repo.isOn.value) repo.setOn(false) }
         }
+        scope.launch { beaconAutoOff() }
+    }
+
+    /**
+     * Auto-apagado de Baliza (22-ago). Vive AQUI, en el servicio que mantiene la luz encendida,
+     * y se DERIVA del estado en vez de programarse a mano.
+     *
+     * La version anterior estaba en el ViewModel y acumulaba cinco defectos, todos por ser
+     * imperativa: solo se programaba al pulsar encender —entrar en Baliza con la luz ya encendida
+     * no lo activaba—, cambiar los minutos no lo reprogramaba, salir del modo no lo cancelaba
+     * (asi que al vencer podia apagar OTRO modo), y moria con el ViewModel aunque el servicio
+     * siguiera encendido.
+     *
+     * `collectLatest` resuelve los cinco de una vez: cualquier cambio en encendido, modo o
+     * minutos CANCELA la espera pendiente y vuelve a evaluar. No hay nada que cancelar ni
+     * reprogramar a mano porque no hay temporizador propio: hay una espera que solo existe
+     * mientras las condiciones se cumplen.
+     */
+    private suspend fun beaconAutoOff() {
+        combine(
+            repo.isOn,
+            repo.mode,
+            repo.settings.map { it.beaconAutoOffMin }.distinctUntilChanged()
+        ) { on, mode, minutes -> Triple(on, mode, minutes) }
+            .distinctUntilChanged()
+            .collectLatest { (on, mode, minutes) ->
+                if (on && mode == FlashMode.BEACON && minutes > 0) {
+                    delay(minutes * 60_000L)
+                    // Releer el estado: entre la espera y ahora el usuario pudo apagar o cambiar
+                    // de modo, y collectLatest ya lo habria cancelado — esto es el cinturon.
+                    if (repo.isOn.value && repo.mode.first() == FlashMode.BEACON) {
+                        repo.setOn(false)
+                    }
+                }
+            }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

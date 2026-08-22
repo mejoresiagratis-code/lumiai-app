@@ -112,7 +112,14 @@ class SoundAlertService : Service() {
                         engine = engine,
                         allowedLabels = config.activeLabels().toList(),
                         onDetected = { category -> onDetected(category) },
-                        onError = { /* sin modelo o sin permiso: sigue sin avisos */ },
+                        onError = { motivo ->
+                            // ANTES SE IGNORABA (22-ago): si el clasificador fallaba EN MARCHA,
+                            // la pantalla seguia diciendo "Escuchando" y el usuario creia estar
+                            // protegido sin estarlo. Una promesa falsa de aviso es peor que no
+                            // ofrecerlo. Ahora se para y se dice por que.
+                            listeningState.setStopReason(motivo)
+                            stopSelf()
+                        },
                         onWindow = { scores ->
                             // Top-3 de la ventana, legible en pantalla: decide en una prueba
                             // si el clasificador oye (scores fluyen) o los umbrales bloquean.
@@ -192,7 +199,31 @@ class SoundAlertService : Service() {
         val flashed = channel.usesFlash && torch.hasFlash
         if (flashed) flash(category)
         // Pantalla si el usuario lo pidio, o como caida cuando se pidio flash pero no hay LED.
-        if (channel.usesScreen || (channel.usesFlash && !flashed)) screenFlash(category)
+        val wantsScreen = channel.usesScreen || (channel.usesFlash && !flashed)
+        if (wantsScreen) {
+            if (canUseFullScreenAlerts()) {
+                screenFlash(category)
+            } else if (!flashed && torch.hasFlash) {
+                // Android 14+ puede denegar el aviso a pantalla completa. Antes de dejar al
+                // usuario SIN aviso, se cae al flash: peor que lo pedido, mucho mejor que nada.
+                flash(category)
+            } else {
+                listeningState.setStopReason(getString(R.string.sa_screen_alert_blocked))
+            }
+        }
+    }
+
+    /**
+     * ¿Puede la app mostrar avisos a pantalla completa? (22-ago)
+     *
+     * Android 14 restringio este permiso: se concede solo a apps de alarma y llamadas, y el
+     * usuario puede revocarlo. Sin comprobarlo, el canal "solo pantalla" prometia un aviso que
+     * podia no aparecer NUNCA — justo en la funcion pensada para quien no oye.
+     */
+    private fun canUseFullScreenAlerts(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+        val mgr = getSystemService(NotificationManager::class.java) ?: return false
+        return runCatching { mgr.canUseFullScreenIntent() }.getOrDefault(false)
     }
 
     private fun screenFlash(category: SoundCategory) {

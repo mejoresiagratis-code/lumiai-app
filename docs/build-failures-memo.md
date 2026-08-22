@@ -1698,3 +1698,27 @@ de privacidad ya publicada en mejoresiagratis.com.
      (`grep -c "^import ...SIMBOLO$"`) ejecutada tras el cambio habría cantado el 0 al instante.
   3. Al tocar un fichero para experimentar, comprobar su estado antes de commitear: `git diff`
      del fichero, no solo el resultado del script.
+
+### 2026-08-22 (puntos 6 y 7 — auto-apagado de Baliza derivado, y Alerta sonora que no miente)
+- **① Baliza: cinco defectos, todos por ser imperativo.** El temporizador vivía en
+  `FlashViewModel` y solo se programaba al pulsar encender. Consecuencias verificadas: entrar en
+  Baliza con la luz YA encendida no lo activaba; cambiar los minutos no lo reprogramaba; salir del
+  modo no lo cancelaba, así que al vencer **podía apagar otro modo distinto**; y moría con el
+  ViewModel aunque el servicio siguiera encendido.
+  - **Fix estructural:** se muda a `TorchService` —el que mantiene la luz debe ser quien la
+    apaga— y pasa a DERIVARSE de `combine(isOn, mode, minutos)` con `collectLatest`. Los cinco
+    defectos desaparecen a la vez porque ya no hay temporizador que cancelar ni reprogramar: hay
+    una espera que solo existe mientras las condiciones se cumplen. Cualquier cambio la cancela.
+  - Cinturón extra tras la espera: releer estado antes de apagar, por si acaso.
+  - `FlashViewModel` adelgaza otra vez: fuera `autoOffJob`, `scheduleBeaconAutoOff` y 2 imports.
+- **② `onError` del clasificador ya no se ignora.** Si MediaPipe fallaba EN MARCHA, la pantalla
+  seguía diciendo «Escuchando» y el usuario creía estar protegido sin estarlo. En una función
+  pensada para quien no oye, una promesa falsa de aviso es peor que no ofrecerlo. Ahora para el
+  servicio y muestra el motivo (el clasificador ya entregaba mensajes legibles; simplemente nadie
+  los recogía).
+- **③ Avisos a pantalla completa comprobados antes de prometerlos.** Android 14 restringió ese
+  permiso a apps de alarma y llamadas, y el usuario puede revocarlo: el canal «solo pantalla»
+  podía no aparecer NUNCA. Ahora se comprueba `canUseFullScreenIntent()` y, si está bloqueado,
+  **se cae al flash** en vez de dejar sin aviso; si tampoco hay LED, se dice en pantalla.
+- Sin tests que migrar: el auto-apagado vivía en el ViewModel y no tenía ninguno — otra razón
+  para haberlo movido a una capa comprobable.
