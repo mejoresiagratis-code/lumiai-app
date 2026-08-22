@@ -1502,3 +1502,31 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   emisión", CONTAR los colectores. Y desconfiar de la propia documentación: la del memo afirmaba
   que funcionaba porque el Singleton nace una vez, razonamiento correcto sobre la INSTANCIA pero
   irrelevante para el número de SUSCRIPCIONES.
+
+### 2026-08-17 (bloque A — privacidad: borrado real y aislamiento entre cuentas)
+Corrige los dos hallazgos con exposición LEGAL de la auditoría, porque contradecían la política
+de privacidad ya publicada en mejoresiagratis.com.
+
+- **① Borrado de cuenta incompleto.** Solo se eliminaba el usuario de Auth: el documento de
+  Firestore sobrevivía indefinidamente, igual que perfil local y contador de anuncios.
+  `DeleteAccountUseCase` nuevo, con ORDEN JUSTIFICADO: Firestore → local → Auth → anónimo.
+  Firestore va PRIMERO porque sus reglas exigen ser dueño del documento, y ese permiso muere con
+  la cuenta de Auth: borrar Auth antes dejaría basura imborrable para siempre. Si Firestore falla
+  se ABORTA sin tocar Auth y se devuelve el error — mejor pedir reintento que decir "cuenta
+  borrada" dejando datos en la nube. Los TRES caminos de borrado del ViewModel (directo, reauth
+  con contraseña, reauth con Google) pasan ahora por el caso de uso.
+- **② Datos personales heredados entre cuentas.** Nombre y país vivían en claves globales sin UID
+  y el logout solo limpiaba el desbloqueo temporal: la persona B que iniciaba sesión heredaba los
+  datos de A, y el sincronizador los subía a Firestore BAJO EL UID DE B. `SessionDataCleaner`
+  centraliza el borrado de perfil + progreso de anuncios + desbloqueo, y se invoca en logout y
+  en el borrado de cuenta.
+  - *Descartado:* claves con espacio de nombres por UID. Más "puro", pero exige migrar
+    instalaciones existentes y multiplica claves sin beneficio para una app de un perfil por móvil.
+  - **Limpieza de HUÉRFANOS al arrancar:** si el usuario es anónimo pero quedan datos de perfil,
+    no son de nadie y se borran. Sin esto el defecto seguiría vivo en los móviles ya instalados.
+- `AuthRepository.currentUid()` añadido: el borrado necesita el UID de forma síncrona, antes de
+  que el usuario desaparezca.
+- **Nota de herramienta:** `pre_push_audit.sh` cuenta paréntesis SIN excluir comentarios, así que
+  un `// 1)` o un `(17-ago)` desbalancea el fichero a ojos del auditor aunque el código esté
+  perfecto. Verificado a mano que el código estaba 14/14 y reformulados los comentarios. Mejorar
+  el script para ignorar comentarios queda como tarea de Fase 2.

@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.StrictMode
 import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
+import com.mejoresiagratis.lumiai.domain.entitlement.SessionDataCleaner
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
 import com.mejoresiagratis.lumiai.domain.repository.EntitlementOverrideRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -30,6 +32,7 @@ class LumiAiApplication : Application() {
     @Inject lateinit var userRegistry: UserRegistryRepository
     @Inject lateinit var entitlementOverrideRepo: EntitlementOverrideRepository
     @Inject lateinit var rewardProgress: RewardProgressRepository
+    @Inject lateinit var sessionData: SessionDataCleaner
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -52,10 +55,32 @@ class LumiAiApplication : Application() {
         // La implementacion vive en el source set de cada variante: Play Integrity en release,
         // proveedor de depuracion en debug.
         AppCheckInstaller.install()
+        purgeOrphanProfileOnAnonymous()
         purgeGodOverrideOnRelease()
         resetProProgressOnUpdate()
         seedBillingProfileOnSignIn()
         syncUserRegistryOnChange()
+    }
+
+    /**
+     * Datos personales HUÉRFANOS (17-ago): instalaciones anteriores al arreglo pueden arrastrar
+     * nombre y país de una cuenta cerrada, porque el logout no los borraba. Si al arrancar el
+     * usuario es anónimo (o no hay ninguno) pero quedan datos de perfil, no son de nadie: se
+     * limpian. Sin esto, el defecto seguiría vivo en los móviles ya instalados aunque el código
+     * nuevo lo impida hacia delante.
+     */
+    private fun purgeOrphanProfileOnAnonymous() {
+        appScope.launch {
+            runCatching {
+                val user = auth.currentUser.first()
+                if (user == null || user.isAnonymous) {
+                    val profile = billingProfileRepo.profile.first()
+                    if (profile.fullName.isNotBlank() || profile.billingCountry.isNotBlank()) {
+                        sessionData.clearAll()
+                    }
+                }
+            }
+        }
     }
 
     /**

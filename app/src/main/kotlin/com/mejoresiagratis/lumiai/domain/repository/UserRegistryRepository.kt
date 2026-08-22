@@ -17,4 +17,10 @@ data class UserRegistrySnapshot(
 
 interface UserRegistryRepository {
     suspend fun sync(snapshot: UserRegistrySnapshot)
+
+    /**
+     * Borra el documento del usuario. Lanza si falla: el borrado de cuenta necesita saberlo
+     * para no prometer al usuario algo que no ocurrio (17-ago).
+     */
+    suspend fun delete(uid: String)
 }

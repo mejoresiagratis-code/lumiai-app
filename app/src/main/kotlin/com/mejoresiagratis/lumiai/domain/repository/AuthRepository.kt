@@ -30,4 +30,10 @@ interface AuthRepository {
 
     /** Borra la cuenta (RGPD) y vuelve a sesión anónima para que la app siga usable. */
     suspend fun deleteAccount(): Result<Unit>
+
+    /**
+     * UID actual de forma SÍNCRONA. El borrado de cuenta lo necesita antes de tocar Auth: leerlo
+     * del flujo obligaría a suspender justo cuando el usuario está a punto de desaparecer (17-ago).
+     */
+    fun currentUid(): String?
 }

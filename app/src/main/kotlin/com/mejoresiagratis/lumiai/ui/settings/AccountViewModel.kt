@@ -8,7 +8,8 @@ import com.mejoresiagratis.lumiai.domain.model.AuthUser
 import com.mejoresiagratis.lumiai.domain.model.BillingProfile
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
-import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
+import com.mejoresiagratis.lumiai.domain.entitlement.DeleteAccountUseCase
+import com.mejoresiagratis.lumiai.domain.entitlement.SessionDataCleaner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,7 +30,8 @@ data class AccountUiState(
 class AccountViewModel @Inject constructor(
     private val auth: AuthRepository,
     private val billingProfileRepo: BillingProfileRepository,
-    private val temporaryUnlock: TemporaryUnlockRepository
+    private val sessionData: SessionDataCleaner,
+    private val deleteAccountUseCase: DeleteAccountUseCase
 ) : ViewModel() {
 
     val user: StateFlow<AuthUser?> =
@@ -54,9 +56,10 @@ class AccountViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
-            // Regla de producto (13-ago): la prueba de Pro NO sobrevive a un logout,
-            // aunque no haya pasado la hora — hay que volver a ver los 2 anuncios.
-            temporaryUnlock.clear()
+            // Se limpia TODO el estado de la sesion, no solo el desbloqueo temporal (17-ago):
+            // el perfil de facturacion y el contador de anuncios tambien eran de esta cuenta y
+            // se heredaban a la siguiente persona que iniciara sesion en el mismo movil.
+            sessionData.clearAll()
             auth.signOut()
             auth.ensureAnonymous()
         }
@@ -77,7 +80,7 @@ class AccountViewModel @Inject constructor(
     fun deleteAccount() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(working = true, error = null)
-            applyDeleteResult(auth.deleteAccount())
+            applyDeleteResult(deleteAccountUseCase())
         }
     }
 
@@ -89,7 +92,7 @@ class AccountViewModel @Inject constructor(
                 _ui.value = _ui.value.copy(working = false, error = ra.toError())
                 return@launch
             }
-            applyDeleteResult(auth.deleteAccount())
+            applyDeleteResult(deleteAccountUseCase())
         }
     }
 
@@ -101,7 +104,7 @@ class AccountViewModel @Inject constructor(
                 _ui.value = _ui.value.copy(working = false, error = ra.toError())
                 return@launch
             }
-            applyDeleteResult(auth.deleteAccount())
+            applyDeleteResult(deleteAccountUseCase())
         }
     }
 

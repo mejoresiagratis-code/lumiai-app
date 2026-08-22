@@ -44,6 +44,13 @@ class DataStoreBillingProfileRepository @Inject constructor(
         }
     }
 
+    override suspend fun clear() {
+        dataStore.edit { prefs ->
+            prefs.remove(nameKey)
+            prefs.remove(countryKey)
+        }
+    }
+
     override suspend fun prefillCountryIfEmpty(value: String) {
         val trimmed = value.trim()
         if (trimmed.isEmpty()) return

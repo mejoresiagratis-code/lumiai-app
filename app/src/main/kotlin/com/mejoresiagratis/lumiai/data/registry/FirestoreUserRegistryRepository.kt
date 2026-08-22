@@ -49,6 +49,16 @@ class FirestoreUserRegistryRepository @Inject constructor() : UserRegistryReposi
         ref.set(data, SetOptions.merge()).await()
     }
 
+    /**
+     * Borra el documento del usuario. NO se envuelve en runCatching a proposito: quien llama
+     * (el borrado de cuenta) tiene que distinguir entre "borrado" y "no se pudo" para poder
+     * decirselo al usuario. Las reglas de Firestore exigen ser el dueño del documento, asi que
+     * esto debe ejecutarse ANTES de eliminar la cuenta de Auth.
+     */
+    override suspend fun delete(uid: String) {
+        firestore.collection(USERS_COLLECTION).document(uid).delete().await()
+    }
+
     private companion object {
         const val USERS_COLLECTION = "users"
     }

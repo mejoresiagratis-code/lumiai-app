@@ -18,4 +18,7 @@ interface BillingProfileRepository {
 
     /** País de facturación sembrado por defecto SOLO si está vacío (p. ej. del Locale). */
     suspend fun prefillCountryIfEmpty(value: String)
+
+    /** Borra nombre y pais. Se invoca al cerrar sesion y al borrar cuenta (17-ago). */
+    suspend fun clear()
 }

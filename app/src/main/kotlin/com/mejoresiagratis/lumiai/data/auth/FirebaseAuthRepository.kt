@@ -135,6 +135,8 @@ class FirebaseAuthRepository @Inject constructor(
             _currentUser.value = auth.currentUser?.toAuthUser()
         }
 
+    override fun currentUid(): String? = auth.currentUser?.uid
+
     override suspend fun signOut() {
         auth.signOut()
     }
