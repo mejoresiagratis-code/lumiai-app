@@ -18,6 +18,7 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.mejoresiagratis.lumiai.domain.billing.BillingConnectionState
 import com.mejoresiagratis.lumiai.domain.billing.PurchaseOutcome
+import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_BASE_PLAN_ID
 import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionProduct
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository

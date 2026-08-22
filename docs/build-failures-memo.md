@@ -1681,3 +1681,20 @@ de privacidad ya publicada en mejoresiagratis.com.
 - **Regla práctica que sustituye al linter:** al usar un símbolo nuevo de otro paquete, verificar
   con `grep "^import .*SIMBOLO$"` (anclado a línea de import), nunca con una búsqueda libre del
   nombre.
+
+### 2026-08-22 (lección #53 — el `&&` que se comió mi propio arreglo)
+- **El mismo fallo, empujado DOS veces.** v0.9.50 pretendía arreglar el import ausente de
+  `SUBSCRIPTION_BASE_PLAN_ID`… y salió sin él. Motivo: mientras probaba la comprobación
+  automática, hice `cp fichero /tmp/bak && sed -i borra-import && script && cp /tmp/bak fichero`.
+  El script devolvió **código 1 al detectar el problema (que era su trabajo)**, así que el `&&`
+  cortó la cadena y **la restauración nunca se ejecutó**. Empujé el fichero mutilado.
+- **Lo detecté por casualidad**: el `grep` de confirmación del commit mostró las líneas de uso
+  pero NO la del import. Si no hubiera mirado esa salida, el CI habría vuelto a caer.
+- **Reglas operativas nuevas:**
+  1. Restaurar copias de seguridad con `;` o en un comando aparte, **nunca encadenado con `&&`**
+     detrás de algo que puede devolver error legítimamente. Un verificador que falla al encontrar
+     un problema está haciendo su trabajo, no abortando.
+  2. **Verificar DESPUÉS de escribir, no antes.** En este caso la comprobación anclada
+     (`grep -c "^import ...SIMBOLO$"`) ejecutada tras el cambio habría cantado el 0 al instante.
+  3. Al tocar un fichero para experimentar, comprobar su estado antes de commitear: `git diff`
+     del fichero, no solo el resultado del script.
