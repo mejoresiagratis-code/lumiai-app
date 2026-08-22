@@ -1638,3 +1638,25 @@ de privacidad ya publicada en mejoresiagratis.com.
 - **NO se ha construido el "coordinador de sesiones" completo** que propone la auditoría externa:
   es la arquitectura correcta a medio plazo, pero reescribir la orquestación de tres servicios a
   nueve días del plazo introduce más riesgo del que elimina. Queda en Fase 2 del roadmap.
+
+### 2026-08-22 (puntos 8 y 9 — opciones de privacidad de anuncios y oferta de compra explícita)
+- **① Opciones de privacidad (UMP) — requisito de Google, no recomendación.** Verificado: NO
+  existía ninguna entrada en la app. El consentimiento se pedía al arrancar y el usuario no podía
+  revisarlo ni revocarlo nunca más. Añadida fila en Ajustes → General que abre
+  `showPrivacyOptionsForm`, **visible solo si `privacyOptionsRequirementStatus == REQUIRED`**:
+  mostrarla siempre abriría un formulario inexistente en regiones sin ese requisito.
+  - Vive en `RewardedUnlockViewModel`, que ya es el dueño de todo lo relativo a publicidad, en
+    lugar de inyectar `AdsConsentManager` directamente en la pantalla.
+  - Elevado de prioridad respecto al roadmap: publicando desde España, servir anuncios en el EEE
+    sin esta vía puede costar la cuenta de AdMob.
+- **② Oferta de compra explícita.** `subscriptionOfferDetails.firstOrNull()` aparecía en DOS
+  sitios independientes —el precio que se muestra y el flujo de compra— sin garantía de que
+  eligieran la misma. Con un solo plan da igual; con un precio introductorio o una promoción, el
+  orden de esa lista no está garantizado y se podría cobrar algo distinto de lo anunciado.
+  Ahora un único `selectedOffer()` filtra por `SUBSCRIPTION_BASE_PLAN_ID`.
+  - **Caída deliberada a la primera oferta** si el plan declarado no aparece: hoy solo hay uno y
+    bloquear la compra por un identificador mal escrito sería peor que cobrar el único precio
+    existente. **En cuanto exista una segunda oferta esa caída deja de ser aceptable** y debe
+    convertirse en error visible — anotado aquí para no olvidarlo.
+  - `SUBSCRIPTION_BASE_PLAN_ID = "lumiai-pro-mensual"` DEBE coincidir con el ID del plan base en
+    Play Console. Pablo tiene que verificarlo al configurar la suscripción.

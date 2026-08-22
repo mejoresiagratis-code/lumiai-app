@@ -3,6 +3,7 @@ package com.mejoresiagratis.lumiai.ui.settings
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mejoresiagratis.lumiai.ads.AdsConsentManager
 import com.mejoresiagratis.lumiai.ads.RewardedAdController
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import com.mejoresiagratis.lumiai.domain.entitlement.Tier
@@ -41,8 +42,19 @@ class RewardedUnlockViewModel @Inject constructor(
     temporaryUnlock: TemporaryUnlockRepository,
     rewardProgress: RewardProgressRepository,
     entitlementRepo: EntitlementRepository,
-    private val rewardedAdController: RewardedAdController
+    private val rewardedAdController: RewardedAdController,
+    private val adsConsentManager: AdsConsentManager
 ) : ViewModel() {
+
+    /**
+     * ¿Debe ofrecerse el acceso a revisar el consentimiento de anuncios? (22-ago)
+     * Depende de la region y no cambia dentro de una sesion, asi que se lee como propiedad.
+     * Vive aqui porque este ViewModel ya es el dueño de todo lo relativo a publicidad.
+     */
+    val privacyOptionsRequired: Boolean get() = adsConsentManager.isPrivacyOptionsRequired
+
+    /** Abre el formulario de opciones de privacidad de UMP. */
+    fun showPrivacyOptions(activity: Activity) = adsConsentManager.showPrivacyOptions(activity)
 
     private val entitlements = entitlementRepo.entitlements
 

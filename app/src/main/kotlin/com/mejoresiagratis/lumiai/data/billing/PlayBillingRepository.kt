@@ -6,6 +6,7 @@ import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.Purchase
@@ -119,7 +120,7 @@ class PlayBillingRepository @Inject constructor(
         val result = client.queryProductDetails(params)
         if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return
         val details = result.productDetailsList?.firstOrNull() ?: return
-        val offer = details.subscriptionOfferDetails?.firstOrNull() ?: return
+        val offer = details.selectedOffer() ?: return
         val phase = offer.pricingPhases.pricingPhaseList.firstOrNull() ?: return
         _product.value = SubscriptionProduct(
             productId = details.productId,
@@ -167,7 +168,7 @@ class PlayBillingRepository @Inject constructor(
         val productDetails = queryResult.productDetailsList?.firstOrNull()
             ?: return PurchaseOutcome.Error("")
         // PBL v9: el offerToken es obligatorio para lanzar el flujo de un producto SUBS.
-        val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
+        val offerToken = productDetails.selectedOffer()?.offerToken
             ?: return PurchaseOutcome.Error("")
 
         val flowParams = BillingFlowParams.newBuilder()
@@ -231,6 +232,24 @@ class PlayBillingRepository @Inject constructor(
     private suspend fun handlePurchase(purchase: Purchase) {
         if (!purchase.isAcknowledged) acknowledge(purchase)
         _isSubscribed.value = true
+    }
+
+    /**
+     * Oferta que se compra: la del plan base declarado en [SUBSCRIPTION_BASE_PLAN_ID].
+     *
+     * Antes se cogia `subscriptionOfferDetails.firstOrNull()` en DOS sitios distintos —el precio
+     * mostrado y el flujo de compra— sin garantia de que fueran la misma. Ahora hay un unico
+     * punto que decide.
+     *
+     * Si el plan declarado no aparece se cae a la primera oferta EN LUGAR de fallar: hoy solo
+     * existe un plan, y bloquear la compra por un identificador mal escrito seria peor que
+     * cobrar el unico precio que hay. En cuanto exista mas de una oferta, esa caida deja de ser
+     * aceptable y debe convertirse en error visible (anotado en el roadmap, 22-ago).
+     */
+    private fun ProductDetails.selectedOffer(): ProductDetails.SubscriptionOfferDetails? {
+        val offers = subscriptionOfferDetails ?: return null
+        return offers.firstOrNull { it.basePlanId == SUBSCRIPTION_BASE_PLAN_ID }
+            ?: offers.firstOrNull()
     }
 
     private suspend fun acknowledge(purchase: Purchase) {

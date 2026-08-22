@@ -6,6 +6,20 @@ import kotlinx.coroutines.flow.StateFlow
 /** Identificador del único producto de suscripción de LumiAI (configurado en Play Console). */
 const val SUBSCRIPTION_PRODUCT_ID = "lumiai_pro_monthly"
 
+/**
+ * Plan base que debe usarse al comprar (configurado en Play Console).
+ *
+ * Antes se tomaba `subscriptionOfferDetails.firstOrNull()`: **la primera oferta que devolviera
+ * Google**. Con un único plan da igual, pero el día que se añada un precio introductorio o una
+ * promoción, el orden de esa lista no está garantizado y se podría lanzar el flujo con la oferta
+ * equivocada — cobrando algo distinto de lo anunciado. Elegir por identificador explícito
+ * elimina esa mina antes de pisarla (22-ago).
+ *
+ * IMPORTANTE: debe COINCIDIR con el ID del plan base en Play Console. Si no coincide, se cae a
+ * la primera oferta disponible; ver `selectedOffer()` en PlayBillingRepository.
+ */
+const val SUBSCRIPTION_BASE_PLAN_ID = "lumiai-pro-mensual"
+
 /** Producto de suscripción listo para mostrar (precio ya formateado por Play para la región/moneda del usuario). */
 data class SubscriptionProduct(
     val productId: String,

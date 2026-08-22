@@ -324,4 +324,6 @@
     <string name="sa_stopped_no_pro">Listening stopped: your Pro access ended.</string>
     <string name="music_notif_no_pro">Stopped: your Pro access ended.</string>
     <string name="changelog_pro_revoke">Music and Sound Alert now stop on their own when your Pro access ends, instead of running on.</string>
+    <string name="ads_privacy_options">Ad privacy options</string>
+    <string name="ads_privacy_options_subtitle">Review or change your consent</string>
 </resources>

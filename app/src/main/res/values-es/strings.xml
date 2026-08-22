@@ -324,4 +324,6 @@
     <string name="sa_stopped_no_pro">Escucha detenida: tu acceso Pro ha terminado.</string>
     <string name="music_notif_no_pro">Detenido: tu acceso Pro ha terminado.</string>
     <string name="changelog_pro_revoke">Música y Alerta sonora se detienen solas cuando termina tu acceso Pro, en vez de seguir corriendo.</string>
+    <string name="ads_privacy_options">Opciones de privacidad de anuncios</string>
+    <string name="ads_privacy_options_subtitle">Revisa o cambia tu consentimiento</string>
 </resources>

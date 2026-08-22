@@ -154,6 +154,9 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val webClientId = accountViewModel.webClientId
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    // El requisito de opciones de privacidad depende de la region y no cambia dentro de una
+    // sesion: se consulta una vez al entrar en Ajustes en vez de en cada recomposicion.
+    val privacyOptionsRequired = remember { rewardedUnlockViewModel.privacyOptionsRequired }
     var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
     var showSubscribeGate by remember { mutableStateOf(false) }
     var showSoundAlertLocked by remember { mutableStateOf(false) }
@@ -669,6 +672,19 @@ fun SettingsScreen(
                         runCatching { context.startActivity(i) }
                     }
                 )
+                // Opciones de privacidad de anuncios (22-ago). Solo se muestra donde la
+                // normativa de Google lo exige: en el resto de regiones el formulario no
+                // existe y abrirlo dejaria al usuario ante una pantalla en blanco.
+                if (privacyOptionsRequired) {
+                    SettingsRow(
+                        titleRes = R.string.ads_privacy_options,
+                        subtitle = stringResource(R.string.ads_privacy_options_subtitle),
+                        onClick = {
+                            val act = context.findActivity()
+                            if (act != null) rewardedUnlockViewModel.showPrivacyOptions(act)
+                        }
+                    )
+                }
                 SettingsRow(
                     titleRes = R.string.about_version,
                     subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",

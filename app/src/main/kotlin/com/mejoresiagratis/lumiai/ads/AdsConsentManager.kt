@@ -26,6 +26,30 @@ class AdsConsentManager @Inject constructor(
         get() = consentInformation.canRequestAds()
 
     /**
+     * ¿Hay que ofrecer al usuario un acceso VISIBLE para revisar su consentimiento? (22-ago)
+     *
+     * Google lo EXIGE donde su normativa lo requiere —el EEE, entre otros—: no basta con pedir
+     * el consentimiento una vez, el usuario debe poder volver atrás y cambiarlo. Faltaba por
+     * completo: se pedía al arrancar y no había forma de revisarlo nunca más.
+     *
+     * Se consulta en vez de mostrar la opción siempre porque en regiones sin ese requisito el
+     * formulario no existe y abrirlo dejaría al usuario ante una pantalla vacía.
+     */
+    val isPrivacyOptionsRequired: Boolean
+        get() = consentInformation.privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+
+    /**
+     * Abre el formulario para que el usuario revise o revoque su consentimiento.
+     * [onError] recibe un mensaje solo si el formulario no pudo mostrarse.
+     */
+    fun showPrivacyOptions(activity: Activity, onError: (String) -> Unit = {}) {
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
+            formError?.let { onError(it.message) }
+        }
+    }
+
+    /**
      * Actualiza el estado de consentimiento y muestra el formulario si es necesario.
      * Invoca [onResult] con el valor de [canRequestAds] al terminar (éxito o error de red).
      */
