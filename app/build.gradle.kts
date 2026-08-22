@@ -20,8 +20,8 @@ android {
         applicationId = "com.mejoresiagratis.lumiai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 78
-        versionName = "0.9.49"
+        versionCode = 79
+        versionName = "0.9.50"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }

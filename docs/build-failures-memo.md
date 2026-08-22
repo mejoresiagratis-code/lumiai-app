@@ -1660,3 +1660,24 @@ de privacidad ya publicada en mejoresiagratis.com.
     convertirse en error visible — anotado aquí para no olvidarlo.
   - `SUBSCRIPTION_BASE_PLAN_ID = "lumiai-pro-mensual"` DEBE coincidir con el ID del plan base en
     Play Console. Pablo tiene que verificarlo al configurar la suscripción.
+
+### 2026-08-22 (lección #52 — import ausente, y por qué NO se automatiza su detección)
+- CI rojo en v0.9.49: `Unresolved reference 'SUBSCRIPTION_BASE_PLAN_ID'` en
+  `PlayBillingRepository`. Usé la constante nueva y no añadí su import.
+- **Mi verificación previa fue mala, y esa es la lección de verdad.** Comprobé con un grep si el
+  nombre aparecía en el fichero — y aparecía… dentro del KDoc del propio helper que acababa de
+  escribir. Un nombre citado en un comentario NO es un import. Buscar la CADENA en vez del
+  IMPORT es lo que dejó pasar el fallo.
+- **Intento de automatizarlo, y por qué se descartó.** Escribí una comprobación que detectara
+  identificadores en mayúsculas usados sin importar. Detectaba el fallo real, pero producía
+  falsos positivos irreparables con regex: constantes HEREDADAS (`START_STICKY` viene de
+  `Service`, sin import), nombres dentro de literales de texto (`"RECORD_AUDIO no concedido"`),
+  y anotaciones (`@Suppress("DEPRECATION")`). Cada parche añadía casos límite nuevos.
+  **Descartada a propósito:** un linter con diez falsos positivos se desactiva en una semana, y
+  entonces no protege de nada. El CI ya detecta referencias sin resolver de forma fiable — esa
+  es la herramienta correcta para este problema, no un grep.
+- Se CONSERVA la comprobación de apóstrofos añadida ayer: esa sí es precisa, sin falsos
+  positivos, y cubre algo que el CI solo detecta tras el push.
+- **Regla práctica que sustituye al linter:** al usar un símbolo nuevo de otro paquete, verificar
+  con `grep "^import .*SIMBOLO$"` (anclado a línea de import), nunca con una búsqueda libre del
+  nombre.
