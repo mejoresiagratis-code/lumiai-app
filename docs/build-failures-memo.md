@@ -1598,3 +1598,19 @@ de privacidad ya publicada en mejoresiagratis.com.
     o vacío. Ese detalle técnico viene en inglés y sin traducir, así que se muestra entre
     paréntesis como apoyo, nunca como el mensaje principal.
   - Barrido posterior: cero textos en español fuera de la pantalla God, que es solo de debug.
+
+### 2026-08-22 (lección #51 — apóstrofo sin escapar en strings.xml tumba la build entera)
+- CI rojo en v0.9.46 (b39c1d6): `Failed to flatten XML for resource 'billing_msg_success' with
+  error: Invalid unicode escape sequence in string`. Causa: las dos strings INGLESAS que escribí
+  llevaban apóstrofo recto sin escapar — `You're`, `couldn't`. En Android el apóstrofo dentro de
+  `<string>` **debe** ir como `\'`; aapt2 lo interpreta como inicio de secuencia de escape.
+- **Por qué se coló pese a la auditoría:** el XML era perfectamente VÁLIDO (`ElementTree` lo
+  parseaba sin quejarse) y la paridad EN/ES estaba bien. Es un fallo de la herramienta de
+  RECURSOS de Android, no de sintaxis XML ni de Kotlin, así que ninguna de las comprobaciones
+  existentes podía verlo. Además solo afecta al inglés: en español no salió porque las frases no
+  llevaban apóstrofo.
+- **Fix + prevención:** escapados, y `pre_push_audit.sh` amplía su alcance a los recursos con una
+  comprobación de apóstrofos sin escapar en ambos idiomas. **Probada introduciendo el fallo a
+  propósito** antes de darla por buena, en vez de confiar en que la expresión regular funcionaba.
+- Regla: cada vez que el CI caiga por algo que la auditoría estática no vio, ampliar la auditoría
+  en el mismo commit. El script cubría Kotlin; ahora también recursos.

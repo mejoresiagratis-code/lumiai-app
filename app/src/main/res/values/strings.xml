@@ -317,8 +317,8 @@
     <string name="changelog_licenses">Open-source licences are now listed in full, and verification emails arrive in your language.</string>
     <string name="changelog_privacy">Deleting your account now removes all your data, and signing out clears it from the device.</string>
     <string name="account_delete_partial">Your account was deleted, but our support record could not be removed right now (%1$s). Write to us and we will delete it.</string>
-    <string name="billing_msg_success">You're Pro now. Thanks for the support!</string>
+    <string name="billing_msg_success">You\'re Pro now. Thanks for the support!</string>
     <string name="billing_msg_already_owned">You already had an active subscription.</string>
     <string name="billing_msg_pending">Payment pending confirmation.</string>
-    <string name="billing_msg_error">The purchase couldn't be completed.</string>
+    <string name="billing_msg_error">The purchase couldn\'t be completed.</string>
 </resources>

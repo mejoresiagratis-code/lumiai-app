@@ -65,6 +65,19 @@ if git diff origin/main...HEAD -- '*.kt' 2>/dev/null | grep -qE '^\+.*(construct
   echo "  recordatorio: cambiaste constructores/clases; revisa app/src/test por construcciones posicionales."
 fi
 
+# ── strings.xml: apostrofos SIN escapar (22-ago) ──────────────────────────────
+# aapt2 falla con "Invalid unicode escape sequence" y el CI se cae DESPUES del push.
+# Es un fallo de recursos, no de Kotlin, asi que la verificacion de llaves no lo veia.
+for sx in app/src/main/res/values/strings.xml app/src/main/res/values-es/strings.xml; do
+  [ -f "$sx" ] || continue
+  bad=$(grep -nP "<string[^>]*>[^<]*(?<!\\\\)'[^<]*</string>" "$sx" || true)
+  if [ -n "$bad" ]; then
+    echo "  ✗ $sx: apostrofo sin escapar (usa \\'):"
+    echo "$bad" | head -5 | sed 's/^/      /'
+    fail=1
+  fi
+done
+
 if [ "$fail" -ne 0 ]; then
   echo "pre-push: FALLO. Corrige antes de hacer push."
   exit 1
