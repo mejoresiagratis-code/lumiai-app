@@ -1478,3 +1478,27 @@ Revisión buscando PATRONES en todo el proyecto, no pantalla por pantalla:
   Q4 "básica"; ahora se confirma que además el gate es decorativo. NO se activa ahora: a 14 días
   del deadline, endurecer el CI puede bloquear pushes por deuda preexistente. Tarea para después
   de publicar.
+
+### 2026-08-17 (lección #48 — GRAVE: `isColdStart` sobre un flujo con varios colectores NUNCA funcionó)
+- **Auditoría externa (ChatGPT sobre 6d9633a) acertó en lo más serio, y era código mío.** El
+  patrón `isColdStart` que escribí el 13-ago y documenté con seguridad en DOS repositorios estaba
+  roto de raíz.
+- **Por qué:** el flag se consume en la PRIMERA emisión que procesa el `map`, no "al arrancar".
+  Verificado contando colectores reales: `proUntilMillis` tiene **cuatro** (FlashViewModel,
+  RewardedUnlockViewModel, GodViewModel, RecordRewardUseCase) y `mode` tiene **dos**
+  (FlashViewModel, TorchService). El primer colector recibía el valor simulado; **todos los demás
+  leían el valor persistido real**. Es decir: la hora de Pro RESUCITABA al reabrir la app y el
+  modo NO volvía a Continuo. Además `extend()` prolongaba la fecha vieja resucitada.
+- **Fix correcto = no parchear el flag, sino no persistir.** Si un dato debe morir con el
+  proceso, su sitio es la memoria, no DataStore con una simulación encima:
+  - `DataStoreTemporaryUnlockRepository` pasa a `MutableStateFlow` puro; ya no recibe `DataStore`.
+  - `mode` pasa a `MutableStateFlow(CONTINUOUS)` en `DataStoreFlashStateRepository`; la clave
+    `MODE` se elimina. Los `settings` SIGUEN persistiéndose: esos sí deben sobrevivir.
+  - Al ser ambos `@Singleton` de Hilt, "instancia nueva" es exactamente "proceso nuevo". Sin
+    carreras, sin lecturas obsoletas, sin simular nada.
+- **Lección transversal:** una simulación de ciclo de vida dentro de un operador de flujo es
+  frágil por diseño — depende de cuántos colectores haya y en qué orden lleguen, algo que el
+  autor del repositorio no controla. Antes de escribir lógica que dependa de "la primera
+  emisión", CONTAR los colectores. Y desconfiar de la propia documentación: la del memo afirmaba
+  que funcionaba porque el Singleton nace una vez, razonamiento correcto sobre la INSTANCIA pero
+  irrelevante para el número de SUSCRIPCIONES.

@@ -25,7 +25,6 @@ class DataStoreFlashStateRepository @Inject constructor(
 ) : FlashStateRepository {
 
     private object Keys {
-        val MODE = stringPreferencesKey("mode")
         val INTENSITY = intPreferencesKey(FlashSettingsMapper.KEY_INTENSITY)
         val STROBE = floatPreferencesKey(FlashSettingsMapper.KEY_STROBE_HZ)
         val UNIT = longPreferencesKey(FlashSettingsMapper.KEY_MORSE_UNIT)
@@ -44,23 +43,20 @@ class DataStoreFlashStateRepository @Inject constructor(
     private val _isOn = MutableStateFlow(false)
     override val isOn: StateFlow<Boolean> = _isOn.asStateFlow()
 
-    // Decision de producto (13-ago): la app SIEMPRE entra por Continuo cuando el proceso
-    // es nuevo (app cerrada del todo o recien actualizada) — nunca hereda el ultimo modo
-    // usado. In-memory (no DataStore) y sin bloquear el arranque con I/O: al ser esta clase
-    // un @Singleton de Hilt, su instancia nace UNA vez por proceso — exactamente el mismo
-    // ciclo de vida que "app cerrada = proceso nuevo". Reaperturas dentro del MISMO proceso
-    // (minimizar/maximizar, navegar entre pantallas) siguen respetando el modo elegido.
-    @Volatile private var isColdStart = true
-
-    override val mode: Flow<FlashMode> = dataStore.data.map { p ->
-        if (isColdStart) {
-            isColdStart = false
-            FlashMode.CONTINUOUS
-        } else {
-            runCatching { FlashMode.valueOf(p[Keys.MODE] ?: FlashMode.CONTINUOUS.name) }
-                .getOrDefault(FlashMode.CONTINUOUS)
-        }
-    }
+    // Decision de producto (13-ago): la app SIEMPRE entra por Continuo con proceso nuevo.
+    //
+    // CORREGIDO 17-ago: antes esto se simulaba con un flag `isColdStart` sobre el flujo
+    // persistido, devolviendo CONTINUOUS en la primera emision. Era INCORRECTO — `mode`
+    // tiene DOS colectores (FlashViewModel y TorchService): el primero consumia el flag y
+    // recibia CONTINUOUS, pero el segundo leia el modo persistido real. El arranque en frio
+    // no estaba garantizado en absoluto.
+    //
+    // El modo es estado de SESION, no preferencia persistente: su sitio es la memoria. Como
+    // esta clase es @Singleton de Hilt, la instancia nace una vez por proceso — "proceso
+    // nuevo" es exactamente "vuelta a Continuo". Los ajustes (settings) SI se persisten:
+    // esos deben sobrevivir entre sesiones. La clave MODE de DataStore queda en desuso.
+    private val _mode = MutableStateFlow(FlashMode.CONTINUOUS)
+    override val mode: Flow<FlashMode> = _mode.asStateFlow()
 
     override val settings: Flow<FlashSettings> = dataStore.data.map { p ->
         FlashSettingsMapper.fromMap(readMap(p))
@@ -71,7 +67,7 @@ class DataStoreFlashStateRepository @Inject constructor(
     }
 
     override suspend fun setMode(mode: FlashMode) {
-        dataStore.edit { it[Keys.MODE] = mode.name }
+        _mode.value = mode
     }
 
     override suspend fun updateSettings(transform: (FlashSettings) -> FlashSettings) {
