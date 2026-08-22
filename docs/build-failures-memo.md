@@ -1722,3 +1722,17 @@ de privacidad ya publicada en mejoresiagratis.com.
   **se cae al flash** en vez de dejar sin aviso; si tampoco hay LED, se dice en pantalla.
 - Sin tests que migrar: el auto-apagado vivía en el ViewModel y no tenía ninguno — otra razón
   para haberlo movido a una capa comprobable.
+
+### 2026-08-22 (lección #54 — el pipe que se comió el código de salida del auditor)
+- Empujé v0.9.52 **con el auditor en rojo**. Motivo: escribí
+  `bash pre_push_audit.sh --all | tail -1 && sed -i ...`. Un pipe devuelve el código de salida
+  del ÚLTIMO comando de la tubería —`tail`, que siempre sale con 0—, así que el `&&` continuó
+  como si todo estuviera bien. Es la misma familia del error de ayer con `&&`: encadenar
+  decisiones a comandos cuyo código de salida no es el que creo estar leyendo.
+- **Lo que sí funcionó:** la comprobación de apóstrofos añadida ayer detectó `Beacon's` y
+  `can't` en la string inglesa del changelog. Habría vuelto a tumbar el CI por tercera vez. La
+  herramienta acertó; el error fue no leer su veredicto.
+- **Regla operativa:** ejecutar el auditor a un fichero y comprobar `$?` explícitamente
+  (`bash pre_push_audit.sh --all > /tmp/audit.txt; [ $? -ne 0 ] && abortar`), NUNCA canalizarlo a
+  `tail`/`grep` y encadenar con `&&`. Si se necesita ver solo el final, leer el fichero DESPUÉS
+  de comprobar el código.

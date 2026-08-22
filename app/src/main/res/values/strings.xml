@@ -327,5 +327,5 @@
     <string name="ads_privacy_options">Ad privacy options</string>
     <string name="ads_privacy_options_subtitle">Review or change your consent</string>
     <string name="sa_screen_alert_blocked">Screen alerts are blocked by Android. Allow full-screen notifications for LumiAI in system settings.</string>
-    <string name="changelog_beacon_alert">Beacon's auto-off now reacts to changes, and Sound Alert warns you if it can't alert instead of failing quietly.</string>
+    <string name="changelog_beacon_alert">Beacon\'s auto-off now reacts to changes, and Sound Alert warns you if it can\'t alert instead of failing quietly.</string>
 </resources>
