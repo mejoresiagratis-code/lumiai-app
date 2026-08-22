@@ -19,7 +19,13 @@ import javax.inject.Inject
 data class SubscriptionUiState(
     val product: SubscriptionProduct? = null,
     val purchasing: Boolean = false,
-    val lastMessage: String? = null
+    /**
+     * Resultado de la ultima compra, SIN traducir (22-ago). Antes el ViewModel fabricaba el
+     * texto ya escrito — y en español fijo, asi que un usuario ingles veia "Ya tenias la
+     * suscripcion activa" justo al pagar. La capa de presentacion no debe producir texto
+     * visible: ahora entrega el hecho y la interfaz resuelve la string del idioma que toque.
+     */
+    val lastOutcome: PurchaseOutcome? = null
 )
 
 @HiltViewModel
@@ -28,28 +34,24 @@ class SubscriptionViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _purchasing = MutableStateFlow(false)
-    private val _lastMessage = MutableStateFlow<String?>(null)
+    private val _lastOutcome = MutableStateFlow<PurchaseOutcome?>(null)
 
     val ui: StateFlow<SubscriptionUiState> = combine(
-        repo.product, _purchasing, _lastMessage
-    ) { product, purchasing, message ->
-        SubscriptionUiState(product = product, purchasing = purchasing, lastMessage = message)
+        repo.product, _purchasing, _lastOutcome
+    ) { product, purchasing, outcome ->
+        SubscriptionUiState(product = product, purchasing = purchasing, lastOutcome = outcome)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SubscriptionUiState())
 
     fun purchase(activity: Activity?) {
         if (activity == null || _purchasing.value) return
         _purchasing.value = true
         viewModelScope.launch {
-            when (val outcome = repo.purchase(activity)) {
-                PurchaseOutcome.Success -> _lastMessage.value = "¡Ya eres Pro! Gracias por tu apoyo."
-                PurchaseOutcome.UserCancelled -> { /* silencio: el usuario cerró el flujo, no es un error */ }
-                PurchaseOutcome.AlreadyOwned -> _lastMessage.value = "Ya tenías la suscripción activa."
-                PurchaseOutcome.Pending -> _lastMessage.value = "Pago pendiente de confirmación."
-                is PurchaseOutcome.Error -> _lastMessage.value = outcome.message
-            }
+            val outcome = repo.purchase(activity)
+            // Cancelar no es un error: el usuario cerró el flujo a propósito y no merece aviso.
+            _lastOutcome.value = outcome.takeIf { it !is PurchaseOutcome.UserCancelled }
             _purchasing.value = false
         }
     }
 
-    fun consumeMessage() { _lastMessage.value = null }
+    fun consumeMessage() { _lastOutcome.value = null }
 }

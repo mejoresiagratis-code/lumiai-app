@@ -1578,3 +1578,23 @@ de privacidad ya publicada en mejoresiagratis.com.
   la aplicación forzada en la consola sin registrar el token de depuración, las peticiones a
   Firestore se rechazan mientras Auth sigue funcionando. Esto además rompe en silencio
   `userRegistry.sync()`, que va envuelto en `runCatching`.
+
+### 2026-08-22 (bloque B — AAB publicable y fin del español fijo en la UI inglesa)
+- **① Play NO acepta APK para aplicaciones nuevas** desde 2021, y el CI solo ejecutaba
+  `assembleRelease`: literalmente no existía artefacto publicable. Añadido `bundleRelease` y
+  subida del `.aab` como `app-release-bundle` con `if-no-files-found: error` — si algún día deja
+  de generarse, el job falla en vez de subir nada en silencio. El APK se conserva: sigue siendo
+  lo que se instala en el dispositivo para el smoke test.
+- **② Caída silenciosa a firma de debug.** Sin los secretos `LUMI_*`, la build de release firmaba
+  con la clave de depuración **y el job quedaba en verde**, aparentando un artefacto publicable
+  que Play rechazaría. En `main` ahora hay un paso previo que falla ruidosamente si falta el
+  secreto. En PRs el comportamiento anterior se mantiene a propósito: ahí no se publica nada.
+- **③ Textos de compra en español dentro de la app en inglés.** El `SubscriptionViewModel`
+  fabricaba el mensaje ya escrito y en español fijo: un usuario inglés veía «Ya tenías la
+  suscripción activa» justo al pagar. Raíz del problema: **la capa de presentación producía texto
+  visible**. Ahora expone el `PurchaseOutcome` y la pantalla resuelve la string del idioma que
+  toque. 4 strings nuevas EN/ES.
+  - `PlayBillingRepository` ya no inventa mensajes en español; devuelve el `debugMessage` de Play
+    o vacío. Ese detalle técnico viene en inglés y sin traducir, así que se muestra entre
+    paréntesis como apoyo, nunca como el mensaje principal.
+  - Barrido posterior: cero textos en español fuera de la pantalla God, que es solo de debug.

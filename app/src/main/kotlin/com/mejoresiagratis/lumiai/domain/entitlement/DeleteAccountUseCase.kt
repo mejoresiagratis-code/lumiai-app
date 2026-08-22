@@ -70,7 +70,7 @@ class DeleteAccountUseCase @Inject constructor(
             .getOrElse { e ->
                 return Result.failure(
                     if (e is TimeoutCancellationException) {
-                        IllegalStateException("El servidor no respondió al borrar la cuenta")
+                        IllegalStateException("Auth delete timed out")
                     } else {
                         e
                     }

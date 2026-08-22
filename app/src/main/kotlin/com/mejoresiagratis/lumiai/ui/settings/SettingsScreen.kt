@@ -2,6 +2,7 @@ package com.mejoresiagratis.lumiai.ui.settings
 
 import android.app.Activity
 import com.mejoresiagratis.lumiai.BuildConfig
+import com.mejoresiagratis.lumiai.domain.billing.PurchaseOutcome
 import com.mejoresiagratis.lumiai.domain.entitlement.canStartSubscriptionPurchase
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import android.content.Context
@@ -205,9 +206,26 @@ fun SettingsScreen(
     }
     LaunchedEffect(Unit) { accountViewModel.refresh() }
 
-    LaunchedEffect(subscriptionUi.lastMessage) {
-        subscriptionUi.lastMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+    // La string se resuelve AQUI, en la capa de presentacion y en el idioma del usuario
+    // (22-ago). El detalle tecnico de Play solo se añade si existe: su `debugMessage` viene
+    // en ingles y sin traducir, asi que se muestra como apoyo, nunca como el mensaje.
+    val billingMsgSuccess = stringResource(R.string.billing_msg_success)
+    val billingMsgAlready = stringResource(R.string.billing_msg_already_owned)
+    val billingMsgPending = stringResource(R.string.billing_msg_pending)
+    val billingMsgError = stringResource(R.string.billing_msg_error)
+    LaunchedEffect(subscriptionUi.lastOutcome) {
+        val outcome = subscriptionUi.lastOutcome
+        val text = when (outcome) {
+            PurchaseOutcome.Success -> billingMsgSuccess
+            PurchaseOutcome.AlreadyOwned -> billingMsgAlready
+            PurchaseOutcome.Pending -> billingMsgPending
+            is PurchaseOutcome.Error ->
+                outcome.message.takeIf { it.isNotBlank() }?.let { "$billingMsgError ($it)" }
+                    ?: billingMsgError
+            PurchaseOutcome.UserCancelled, null -> null
+        }
+        if (text != null) {
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
             subscriptionViewModel.consumeMessage()
         }
     }

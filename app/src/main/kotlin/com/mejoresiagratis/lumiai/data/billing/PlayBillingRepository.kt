@@ -161,14 +161,14 @@ class PlayBillingRepository @Inject constructor(
         )
         if (queryResult.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             return PurchaseOutcome.Error(
-                queryResult.billingResult.debugMessage.ifBlank { "No se pudo cargar el producto de suscripción." }
+                queryResult.billingResult.debugMessage
             )
         }
         val productDetails = queryResult.productDetailsList?.firstOrNull()
-            ?: return PurchaseOutcome.Error("Producto de suscripción no disponible.")
+            ?: return PurchaseOutcome.Error("")
         // PBL v9: el offerToken es obligatorio para lanzar el flujo de un producto SUBS.
         val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
-            ?: return PurchaseOutcome.Error("Oferta de suscripción no disponible.")
+            ?: return PurchaseOutcome.Error("")
 
         val flowParams = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(

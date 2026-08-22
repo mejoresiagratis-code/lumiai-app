@@ -317,4 +317,8 @@
     <string name="changelog_licenses">Las licencias de código abierto ya aparecen completas, y los correos de verificación llegan en tu idioma.</string>
     <string name="changelog_privacy">Borrar la cuenta elimina ya todos tus datos, y cerrar sesión los borra del dispositivo.</string>
     <string name="account_delete_partial">Tu cuenta se ha borrado, pero no se pudo eliminar ahora nuestro registro de soporte (%1$s). Escríbenos y lo borramos.</string>
+    <string name="billing_msg_success">¡Ya eres Pro! Gracias por tu apoyo.</string>
+    <string name="billing_msg_already_owned">Ya tenías la suscripción activa.</string>
+    <string name="billing_msg_pending">Pago pendiente de confirmación.</string>
+    <string name="billing_msg_error">No se pudo completar la compra.</string>
 </resources>
