@@ -328,6 +328,15 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                    // Borrado completado pero con el registro administrativo pendiente
+                    // (22-ago): se avisa en vez de fingir un borrado total.
+                    accountUi.deleteWarning?.let { reason ->
+                        Text(
+                            text = stringResource(R.string.account_delete_partial, reason),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     OutlinedButton(
                         onClick = { accountViewModel.signOut() },
                         modifier = Modifier.heightIn(min = 48.dp)

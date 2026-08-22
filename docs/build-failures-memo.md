@@ -1530,3 +1530,28 @@ de privacidad ya publicada en mejoresiagratis.com.
   un `// 1)` o un `(17-ago)` desbalancea el fichero a ojos del auditor aunque el código esté
   perfecto. Verificado a mano que el código estaba 14/14 y reformulados los comentarios. Mejorar
   el script para ignorar comentarios queda como tarea de Fase 2.
+
+### 2026-08-22 (lección #49 — REGRESIÓN mía: borrar cuenta se quedaba colgado sin ningún aviso)
+- **QA de Pablo:** pulsar «Borrar cuenta» → confirmar → **no pasa nada**. Ni error, ni diálogo de
+  re-autenticación, ni cierre de sesión. La cuenta sigue en pantalla.
+- **Descartado primero, para no perseguir fantasmas:** las reglas de Firestore SÍ permiten borrar
+  (`allow write` incluye delete), y tanto el texto de error como el diálogo de re-autenticación
+  existen y se pintarían. Que no apareciera NINGUNO de los dos descarta "falla" y apunta a
+  "se queda esperando".
+- **Causa raíz — dos errores míos de ayer en `DeleteAccountUseCase`:**
+  1. **Espera sin tiempo límite.** `userRegistry.delete()` aguarda confirmación del SERVIDOR de
+     Firestore. Con persistencia offline (activa por defecto en Android) o con App Check
+     rechazando la petición —recordar que lo instalamos hace días—, esa tarea puede no
+     completarse NUNCA. La corrutina quedaba colgada antes del punto de no retorno, con
+     `working = true` para siempre.
+  2. **Error de criterio: abortar por el espejo.** Decidí que un fallo de Firestore cancelara
+     todo el borrado. Es incorrecto: el registro es un ESPEJO administrativo, y dejar que un
+     problema de red impida ejercer el derecho de supresión es peor que conservar un documento
+     residual purgable desde la consola. El derecho del usuario no puede quedar rehén del espejo.
+- **Fix:** `withTimeout(10 s)` en TODAS las operaciones de red del borrado (espejo y Auth). El
+  fallo del espejo ya no aborta: se registra en un `DeleteAccountReport` y el borrado continúa.
+  Si el espejo queda pendiente, se dice al usuario con una string propia en vez de fingir un
+  borrado total. Un timeout en Auth produce error accionable, nunca una pantalla muerta.
+- **Lección transversal:** toda llamada de red dentro de un flujo con «punto de no retorno» debe
+  tener tiempo límite. Sin él, el modo de fallo no es un error visible sino una interfaz
+  congelada, que es el peor de los dos: el usuario no sabe si esperar, reintentar o irse.

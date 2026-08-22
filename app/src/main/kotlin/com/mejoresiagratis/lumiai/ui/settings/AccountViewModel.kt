@@ -8,6 +8,7 @@ import com.mejoresiagratis.lumiai.domain.model.AuthUser
 import com.mejoresiagratis.lumiai.domain.model.BillingProfile
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.BillingProfileRepository
+import com.mejoresiagratis.lumiai.domain.entitlement.DeleteAccountReport
 import com.mejoresiagratis.lumiai.domain.entitlement.DeleteAccountUseCase
 import com.mejoresiagratis.lumiai.domain.entitlement.SessionDataCleaner
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +24,12 @@ data class AccountUiState(
     val working: Boolean = false,
     val verificationSent: Boolean = false,
     val needsReauth: Boolean = false,
-    val error: AuthError? = null
+    val error: AuthError? = null,
+    /**
+     * Aviso cuando el borrado se completó pero el registro administrativo NO pudo eliminarse
+     * (22-ago). El usuario merece saberlo en vez de que se le diga "todo borrado" a medias.
+     */
+    val deleteWarning: String? = null
 )
 
 @HiltViewModel
@@ -111,10 +117,19 @@ class AccountViewModel @Inject constructor(
     fun reportReauthFailure() { _ui.value = _ui.value.copy(working = false, error = AuthError.Unknown) }
     fun dismissReauth() { _ui.value = _ui.value.copy(needsReauth = false) }
 
-    private fun applyDeleteResult(r: Result<Unit>) {
+    private fun applyDeleteResult(r: Result<DeleteAccountReport>) {
         val err = (r.exceptionOrNull() as? AuthException)?.error
         _ui.value = when {
-            r.isSuccess -> _ui.value.copy(working = false, needsReauth = false)
+            r.isSuccess -> {
+                val report = r.getOrNull()
+                _ui.value.copy(
+                    working = false,
+                    needsReauth = false,
+                    error = null,
+                    // Si el espejo no se pudo borrar, se dice — no se finge un borrado total.
+                    deleteWarning = report?.registryFailure?.takeIf { report.registryDeleted.not() }
+                )
+            }
             err == AuthError.RecentLoginRequired -> _ui.value.copy(working = false, needsReauth = true)
             else -> _ui.value.copy(working = false, error = err ?: AuthError.Unknown)
         }
