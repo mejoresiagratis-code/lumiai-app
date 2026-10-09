@@ -7,6 +7,7 @@ import com.mejoresiagratis.lumiai.domain.billing.PurchaseOutcome
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionProduct
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,10 +47,16 @@ class SubscriptionViewModel @Inject constructor(
         if (activity == null || _purchasing.value) return
         _purchasing.value = true
         viewModelScope.launch {
-            val outcome = repo.purchase(activity)
-            // Cancelar no es un error: el usuario cerró el flujo a propósito y no merece aviso.
-            _lastOutcome.value = outcome.takeIf { it !is PurchaseOutcome.UserCancelled }
-            _purchasing.value = false
+            try {
+                val outcome = repo.purchase(activity)
+                _lastOutcome.value = outcome.takeUnless { it is PurchaseOutcome.UserCancelled }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _lastOutcome.value = PurchaseOutcome.Error("")
+            } finally {
+                _purchasing.value = false
+            }
         }
     }
 

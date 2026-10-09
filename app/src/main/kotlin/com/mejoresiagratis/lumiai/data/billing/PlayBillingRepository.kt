@@ -23,6 +23,10 @@ import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionProduct
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,13 +49,17 @@ import kotlin.coroutines.resume
  * de datos — un usuario no puede "hacerse Pro" editando datos locales o de Firestore.
  *
  * Reconocimiento obligatorio: Play cancela y reembolsa automáticamente cualquier compra no
- * reconocida en 3 días (regla vigente desde PBL v2.0); por eso [handlePurchase] siempre acknowledge
+ * reconocida en 3 días (regla vigente desde PBL v2.0); por eso el procesamiento confirma acknowledge
  * antes de conceder el entitlement.
  */
 @Singleton
 class PlayBillingRepository @Inject constructor(
     @ApplicationContext context: Context
 ) : SubscriptionRepository, PurchasesUpdatedListener {
+
+    private val acknowledgement = PurchaseAcknowledgement()
+    private val purchaseMutex = Mutex()
+    private var refreshJob: Job? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -102,9 +110,18 @@ class PlayBillingRepository @Inject constructor(
     }
 
     override fun refresh() {
-        if (!client.isReady) return
-        scope.launch { queryProduct() }
-        scope.launch { restoreEntitlement() }
+        if (refreshJob?.isActive == true) return
+        // Calling a Billing operation also triggers automatic service reconnection.
+        refreshJob = scope.launch {
+            try {
+                restoreEntitlement()
+                queryProduct()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _connectionState.value = BillingConnectionState.UNAVAILABLE
+            }
+        }
     }
 
     private suspend fun queryProduct() {
@@ -131,24 +148,28 @@ class PlayBillingRepository @Inject constructor(
     }
 
     /** Consulta contra Google Play (no contra caché local) qué posee realmente el usuario. */
-    private suspend fun restoreEntitlement() {
+    private suspend fun restoreEntitlement() = purchaseMutex.withLock {
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
         val result = client.queryPurchasesAsync(params)
-        if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) return
-        val active = result.purchasesList.any {
-            it.products.contains(SUBSCRIPTION_PRODUCT_ID) && it.purchaseState == Purchase.PurchaseState.PURCHASED
+        if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            _connectionState.value = BillingConnectionState.UNAVAILABLE
+            return@withLock
         }
-        _isSubscribed.value = active
-        // Si alguna compra activa quedó sin reconocer (p. ej. la app murió a mitad de flujo),
-        // se reconoce ahora — si no, Play la revertirá a los 3 días.
-        result.purchasesList
-            .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isAcknowledged }
-            .forEach { acknowledge(it) }
+        _connectionState.value = BillingConnectionState.CONNECTED
+        val purchases = result.purchasesList.filter {
+            SUBSCRIPTION_PRODUCT_ID in it.products && it.purchaseState == Purchase.PurchaseState.PURCHASED
+        }
+        var confirmed = false
+        for (purchase in purchases) {
+            if (acknowledge(purchase)) confirmed = true
+        }
+        _isSubscribed.value = confirmed
     }
 
     override suspend fun purchase(activity: Activity): PurchaseOutcome {
+        if (pendingPurchase != null) return PurchaseOutcome.Error("")
         val queryResult = client.queryProductDetails(
             QueryProductDetailsParams.newBuilder()
                 .setProductList(
@@ -184,9 +205,12 @@ class PlayBillingRepository @Inject constructor(
             .build()
 
         return suspendCancellableCoroutine { cont ->
-            pendingPurchase = { outcome ->
-                pendingPurchase = null
+            val callback: (PurchaseOutcome) -> Unit = { outcome ->
                 if (cont.isActive) cont.resume(outcome)
+            }
+            pendingPurchase = callback
+            cont.invokeOnCancellation {
+                scope.launch { if (pendingPurchase === callback) pendingPurchase = null }
             }
             val launchResult = client.launchBillingFlow(activity, flowParams)
             if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
@@ -204,35 +228,42 @@ class PlayBillingRepository @Inject constructor(
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: MutableList<Purchase>?) {
-        val outcome: PurchaseOutcome = when (result.responseCode) {
-            BillingClient.BillingResponseCode.OK -> {
-                val purchase = purchases?.firstOrNull { it.products.contains(SUBSCRIPTION_PRODUCT_ID) }
-                when {
-                    purchase == null -> PurchaseOutcome.Error("Compra sin confirmar por Play.")
-                    purchase.purchaseState == Purchase.PurchaseState.PENDING -> PurchaseOutcome.Pending
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED -> {
-                        scope.launch { handlePurchase(purchase) }
-                        PurchaseOutcome.Success
+        // Detach this flow's callback before suspending; do not complete a later purchase.
+        val callback = pendingPurchase
+        pendingPurchase = null
+        scope.launch {
+            val outcome = try {
+                when (result.responseCode) {
+                    BillingClient.BillingResponseCode.OK -> {
+                        val purchase = purchases?.firstOrNull { SUBSCRIPTION_PRODUCT_ID in it.products }
+                        when {
+                            purchase == null -> PurchaseOutcome.Error("")
+                            purchase.purchaseState == Purchase.PurchaseState.PENDING -> PurchaseOutcome.Pending
+                            purchase.purchaseState == Purchase.PurchaseState.PURCHASED -> purchaseMutex.withLock {
+                                if (acknowledge(purchase)) {
+                                    _isSubscribed.value = true
+                                    PurchaseOutcome.Success
+                                } else {
+                                    PurchaseOutcome.Error("")
+                                }
+                            }
+                            else -> PurchaseOutcome.Error("")
+                        }
                     }
-                    else -> PurchaseOutcome.Error("Estado de compra desconocido.")
+                    BillingClient.BillingResponseCode.USER_CANCELED -> PurchaseOutcome.UserCancelled
+                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                        restoreEntitlement()
+                        if (_isSubscribed.value) PurchaseOutcome.AlreadyOwned else PurchaseOutcome.Error("")
+                    }
+                    else -> PurchaseOutcome.Error(result.debugMessage, subCodeOf(result))
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                PurchaseOutcome.Error("")
             }
-            BillingClient.BillingResponseCode.USER_CANCELED -> PurchaseOutcome.UserCancelled
-            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
-                scope.launch { restoreEntitlement() }
-                PurchaseOutcome.AlreadyOwned
-            }
-            else -> PurchaseOutcome.Error(
-                result.debugMessage.ifBlank { "Error de compra (${result.responseCode})." },
-                subCodeOf(result)
-            )
+            callback?.invoke(outcome)
         }
-        pendingPurchase?.invoke(outcome)
-    }
-
-    private suspend fun handlePurchase(purchase: Purchase) {
-        if (!purchase.isAcknowledged) acknowledge(purchase)
-        _isSubscribed.value = true
     }
 
     /**
@@ -253,12 +284,13 @@ class PlayBillingRepository @Inject constructor(
             ?: offers.firstOrNull()
     }
 
-    private suspend fun acknowledge(purchase: Purchase) {
-        val params = AcknowledgePurchaseParams.newBuilder()
-            .setPurchaseToken(purchase.purchaseToken)
-            .build()
-        client.acknowledgePurchase(params)
-    }
+    private suspend fun acknowledge(purchase: Purchase): Boolean =
+        acknowledgement.confirm(purchase.isAcknowledged) {
+            val params = AcknowledgePurchaseParams.newBuilder()
+                .setPurchaseToken(purchase.purchaseToken)
+                .build()
+            client.acknowledgePurchase(params).responseCode == BillingClient.BillingResponseCode.OK
+        }
 
     // BillingResult expone un sub-codigo (p. ej. PAYMENT_DECLINED_DUE_TO_INSUFFICIENT_FUNDS) desde
     // PBL v8 para dar feedback especifico. El nombre exacto del getter varia entre builds del SDK

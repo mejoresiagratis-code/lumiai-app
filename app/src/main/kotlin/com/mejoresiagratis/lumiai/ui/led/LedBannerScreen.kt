@@ -25,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,7 +40,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -82,8 +83,7 @@ private tailrec fun android.content.Context.findActivity(): Activity? = when (th
  *    dibujado, sin recomposición (patrón de la skill compose-animations).
  * 3. Cada frame dibuja como mucho filas x columnas visibles círculos: acotado y estable.
  *
- * El gate (Pro o 2 anuncios) vive FUERA, en la entrada de Ajustes: aquí se llega ya
- * desbloqueado, igual que en Alerta Sonora.
+ * El acceso se comprueba también aquí para cerrar el display cuando caduca Pro.
  */
 private const val LED_ROWS = 26
 private const val GAP_COLS = 10          // separación entre repeticiones del texto
@@ -121,7 +121,19 @@ fun LedBannerScreen(
     onBack: () -> Unit,
     viewModel: LedBannerViewModel = hiltViewModel()
 ) {
-    val config by viewModel.config.collectAsState()
+    val hasAccess by viewModel.hasAccess.collectAsStateWithLifecycle()
+    if (hasAccess != true) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            if (hasAccess == null) CircularProgressIndicator()
+            else {
+                Text(stringResource(R.string.sa_stopped_no_pro))
+                Button(onClick = onBack) { Text(stringResource(R.string.back_cd)) }
+            }
+        }
+        BackHandler(onBack = onBack)
+        return
+    }
+    val config by viewModel.config.collectAsStateWithLifecycle()
     var running by remember { mutableStateOf(false) }
 
     if (running) {

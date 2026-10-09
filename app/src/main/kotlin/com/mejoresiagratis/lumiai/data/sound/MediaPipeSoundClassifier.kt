@@ -14,8 +14,6 @@ import com.google.mediapipe.tasks.components.containers.AudioData.AudioDataForma
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import com.mejoresiagratis.lumiai.domain.sound.SoundDetectionEngine
-import java.util.concurrent.ScheduledThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 /**
  * Envuelve el MediaPipe Audio Classifier (modelo YAMNet) y el AudioRecord para clasificar el
@@ -38,7 +36,8 @@ class MediaPipeSoundClassifier(
     private val onWindow: (Map<String, Float>) -> Unit = {}
 ) {
     private var recorder: AudioRecord? = null
-    private var executor: ScheduledThreadPoolExecutor? = null
+    private var captureLoop: ClassificationLoop? = null
+    @Volatile private var stopped = false
     private var classifier: AudioClassifier? = null
 
     @SuppressLint("MissingPermission")
@@ -70,8 +69,8 @@ class MediaPipeSoundClassifier(
 
             val lengthMs = (REQUIRE_INPUT_BUFFER_SIZE / SAMPLING_RATE_IN_HZ.toFloat()) * 1000f
             val interval = (lengthMs * (1 - DEFAULT_OVERLAP * 0.25)).toLong().coerceAtLeast(1L)
-            executor = ScheduledThreadPoolExecutor(1).apply {
-                scheduleAtFixedRate({ classifyOnce() }, 0, interval, TimeUnit.MILLISECONDS)
+            captureLoop = ClassificationLoop(this::onStreamError).also {
+                it.start(interval, this::classifyOnce)
             }
         } catch (e: IllegalStateException) {
             onError(e.message ?: "init failed")
@@ -96,7 +95,7 @@ class MediaPipeSoundClassifier(
         val categories = result.classificationResults().firstOrNull()
             ?.classifications()?.firstOrNull()
             ?.categories().orEmpty()
-        if (categories.isEmpty()) return
+        if (stopped) return
         val scores = categories.associate { it.categoryName() to it.score() }
         onWindow(scores)
         val fired = engine.onWindow(scores, SystemClock.uptimeMillis())
@@ -104,19 +103,21 @@ class MediaPipeSoundClassifier(
     }
 
     private fun onStreamError(e: RuntimeException) {
+        if (stopped) return
         onError(e.message ?: "stream error")
         Log.e(TAG, "MediaPipe stream error", e)
     }
 
     fun stop() {
-        executor?.shutdownNow()
-        executor = null
+        stopped = true
+        captureLoop?.stop()
+        captureLoop = null
         runCatching { classifier?.close() }
         classifier = null
         runCatching {
             recorder?.stop()
-            recorder?.release()
         }
+        runCatching { recorder?.release() }
         recorder = null
         engine.reset()
     }

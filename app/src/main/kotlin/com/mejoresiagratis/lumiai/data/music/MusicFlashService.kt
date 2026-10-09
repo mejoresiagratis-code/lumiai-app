@@ -8,10 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Build
@@ -21,6 +18,7 @@ import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.entitlement.whileAiAccess
 import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.flash.EngineController
 import com.mejoresiagratis.lumiai.domain.music.BeatDetector
@@ -62,27 +60,6 @@ class MusicFlashService : Service() {
     private var recorder: AudioRecord? = null
     private val detector = BeatDetector()
 
-    // Foco de audio: si otra app (llamada, grabadora, asistente) toma el audio, pausamos
-    // los destellos sin matar el servicio y reanudamos al recuperarlo.
-    @Volatile private var audioFocusLost = false
-    private var audioManager: AudioManager? = null
-    private var focusRequest: AudioFocusRequest? = null
-    private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        when (change) {
-            AudioManager.AUDIOFOCUS_LOSS,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                audioFocusLost = true
-                runCatching { torch.turnOff() }
-                updateNotification(R.string.music_notif_paused)
-            }
-            AudioManager.AUDIOFOCUS_GAIN -> {
-                audioFocusLost = false
-                updateNotification(R.string.music_notif_listening)
-            }
-        }
-    }
-
     override fun onCreate() {
         super.onCreate()
         ensureChannel(this)
@@ -103,65 +80,18 @@ class MusicFlashService : Service() {
         // El motor principal suelta el LED antes del show, pero SIN tocar isOn:
         // en Musica el orbe encendido representa ESTA sesion (una sola notificacion,
         // la de este servicio — QA 13-ago).
-        engine.stop()
-
-        // La sensibilidad se aplica en vivo sin reiniciar la escucha.
         scope.launch {
-            configRepo.sensitivity.collect { detector.sensitivity = it }
-        }
-        // Apagado EXTERNO (boton "Desactivar" del sistema): sin esto, el siguiente
-        // golpe detectado reencendia la luz sin saber que algo externo la habia
-        // apagado (QA 13-ago). stopSelf() dispara onDestroy(), que ya deja isOn/torch
-        // en su estado correcto.
-        scope.launch { torch.externalOffEvents.collect { stopSelf() } }
-        // REVOCACION EN EL SERVICIO (22-ago): ver stopWhenAccessLost().
-        scope.launch { stopWhenAccessLost() }
-        requestAudioFocus()
-        startListening()
-    }
-
-    /**
-     * Para el servicio cuando el acceso Pro se PIERDE (caducidad, logout, borrado de cuenta).
-     * Solo actua en la TRANSICION de "tenia acceso" a "ya no": la primera emision puede llegar
-     * en `false` mientras los permisos se cargan, y reaccionar a eso mataria el modo nada mas
-     * empezar a sonar.
-     */
-    private suspend fun stopWhenAccessLost() {
-        var hadAccess = false
-        proAccess.hasAiAccess.collect { has ->
-            if (has) {
-                hadAccess = true
-            } else if (hadAccess) {
-                updateNotification(R.string.music_notif_no_pro)
-                stopSelf()
-            }
-        }
-    }
-
-    private fun requestAudioFocus() {
-        val am = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
-        audioManager = am
-        // No bloqueamos si no se concede: solo escuchamos el ambiente, no reproducimos.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
-                .build()
-            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                .setAudioAttributes(attrs)
-                .setWillPauseWhenDucked(true)
-                .setOnAudioFocusChangeListener(focusListener)
-                .build()
-            focusRequest = request
-            runCatching { am.requestAudioFocus(request) }
-        } else {
-            @Suppress("DEPRECATION")
-            runCatching {
-                am.requestAudioFocus(
-                    focusListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-                )
+            proAccess.hasAiAccess.whileAiAccess(
+                onDenied = {
+                    updateNotification(R.string.music_notif_no_pro)
+                    stopSelf()
+                }
+            ) {
+                engine.stop()
+                scope.launch { configRepo.sensitivity.collect { detector.sensitivity = it } }
+                scope.launch { torch.externalOffEvents.collect { stopSelf() } }
+                // Microphone capture must not take playback focus from the music player.
+                startListening()
             }
         }
     }
@@ -214,10 +144,8 @@ class MusicFlashService : Service() {
                     when {
                         read > 0 -> {
                             consecutiveErrors = 0
-                            if (!audioFocusLost) {
-                                val beat = detector.feed(buffer, read, System.currentTimeMillis())
-                                if (beat != null) pulse(beat.strength)
-                            }
+                            val beat = detector.feed(buffer, read, android.os.SystemClock.elapsedRealtime())
+                            if (beat != null) pulse(beat.strength)
                         }
                         // Códigos negativos de error de AudioRecord (DEAD_OBJECT, INVALID_OPERATION…)
                         read < 0 -> {
@@ -265,22 +193,9 @@ class MusicFlashService : Service() {
         runCatching { flashState.setOn(false) }
         audioJob?.cancel()
         flashJob?.cancel()
-        abandonAudioFocus()
         runCatching { torch.turnOff() }
         scope.cancel()
         super.onDestroy()
-    }
-
-    private fun abandonAudioFocus() {
-        val am = audioManager ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            focusRequest?.let { runCatching { am.abandonAudioFocusRequest(it) } }
-        } else {
-            @Suppress("DEPRECATION")
-            runCatching { am.abandonAudioFocus(focusListener) }
-        }
-        focusRequest = null
-        audioManager = null
     }
 
     private fun startInForeground() {
