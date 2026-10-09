@@ -349,11 +349,10 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    // Borrado completado pero con el registro administrativo pendiente
-                    // (22-ago): se avisa en vez de fingir un borrado total.
-                    accountUi.deleteWarning?.let { reason ->
+                    // Un timeout no confirma el borrado. Se conserva una solicitud recuperable.
+                    if (accountUi.deletionPending) {
                         Text(
-                            text = stringResource(R.string.account_delete_partial, reason),
+                            text = stringResource(R.string.account_delete_pending),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )

@@ -37,6 +37,13 @@ class SessionDataCleaner @Inject constructor(
      * demás se ejecutan igualmente — dejar datos personales de otra persona sería peor que
      * un fallo parcial silencioso.
      */
+    /** Deletion must retain its pending marker if any local cleanup fails. */
+    suspend fun clearAllStrict() {
+        billingProfile.clear()
+        rewardProgress.set(0)
+        temporaryUnlock.clear()
+    }
+
     suspend fun clearAll() {
         runCatching { billingProfile.clear() }
         runCatching { rewardProgress.set(0) }

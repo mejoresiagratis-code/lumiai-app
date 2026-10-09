@@ -46,6 +46,13 @@ abstract class AppModule {
 
     @Binds
     @Singleton
+    abstract fun bindAccountDeletion(
+        impl: com.mejoresiagratis.lumiai.data.auth.FirebaseAccountDeletionRepository
+    ): com.mejoresiagratis.lumiai.domain.repository.AccountDeletionRepository
+
+
+    @Binds
+    @Singleton
     abstract fun bindTorch(impl: Camera2TorchController): TorchController
 
     @Binds

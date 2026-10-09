@@ -115,7 +115,7 @@
     <string name="account_verification_sent">Verification email sent.</string>
     <string name="account_delete">Delete account</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
-    <string name="account_delete_confirm_body">This is permanent and removes your account and associated data. It can\'t be undone.</string>
+    <string name="account_delete_confirm_body">This permanently deletes your account and associated profile. Once accepted, deletion continues even if you close the app. Google Play subscriptions must be cancelled separately.</string>
     <string name="account_delete_cancel">Cancel</string>
     <string name="account_reauth_title">Confirm your identity</string>
     <string name="account_reauth_body">For security, re-enter your password to delete the account.</string>
@@ -356,4 +356,5 @@
     <string name="sound_cat_glass">Glass breaking</string>
     <string name="sound_cat_crying">Crying · general</string>
     <string name="sound_cat_general_alarm">Alarm · general</string>
+    <string name="account_delete_pending">Account deletion is pending confirmation. Reopen this screen with a connection to retry. Once accepted by the server, deletion continues even if you close the app.</string>
 </resources>

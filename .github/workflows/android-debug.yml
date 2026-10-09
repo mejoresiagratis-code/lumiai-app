@@ -15,6 +15,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  firebase:
+    name: Firebase deletion and rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --prefix functions --ignore-scripts --no-audit --no-fund
+      - name: Deletion and security rules against isolated emulators
+        run: functions/node_modules/.bin/firebase emulators:exec --project demo-lumiai-deletion --only auth,firestore "npm test --prefix functions"
+      - name: Upload emulator logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-logs-${{ github.run_number }}
+          path: '*-debug.log'
+          retention-days: 7
   build:
     name: Tests and debug APK
     runs-on: ubuntu-latest
@@ -75,7 +100,7 @@ jobs:
           retention-days: 14
 
   release:
-    needs: [build, quality]
+    needs: [build, quality, firebase]
     # Solo en main: la build minificada tarda mas y los PRs ya validan con debug.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
