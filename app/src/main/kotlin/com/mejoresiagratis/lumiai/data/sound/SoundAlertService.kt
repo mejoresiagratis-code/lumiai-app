@@ -150,7 +150,10 @@ class SoundAlertService : Service() {
                 if (category != null) onDetected(category, config, torch)
             }
         }
-        launch { torch.externalOffEvents.collect { events.trySend(null) } }
+        launch { torch.externalOffEvents.collect {
+            torch.failure.value?.let { listeningState.setDeliveryWarning(getString(it.messageRes)) }
+            events.trySend(null)
+        } }
         val classifier = MediaPipeSoundClassifier(
             context = applicationContext,
             engine = SoundDetectionEngine(config),
@@ -217,7 +220,15 @@ class SoundAlertService : Service() {
         channel.deliverOutputs(
             hasFlash = torch.hasFlash,
             showScreen = { screenFlash(category) },
-            flash = { flash(category, torch) }
+            flash = {
+                try {
+                    flash(category, torch)
+                    torch.failure.value?.let { listeningState.setDeliveryWarning(getString(it.messageRes)) }
+                } catch (e: com.mejoresiagratis.lumiai.data.torch.TorchOperationException) {
+                    // A failed LED must not stop audio capture or disable the screen channel.
+                    listeningState.setDeliveryWarning(getString(e.failure.messageRes))
+                }
+            }
         )
     }
 

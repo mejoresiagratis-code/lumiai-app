@@ -57,6 +57,7 @@ class HardwareSessionCoordinator @Inject constructor(private val hardware: Torch
     private class Session(val job: Job)
 
     private inner class LeasedTorch(private val owner: Session) : TorchController {
+        override val failure get() = hardware.failure
         override val hasFlash get() = hardware.hasFlash
         override val maxIntensityLevel get() = hardware.maxIntensityLevel
         override val externalOffEvents = hardware.externalOffEvents.filter {

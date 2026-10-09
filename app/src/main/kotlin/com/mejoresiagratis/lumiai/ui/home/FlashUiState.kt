@@ -6,6 +6,7 @@ import com.mejoresiagratis.lumiai.domain.model.FlashMode
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 
 data class FlashUiState(
+    val torchFailure: com.mejoresiagratis.lumiai.data.torch.TorchFailure? = null,
     val isOn: Boolean = false,
     val mode: FlashMode = FlashMode.CONTINUOUS,
     val settings: FlashSettings = FlashSettings(),

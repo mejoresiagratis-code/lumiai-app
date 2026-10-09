@@ -356,4 +356,9 @@
     <string name="sound_cat_glass">Cristal roto</string>
     <string name="sound_cat_crying">Llanto · general</string>
     <string name="sound_cat_general_alarm">Alarma · general</string>
+    <string name="torch_error_busy">Flash ocupado: otra app está usando la cámara. Ciérrala y vuelve a intentarlo.</string>
+    <string name="torch_error_permission">Acceso al flash denegado. Revisa los permisos de LumiAI en los ajustes de Android y vuelve a intentarlo.</string>
+    <string name="torch_error_disabled">Android ha bloqueado el acceso a la cámara. Revisa la privacidad o las restricciones del dispositivo y vuelve a intentarlo.</string>
+    <string name="torch_error_unavailable">El flash no está disponible temporalmente. Cierra la cámara y vuelve a intentarlo.</string>
+    <string name="torch_error_off">No se pudo confirmar el apagado del flash. Comprueba el control de linterna de Android.</string>
 </resources>

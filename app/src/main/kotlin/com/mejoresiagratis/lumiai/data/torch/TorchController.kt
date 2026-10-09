@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.Flow
 
 /** Unica abstraccion que controla el LED por hardware. */
 interface TorchController {
+    val failure: kotlinx.coroutines.flow.StateFlow<TorchFailure?>
+        get() = kotlinx.coroutines.flow.MutableStateFlow(null)
     val hasFlash: Boolean
     val maxIntensityLevel: Int
     fun turnOn(intensityLevel: Int)

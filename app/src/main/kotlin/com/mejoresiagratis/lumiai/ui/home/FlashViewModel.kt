@@ -39,8 +39,8 @@ class FlashViewModel @Inject constructor(
     private val accessFlow = proAccess.access
 
     val uiState: StateFlow<FlashUiState> =
-        combine(repo.isOn, repo.mode, repo.settings, accessFlow) { on, mode, settings, access ->
-            FlashUiState(isOn = on, mode = mode, settings = settings, capabilities = capabilities, access = access)
+        combine(repo.isOn, repo.mode, repo.settings, accessFlow, torch.failure) { on, mode, settings, access, failure ->
+            FlashUiState(torchFailure = failure, isOn = on, mode = mode, settings = settings, capabilities = capabilities, access = access)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

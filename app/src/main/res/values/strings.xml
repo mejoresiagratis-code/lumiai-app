@@ -356,4 +356,9 @@
     <string name="sound_cat_glass">Glass breaking</string>
     <string name="sound_cat_crying">Crying · general</string>
     <string name="sound_cat_general_alarm">Alarm · general</string>
+    <string name="torch_error_busy">Flash unavailable: another app is using the camera. Close it and try again.</string>
+    <string name="torch_error_permission">Flash access denied. Check LumiAI permissions in Android settings and try again.</string>
+    <string name="torch_error_disabled">Android has disabled camera access. Check privacy or device restrictions, then try again.</string>
+    <string name="torch_error_unavailable">The flash is temporarily unavailable. Close the camera and try again.</string>
+    <string name="torch_error_off">Could not confirm that the flash is off. Check the Android flashlight control.</string>
 </resources>
