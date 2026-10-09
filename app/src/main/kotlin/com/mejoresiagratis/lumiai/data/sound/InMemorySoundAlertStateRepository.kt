@@ -23,6 +23,10 @@ class InMemorySoundAlertStateRepository @Inject constructor() : SoundAlertStateR
     override val stopReason: StateFlow<String?> = _stopReason.asStateFlow()
     override fun setStopReason(value: String?) { _stopReason.value = value }
 
+    private val _deliveryWarning = MutableStateFlow<String?>(null)
+    override val deliveryWarning: StateFlow<String?> = _deliveryWarning.asStateFlow()
+    override fun setDeliveryWarning(value: String?) { _deliveryWarning.value = value }
+
     private val _lastWindow = MutableStateFlow<String?>(null)
     override val lastWindow: StateFlow<String?> = _lastWindow.asStateFlow()
     override fun setLastWindow(value: String?) { _lastWindow.value = value }

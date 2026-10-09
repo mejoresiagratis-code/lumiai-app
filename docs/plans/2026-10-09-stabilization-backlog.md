@@ -46,6 +46,20 @@ El propietario confirma que Música recibe audio y que Sonido se detiene correct
 - [ ] Validar esta corrección en Actions y entregar APK `0.9.54-stabilization.2.1`.
 - [ ] Repetir QA en Samsung S26 Ultra: comprobar que el contador avanza, el nivel varía y timbre/golpes producen clasificación y aviso. El reconocimiento físico aún no está confirmado; no se han bajado umbrales a ciegas.
 
+### QA posterior · selección de Flash / Pantalla / Ambas
+
+El propietario confirma que `stabilization.2.1` ya clasifica audio y dispara el flash en Samsung S26 Ultra. El clip de puerta aporreada se confunde con disparos/explosiones: queda como limitación de clasificación, sin remapear esas clases a puerta. Actions #254: 165 pruebas correctas y Lint correcto.
+
+El propietario detecta que las tres opciones usan flash. La causa es el fallback del servicio al faltar permiso de pantalla completa, que además bloqueaba la apertura con la app visible.
+
+- [x] ~~Respetar estrictamente las salidas seleccionadas; Pantalla nunca recurre al LED.~~
+- [x] ~~Abrir la pantalla desde una Activity visible, independientemente del permiso de notificación a pantalla completa.~~
+- [x] ~~En segundo plano usar notificación: su toque abre los destellos; apertura automática sujeta al permiso y al sistema.~~
+- [x] ~~Añadir Probar pantalla, acceso a ajustes de permisos y avisos visibles sin detener la escucha.~~
+- [ ] Validar `stabilization.2.2` en Actions y entregar APK.
+- [ ] En S26 Ultra: Flash → solo LED; Pantalla → blanco/negro sin LED; Ambas → ambos. Repetir con app visible, en segundo plano y bloqueada.
+- [ ] Mantener PR #3 sin integrar hasta confirmar esta matriz. Evaluar por separado el reconocimiento de golpes de puerta.
+
 ### Pendiente · orden de trabajo
 
 1. [ ] Cerrar la segunda entrega: QA del APK y posterior integración del PR #3.

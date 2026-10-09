@@ -24,6 +24,26 @@ class SoundAlertNotificationsTest {
         assertTrue(notification.contentIntent.isImmutable)
     }
 
+    @Test fun deniedFullscreenStillOpensActualScreenWhenTapped() {
+        val notification = SoundAlertNotifications.screen(
+            RuntimeEnvironment.getApplication(),
+            com.mejoresiagratis.lumiai.domain.sound.SoundCategory.TIMBRE, false
+        )
+        assertNull(notification.fullScreenIntent)
+        val intent = shadowOf(notification.contentIntent).savedIntent
+        assertEquals(ScreenFlashActivity::class.java.name, intent.component?.className)
+        assertTrue(intent.hasExtra(ScreenFlashActivity.EXTRA_PATTERN))
+    }
+
+    @Test fun allowedFullscreenAndTapUseTheSameScreenIntent() {
+        val notification = SoundAlertNotifications.screen(
+            RuntimeEnvironment.getApplication(),
+            com.mejoresiagratis.lumiai.domain.sound.SoundCategory.TIMBRE, true
+        )
+        assertNotNull(notification.fullScreenIntent)
+        assertEquals(notification.contentIntent, notification.fullScreenIntent)
+    }
+
     @Test fun listeningHasStopActionAndSeparateQuietChannel() {
         val notification = SoundAlertNotifications.listening(RuntimeEnvironment.getApplication())
         assertEquals(SoundAlertNotifications.LISTENING_CHANNEL, notification.channelId)

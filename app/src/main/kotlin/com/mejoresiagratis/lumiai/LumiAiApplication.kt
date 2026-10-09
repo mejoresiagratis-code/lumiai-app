@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai
 
 import android.app.Application
+import com.mejoresiagratis.lumiai.data.sound.VisibleScreenAlertLauncher
 import android.os.StrictMode
 import com.mejoresiagratis.lumiai.domain.billing.SUBSCRIPTION_PRODUCT_ID
 import com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
@@ -26,6 +27,7 @@ import javax.inject.Inject
 @HiltAndroidApp
 class LumiAiApplication : Application() {
 
+    @Inject lateinit var screenAlertLauncher: VisibleScreenAlertLauncher
     @Inject lateinit var auth: AuthRepository
     @Inject lateinit var billingProfileRepo: BillingProfileRepository
     @Inject lateinit var subscriptionRepo: SubscriptionRepository
@@ -48,6 +50,7 @@ class LumiAiApplication : Application() {
             )
         }
         super.onCreate()
+        registerActivityLifecycleCallbacks(screenAlertLauncher)
         // App Check LO PRIMERO tras super.onCreate() (Q5, 16-ago): tiene que quedar instalado
         // antes de que cualquier servicio de Firebase haga su primera peticion, o esa peticion
         // saldria sin token. Las rutinas de abajo (registro de usuario, perfil) hablan con

@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
-import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -41,21 +40,24 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.mejoresiagratis.lumiai.domain.sound.deliverOutputs
 import javax.inject.Inject
 
 /**
  * Servicio en primer plano (tipo microfono) que escucha y clasifica sonidos en el dispositivo y,
  * al reconocer una categoria activa, avisa segun su canal configurado: destello del LED (patron
  * por ritmo), parpadeo de pantalla (ScreenFlashActivity via full-screen-intent) o ambos. Si se
- * pidio flash pero el dispositivo no tiene, cae a pantalla para no dejar sin aviso.
+ * pidio flash pero el dispositivo no tiene, informa sin sustituir el canal elegido.
  *
  * La configuracion se aplica EN VIVO (14-ago): cada cambio de categorias, sensibilidad o canal
  * reconstruye clasificador y motor sin que el usuario tenga que parar y volver a iniciar. Requiere
- * RECORD_AUDIO y el modelo yamnet.tflite en assets: sin ellos sigue vivo pero no avisa.
+ * RECORD_AUDIO y el modelo yamnet.tflite en assets: los fallos detienen la escucha con motivo visible.
  */
 @AndroidEntryPoint
 class SoundAlertService : Service() {
 
+    @Inject lateinit var screenLauncher: VisibleScreenAlertLauncher
     @Inject lateinit var sessions: HardwareSessionCoordinator
     @Inject lateinit var flashState: FlashStateRepository
     @Inject lateinit var configRepo: SoundAlertConfigRepository
@@ -131,6 +133,7 @@ class SoundAlertService : Service() {
         // All callbacks hand off to session children. null cancels only the current flash.
         val events = Channel<SoundCategory?>(Channel.CONFLATED)
         val lastResultAt = AtomicLong(SystemClock.elapsedRealtime())
+        listeningState.setDeliveryWarning(null)
         listeningState.setLastWindow(getString(R.string.sa_analysis_starting))
         launch {
             while (isActive) {
@@ -205,71 +208,37 @@ class SoundAlertService : Service() {
 
     private suspend fun onDetected(category: SoundCategory, config: SoundAlertConfig, torch: TorchController) {
         listeningState.setLastDetection(getString(category.labelRes()))
-        notifyDetection(category)
+        listeningState.setDeliveryWarning(null)
         val channel = config.channel(category)
-        var useFlash = channel.usesFlash && torch.hasFlash
-        val wantsScreen = channel.usesScreen || (channel.usesFlash && !useFlash)
-        if (wantsScreen) {
-            if (canUseFullScreenAlerts()) {
-                screenFlash(category)
-            } else if (!useFlash && torch.hasFlash) {
-                useFlash = true
-            } else {
-                listeningState.setStopReason(getString(R.string.sa_screen_alert_blocked))
-            }
+        if (!channel.usesScreen) notifyDetection(category)
+        if (channel.usesFlash && !torch.hasFlash) {
+            listeningState.setDeliveryWarning(getString(R.string.sa_no_flash))
         }
-        if (useFlash) flash(category, torch)
-    }
-
-    /**
-     * ¿Puede la app mostrar avisos a pantalla completa? (22-ago)
-     *
-     * Android 14 restringio este permiso: se concede solo a apps de alarma y llamadas, y el
-     * usuario puede revocarlo. Sin comprobarlo, el canal "solo pantalla" prometia un aviso que
-     * podia no aparecer NUNCA — justo en la funcion pensada para quien no oye.
-     */
-    private fun canUseFullScreenAlerts(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
-        val mgr = getSystemService(NotificationManager::class.java) ?: return false
-        return runCatching { mgr.canUseFullScreenIntent() }.getOrDefault(false)
-    }
-
-    /**
-     * Aviso de pantalla. Se emite por DOS vias porque ninguna cubre todos los casos (QA 22-ago):
-     *
-     * - **Intent a pantalla completa**: es la unica via permitida para "despertar" el movil, y
-     *   funciona con la pantalla APAGADA o bloqueada — el escenario principal de esta funcion.
-     *   Pero con el movil desbloqueado y en uso, Android lo degrada DELIBERADAMENTE a una
-     *   notificacion flotante que hay que tocar. No es un fallo nuestro: es la regla del sistema.
-     * - **Arranque directo de la actividad**: solo se permite si la app esta en primer plano, y
-     *   cubre justo el hueco anterior. Se intenta ademas de la notificacion, no en su lugar.
-     */
-    private fun screenFlash(category: SoundCategory) {
-        val intent = Intent(this, ScreenFlashActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(ScreenFlashActivity.EXTRA_PATTERN, SoundAlertFlash.patternFor(category))
-        }
-        // Con la app visible, el arranque directo SI esta permitido y el aviso aparece al
-        // instante, sin tocar nada. Si la app esta en segundo plano el sistema lo ignora en
-        // silencio (no lanza), y queda la notificacion de abajo como via.
-        runCatching { startActivity(intent) }
-        val pending = PendingIntent.getActivity(
-            this,
-            category.ordinal,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        channel.deliverOutputs(
+            hasFlash = torch.hasFlash,
+            showScreen = { screenFlash(category) },
+            flash = { flash(category, torch) }
         )
-        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.sa_notif_detected))
-            .setContentText(getString(category.labelRes()))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setFullScreenIntent(pending, true)
-            .setContentIntent(SoundAlertNotifications.open(this))
-            .setAutoCancel(true)
-            .build()
-        getSystemService(NotificationManager::class.java).notify(SCREEN_NOTIF_ID, notif)
+    }
+
+    private suspend fun screenFlash(category: SoundCategory) = withContext(Dispatchers.Main.immediate) {
+        val intent = ScreenFlashActivity.createIntent(this@SoundAlertService, SoundAlertFlash.patternFor(category))
+        // Visible Activity delivery does NOT require the permission for background full-screen intents.
+        if (screenLauncher.show(intent)) return@withContext
+        if (!ScreenAlertAccess.notificationsAllowed(this@SoundAlertService)) {
+            listeningState.setDeliveryWarning(getString(R.string.sa_screen_notifications_blocked))
+            return@withContext
+        }
+        val fullScreenAllowed = ScreenAlertAccess.fullScreenAllowed(this@SoundAlertService)
+        val notification = SoundAlertNotifications.screen(this@SoundAlertService, category, fullScreenAllowed)
+        try {
+            getSystemService(NotificationManager::class.java).notify(SCREEN_NOTIF_ID, notification)
+            if (!fullScreenAllowed) {
+                listeningState.setDeliveryWarning(getString(R.string.sa_screen_alert_blocked))
+            }
+        } catch (_: SecurityException) {
+            listeningState.setDeliveryWarning(getString(R.string.sa_screen_notifications_blocked))
+        }
     }
 
     private suspend fun flash(category: SoundCategory, torch: TorchController) {
@@ -314,7 +283,7 @@ class SoundAlertService : Service() {
 
     companion object {
         const val ACTION_STOP = "com.mejoresiagratis.lumiai.action.SOUND_ALERT_STOP"
-        private const val CHANNEL_ID = "sound_alert"
+        private const val CHANNEL_ID = SoundAlertNotifications.ALERT_CHANNEL
         // IDs centralizados (17-ago): DETECTION_NOTIF_ID valia 4 y CHOCABA con la
         // notificacion de primer plano de MusicFlashService — al detectar un sonido con
         // Musica activa, la borraba. Ver NotificationIds.
