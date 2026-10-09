@@ -19,6 +19,10 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class DevicePreferencesPersistenceTest {
+    private val auth = io.mockk.mockk<com.mejoresiagratis.lumiai.domain.repository.AuthRepository> {
+        io.mockk.every { currentUser } returns kotlinx.coroutines.flow.flowOf(null)
+        io.mockk.every { currentUid() } returns null
+    }
     @get:Rule val folder = TemporaryFolder()
 
     @Test fun `preferences survive datastore reopen but hardware session stays off`() = runTest {
@@ -29,7 +33,7 @@ class DevicePreferencesPersistenceTest {
         flash.updateSettings { it.copy(intensityLevel = 37, morseText = "TEST") }
         flash.setOn(true)
         flash.setMode(FlashMode.STROBE)
-        DataStoreThemePreferencesRepository(store).setThemeMode(ThemeMode.DARK)
+        DataStoreThemePreferencesRepository(store, auth).setThemeMode(ThemeMode.DARK)
         val sounds = DataStoreSoundAlertConfigRepository(store)
         sounds.setEnabled(SoundCategory.GATO, true)
         sounds.setSensitivity(SoundCategory.GATO, Sensitivity.ALTA)
@@ -44,7 +48,7 @@ class DevicePreferencesPersistenceTest {
             assertEquals("TEST", next.settings.first().morseText)
             assertFalse(next.isOn.value)
             assertEquals(FlashMode.CONTINUOUS, next.mode.first())
-            assertEquals(ThemeMode.DARK, DataStoreThemePreferencesRepository(reopened).themeMode.first())
+            assertEquals(ThemeMode.DARK, DataStoreThemePreferencesRepository(reopened, auth).themeMode.first())
             val config = DataStoreSoundAlertConfigRepository(reopened).config.first()
             assertTrue(config.isEnabled(SoundCategory.GATO))
             assertEquals(Sensitivity.ALTA, config.sensitivity(SoundCategory.GATO))

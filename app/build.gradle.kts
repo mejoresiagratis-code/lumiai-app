@@ -63,7 +63,7 @@ android {
 
     buildTypes {
         debug {
-            versionNameSuffix = "-settings-consent.1"
+            versionNameSuffix = "-settings-consent.2"
             isMinifyEnabled = false
             // IDs de PRUEBA de Google en debug: nunca generan impresiones reales.
             manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"

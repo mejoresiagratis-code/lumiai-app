@@ -12,20 +12,32 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.combine
+import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
+import com.mejoresiagratis.lumiai.domain.entitlement.Tier
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(
     private val repo: ThemePreferencesRepository,
-    flashState: FlashStateRepository
+    flashState: FlashStateRepository,
+    proAccess: ProAccessMonitor
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> =
         repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
 
     val accentColor: StateFlow<AccentColor> =
-        repo.accentColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.BLUE)
+        combine(repo.accentColor, proAccess.access) { selected, access ->
+            if (selected.isUnlocked(access.entitlements.hasAccount, access.unlocks(Tier.AI))) selected
+            else {
+                try { repo.resetAccentIfMatches(selected) }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (_: Exception) { /* Still render a permitted color if persistence fails. */ }
+                AccentColor.BLUE
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentColor.BLUE)
 
     val accentStyle: StateFlow<AccentStyle> =
         repo.accentStyle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentStyle.VIVID)

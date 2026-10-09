@@ -15,6 +15,12 @@ interface ThemePreferencesRepository {
     val accentStyle: Flow<AccentStyle>
     suspend fun setAccentStyle(style: AccentStyle)
 
+    /** Reset both appearance choices, preserving theme mode and accessibility. */
+    suspend fun resetAccent()
+
+    /** Only reset the observed color if it is still selected; do not erase a newer choice. */
+    suspend fun resetAccentIfMatches(accent: AccentColor)
+
     val reduceMotion: Flow<Boolean>
     suspend fun setReduceMotion(value: Boolean)
 

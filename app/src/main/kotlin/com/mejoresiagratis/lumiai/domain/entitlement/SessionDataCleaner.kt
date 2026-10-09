@@ -11,14 +11,15 @@ import javax.inject.Singleton
 class SessionDataCleaner @Inject constructor(
     private val billingProfile: BillingProfileRepository,
     private val rewardProgress: RewardProgressRepository,
-    private val temporaryUnlock: TemporaryUnlockRepository
+    private val temporaryUnlock: TemporaryUnlockRepository,
+    private val theme: com.mejoresiagratis.lumiai.domain.repository.ThemePreferencesRepository
 ) {
 
     /** Attempt all cleanup, but never report success after a failed write. */
     suspend fun clearAll() {
         var failure: Exception? = null
         for (clear in listOf<suspend () -> Unit>(
-            { billingProfile.clear() }, { rewardProgress.set(0) }, { temporaryUnlock.clear() }
+            { billingProfile.clear() }, { rewardProgress.set(0) }, { temporaryUnlock.clear() }, { theme.resetAccent() }
         )) {
             try { clear() }
             catch (e: kotlinx.coroutines.CancellationException) { throw e }

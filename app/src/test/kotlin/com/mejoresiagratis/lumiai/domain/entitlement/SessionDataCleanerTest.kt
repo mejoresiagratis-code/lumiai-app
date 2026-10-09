@@ -11,14 +11,15 @@ class SessionDataCleanerTest {
     private val profile = mockk<BillingProfileRepository>(relaxed = true)
     private val progress = mockk<RewardProgressRepository>(relaxed = true)
     private val unlock = mockk<TemporaryUnlockRepository>(relaxed = true)
-    private val cleaner = SessionDataCleaner(profile, progress, unlock)
+    private val theme = mockk<ThemePreferencesRepository>(relaxed = true)
+    private val cleaner = SessionDataCleaner(profile, progress, unlock, theme)
 
     @Test fun `write failure is reported after other cleanup is attempted`() = runTest {
         coEvery { profile.clear() } throws java.io.IOException("disk")
         var failed = false
         try { cleaner.clearAll() } catch (_: java.io.IOException) { failed = true }
         assertTrue(failed)
-        coVerify { progress.set(0); unlock.clear() }
+        coVerify { progress.set(0); unlock.clear(); theme.resetAccent() }
     }
 
     @Test fun `cancellation is propagated without starting new cleanup`() = runTest {

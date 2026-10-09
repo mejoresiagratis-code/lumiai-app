@@ -11,15 +11,21 @@ import com.mejoresiagratis.lumiai.domain.model.ThemeMode
 import com.mejoresiagratis.lumiai.domain.repository.ThemePreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
+import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
+import com.mejoresiagratis.lumiai.domain.model.AuthUser
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class DataStoreThemePreferencesRepository @Inject constructor(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val auth: AuthRepository
 ) : ThemePreferencesRepository {
 
     private val themeKey = stringPreferencesKey("theme_mode")
+    private val accentOwnerKey = stringPreferencesKey("accent_owner")
     private val accentKey = stringPreferencesKey("accent_color")
     private val accentStyleKey = stringPreferencesKey("accent_style")
     private val reduceMotionKey = booleanPreferencesKey("a11y_reduce_motion")
@@ -37,25 +43,53 @@ class DataStoreThemePreferencesRepository @Inject constructor(
         dataStore.edit { it[themeKey] = mode.name }
     }
 
-    // Default de la app: acento azul vívido (igual que el Splash). Solo aplica si el
-    // usuario no eligió nunca un acento (la clave persistida se respeta siempre).
-    override val accentColor: Flow<AccentColor> = dataStore.data.map { p ->
-        runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.BLUE.name) }
+    private fun owner(user: AuthUser?): String =
+        user?.takeUnless { it.isAnonymous }?.let { "account:${it.uid}" } ?: "guest"
+
+    private suspend fun editAccent(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
+        val current = auth.currentUser.first()
+        val expectedUid = current?.uid
+        if (auth.currentUid() != expectedUid) return
+        val expectedOwner = owner(current)
+        dataStore.edit { p ->
+            if (auth.currentUid() != expectedUid) return@edit
+            if (p[accentOwnerKey] != expectedOwner) {
+                p.remove(accentKey)
+                p.remove(accentStyleKey)
+                p[accentOwnerKey] = expectedOwner
+            }
+            block(p)
+        }
+    }
+
+    override val accentColor: Flow<AccentColor> = combine(auth.currentUser, dataStore.data) { user, p ->
+        if (p[accentOwnerKey] != owner(user)) AccentColor.BLUE
+        else runCatching { AccentColor.valueOf(p[accentKey] ?: AccentColor.BLUE.name) }
             .getOrDefault(AccentColor.BLUE)
     }
 
-    override suspend fun setAccentColor(accent: AccentColor) {
-        dataStore.edit { it[accentKey] = accent.name }
-    }
+    override suspend fun setAccentColor(accent: AccentColor) = editAccent { it[accentKey] = accent.name }
 
-    // Default de la app: estilo vívido (Content, primary ≈ semilla — azul directo).
-    override val accentStyle: Flow<AccentStyle> = dataStore.data.map { p ->
-        runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.VIVID.name) }
+    override val accentStyle: Flow<AccentStyle> = combine(auth.currentUser, dataStore.data) { user, p ->
+        if (p[accentOwnerKey] != owner(user)) AccentStyle.VIVID
+        else runCatching { AccentStyle.valueOf(p[accentStyleKey] ?: AccentStyle.VIVID.name) }
             .getOrDefault(AccentStyle.VIVID)
     }
 
-    override suspend fun setAccentStyle(style: AccentStyle) {
-        dataStore.edit { it[accentStyleKey] = style.name }
+    override suspend fun setAccentStyle(style: AccentStyle) = editAccent { it[accentStyleKey] = style.name }
+
+    override suspend fun resetAccent() {
+        // Explicit sign-out discards the old selection; logging back in cannot resurrect it.
+        editAccent { p -> p.remove(accentKey); p.remove(accentStyleKey) }
+    }
+
+    override suspend fun resetAccentIfMatches(accent: AccentColor) {
+        editAccent { p ->
+            if (p[accentKey] == accent.name) {
+                p.remove(accentKey)
+                p.remove(accentStyleKey)
+            }
+        }
     }
 
     // Accesibilidad (Capa B). Defaults: desactivados (se respeta tambien el sistema).

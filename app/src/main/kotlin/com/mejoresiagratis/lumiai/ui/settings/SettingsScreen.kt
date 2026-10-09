@@ -169,16 +169,6 @@ fun SettingsScreen(
     var billingOpen by rememberSaveable { mutableStateOf(false) }
     val subscriptionUi by subscriptionViewModel.ui.collectAsStateWithLifecycle()
 
-    // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
-    // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
-    // Usa el acceso Pro EFECTIVO (17-ago), igual que los swatches: con multicolor
-    // desbloqueable por anuncios, al agotarse la hora el acento debe revertir solo.
-    // La clave del efecto incluye proUnlocked para que ese momento se detecte.
-    LaunchedEffect(accentColor, isGuest, proUi.proUnlocked) {
-        if (!accentColor.isUnlocked(hasAccount = !isGuest, hasPro = proUi.proUnlocked)) {
-            onSelectAccent(AccentColor.BLUE)
-        }
-    }
     var reauthPassword by remember { mutableStateOf("") }
     val launchGoogleReauth: () -> Unit = {
         val id = webClientId
@@ -582,7 +572,7 @@ fun SettingsScreen(
                 )
                 AccentSwatches(
                     selected = accentColor,
-                    hasAccount = !isGuest,
+                    hasAccount = proUi.hasAccount,
                     // Acceso Pro EFECTIVO (17-ago): incluye el desbloqueo temporal por
                     // anuncios, no solo la suscripción — multicolor se comporta ya como
                     // el resto de herramientas Pro.
