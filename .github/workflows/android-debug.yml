@@ -38,7 +38,7 @@ jobs:
           name: lumiai-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -48,7 +48,7 @@ jobs:
             app/build/reports/tests/
             app/build/test-results/
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
 
   quality:
     name: Android Lint
@@ -72,7 +72,7 @@ jobs:
           name: lint-report-${{ github.run_number }}
           path: app/build/reports/lint-results-*.*
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
 
   release:
     needs: [build, quality]
@@ -127,7 +127,7 @@ jobs:
           name: app-release-bundle
           path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
