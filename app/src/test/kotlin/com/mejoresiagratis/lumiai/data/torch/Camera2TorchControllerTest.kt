@@ -24,7 +24,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [32])
+@Config(sdk = [32], application = android.app.Application::class)
 class Camera2TorchControllerTest {
     private val context = mockk<Context>()
     private val manager = mockk<CameraManager>()
