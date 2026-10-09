@@ -112,4 +112,25 @@ class Camera2TorchControllerTest {
         torch.turnOff()
         assertEquals(TorchFailure.PERMISSION, torch.failure.value)
     }
+    @Test @Config(sdk = [33])
+    fun `strength capability is cached while device remains available`() {
+        every { characteristics.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) } returns 5
+        every { manager.turnOnTorchWithStrengthLevel("0", any()) } just Runs
+        torch.turnOn(100)
+        torch.pulseOff()
+        torch.turnOn(20)
+        verify(exactly = 1) { characteristics.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) }
+        verify { manager.turnOnTorchWithStrengthLevel("0", 5) }
+        verify { manager.turnOnTorchWithStrengthLevel("0", 1) }
+    }
+
+    @Test fun `missing camera can be discovered on a later attempt`() {
+        every { manager.cameraIdList } returns emptyArray()
+        assertThrows(TorchOperationException::class.java) { torch.turnOn(100) }
+        assertEquals(TorchFailure.UNAVAILABLE, torch.failure.value)
+        every { manager.cameraIdList } returns arrayOf("0")
+        torch.turnOn(100)
+        assertNull(torch.failure.value)
+    }
+
 }

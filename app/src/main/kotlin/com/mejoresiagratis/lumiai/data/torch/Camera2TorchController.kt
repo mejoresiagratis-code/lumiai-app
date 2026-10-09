@@ -30,6 +30,7 @@ class Camera2TorchController @Inject constructor(
         context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
     @Volatile private var cachedCameraId: String? = null
+    @Volatile private var strengthCache: Pair<String, Int>? = null
     @Volatile private var lastControlledId: String? = null
     @Volatile private var requestedOn = false
     private val _failure = MutableStateFlow<TorchFailure?>(null)
@@ -41,7 +42,7 @@ class Camera2TorchController @Inject constructor(
 
     private fun cameraId(): String = cachedCameraId ?: findFlashCamera()?.also {
         cachedCameraId = it
-    } ?: throw TorchOperationException(TorchFailure.NO_FLASH)
+    } ?: throw TorchOperationException(if (hasFlash) TorchFailure.UNAVAILABLE else TorchFailure.NO_FLASH)
 
     // Ultima vez que ESTE controlador apago la linterna por su cuenta (turnOff, o el
     // respaldo interno de pulseOff): ventana usada por el TorchCallback de mas abajo
@@ -59,6 +60,7 @@ class Camera2TorchController @Inject constructor(
                     override fun onTorchModeUnavailable(cameraId: String) {
                         if (cameraId != cachedCameraId || !requestedOn) return
                         requestedOn = false
+                        strengthCache = null
                         cachedCameraId = null
                         lastControlledId = null
                         _failure.value = TorchFailure.UNAVAILABLE
@@ -83,8 +85,11 @@ class Camera2TorchController @Inject constructor(
         get() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return 1
             return runCatching {
-                cameraManager.getCameraCharacteristics(cameraId())
-                    .get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) ?: 1
+                val id = cameraId()
+                strengthCache?.takeIf { it.first == id }?.second ?: (
+                    cameraManager.getCameraCharacteristics(id)
+                        .get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) ?: 1
+                    ).coerceAtLeast(1).also { strengthCache = id to it }
             }.getOrDefault(1).coerceAtLeast(1)
         }
 
@@ -102,6 +107,7 @@ class Camera2TorchController @Inject constructor(
             _failure.value = null
         } catch (e: Exception) {
             requestedOn = false
+            strengthCache = null
             cachedCameraId = null // Rediscover on the next explicit start / sound alert.
             val reason = when (e) {
                 is TorchOperationException -> e.failure
