@@ -35,6 +35,17 @@ Leyenda: `[x]` y tachado = implementado; `[ ]` = pendiente. Implementación, val
 
 Evidencias: [PR #2](https://github.com/mejoresiagratis-code/lumiai-app/pull/2), [Actions main #249](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37947170674), [PR #3](https://github.com/mejoresiagratis-code/lumiai-app/pull/3) y [Actions #252](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37949146999). La validación #252 corresponde al código anterior a esta actualización exclusivamente documental.
 
+### Incidencia de QA · Samsung S26 Ultra · entrega 2
+
+El propietario confirma que Música recibe audio y que Sonido se detiene correctamente, pero Alerta Sonora no reconoce timbre/golpes y su notificación no abre al tocarla. El fallo se reproduce tanto con acceso de depuración como con Pro temporal. **PR #3 sigue pendiente de integración.**
+
+- [x] ~~Corregir el ensamblado de audio: PCM16/MIC, ventanas completas de 975 ms con 50 % de solapamiento y clasificación síncrona serializada.~~
+- [x] ~~Mostrar nivel de micrófono, contador de resultados y clases sin ocultarlas por umbral/allowlist.~~
+- [x] ~~Añadir aviso si pasan 15 segundos sin resultados; notificación con apertura de Alerta Sonora y acción Parar.~~
+- [x] ~~Añadir pruebas de lecturas parciales/solapamiento, entrada de MediaPipe, etiquetas del modelo empaquetado y acciones de notificación.~~
+- [ ] Validar esta corrección en Actions y entregar APK `0.9.54-stabilization.2.1`.
+- [ ] Repetir QA en Samsung S26 Ultra: comprobar que el contador avanza, el nivel varía y timbre/golpes producen clasificación y aviso. El reconocimiento físico aún no está confirmado; no se han bajado umbrales a ciegas.
+
 ### Pendiente · orden de trabajo
 
 1. [ ] Cerrar la segunda entrega: QA del APK y posterior integración del PR #3.

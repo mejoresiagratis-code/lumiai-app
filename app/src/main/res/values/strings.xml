@@ -328,4 +328,8 @@
     <string name="ads_privacy_options_subtitle">Review or change your consent</string>
     <string name="sa_screen_alert_blocked">Screen alerts are blocked by Android. Allow full-screen notifications for LumiAI in system settings.</string>
     <string name="changelog_beacon_alert">Beacon\'s auto-off now reacts to changes, and Sound Alert warns you if it can\'t alert instead of failing quietly.</string>
+    <string name="sa_analysis_starting">Starting audio analysis…</string>
+    <string name="sa_analysis_result">Result #%1$d · microphone %2$d dBFS · %3$s</string>
+    <string name="sa_analysis_empty">No classification scores</string>
+    <string name="sa_analysis_timeout">No audio analysis results for 15 seconds. Stop and restart listening. Check microphone access in Android settings.</string>
 </resources>

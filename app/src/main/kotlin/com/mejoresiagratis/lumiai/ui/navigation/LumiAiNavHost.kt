@@ -1,6 +1,7 @@
 package com.mejoresiagratis.lumiai.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,9 +54,15 @@ fun LumiAiNavHost(
     haptics: Boolean,
     onSetHaptics: (Boolean) -> Unit,
     autoLockScreen: Boolean,
-    onSetAutoLockScreen: (Boolean) -> Unit
+    onSetAutoLockScreen: (Boolean) -> Unit,
+    soundAlertRequest: Int = 0
 ) {
     val navController = rememberNavController()
+    LaunchedEffect(soundAlertRequest) {
+        if (soundAlertRequest > 0 && startDestination != Routes.ONBOARDING) {
+            navController.navigate(Routes.SOUND_ALERT) { launchSingleTop = true }
+        }
+    }
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.ONBOARDING) {
             OnboardingScreen(

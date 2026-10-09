@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
+import java.util.concurrent.atomic.AtomicLong
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.data.session.HardwareSessionCoordinator
@@ -88,6 +90,10 @@ class SoundAlertService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         if (!ready) return START_NOT_STICKY
         scope.launch {
             try {
@@ -124,6 +130,18 @@ class SoundAlertService : Service() {
     private suspend fun listen(config: SoundAlertConfig, torch: TorchController, startId: Int): Unit = coroutineScope {
         // All callbacks hand off to session children. null cancels only the current flash.
         val events = Channel<SoundCategory?>(Channel.CONFLATED)
+        val lastResultAt = AtomicLong(SystemClock.elapsedRealtime())
+        listeningState.setLastWindow(getString(R.string.sa_analysis_starting))
+        launch {
+            while (isActive) {
+                delay(1_000)
+                if (SystemClock.elapsedRealtime() - lastResultAt.get() >= 15_000) {
+                    listeningState.setStopReason(getString(R.string.sa_analysis_timeout))
+                    stopSelf(startId)
+                    break
+                }
+            }
+        }
         launch {
             events.receiveAsFlow().collectLatest { category ->
                 if (category != null) onDetected(category, config, torch)
@@ -133,7 +151,6 @@ class SoundAlertService : Service() {
         val classifier = MediaPipeSoundClassifier(
             context = applicationContext,
             engine = SoundDetectionEngine(config),
-            allowedLabels = config.activeLabels().toList(),
             onDetected = { category -> if (isActive) events.trySend(category) },
             onError = { reason ->
                 if (isActive) {
@@ -141,11 +158,15 @@ class SoundAlertService : Service() {
                     stopSelf(startId)
                 }
             },
-            onWindow = { scores ->
+            onWindow = { scores, levelDb, count ->
                 if (isActive) {
+                    lastResultAt.set(SystemClock.elapsedRealtime())
                     val top = scores.entries.sortedByDescending { it.value }.take(3)
                         .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
-                    listeningState.setLastWindow(top.ifEmpty { null })
+                    listeningState.setLastWindow(getString(
+                        R.string.sa_analysis_result, count, levelDb.toInt(),
+                        top.ifEmpty { getString(R.string.sa_analysis_empty) }
+                    ))
                 }
             }
         )
@@ -245,6 +266,7 @@ class SoundAlertService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(pending, true)
+            .setContentIntent(SoundAlertNotifications.open(this))
             .setAutoCancel(true)
             .build()
         getSystemService(NotificationManager::class.java).notify(SCREEN_NOTIF_ID, notif)
@@ -267,12 +289,7 @@ class SoundAlertService : Service() {
     }
 
     private fun startInForeground() {
-        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.app_name))
-            .setContentText(getString(R.string.sa_notif_listening))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOngoing(true)
-            .build()
+        val notif = SoundAlertNotifications.listening(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
         } else {
@@ -289,12 +306,14 @@ class SoundAlertService : Service() {
             .setContentTitle(getString(R.string.sa_notif_detected))
             .setContentText(getString(category.labelRes()))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(SoundAlertNotifications.open(this))
             .setAutoCancel(true)
             .build()
         mgr.notify(DETECTION_NOTIF_ID, notif)
     }
 
     companion object {
+        const val ACTION_STOP = "com.mejoresiagratis.lumiai.action.SOUND_ALERT_STOP"
         private const val CHANNEL_ID = "sound_alert"
         // IDs centralizados (17-ago): DETECTION_NOTIF_ID valia 4 y CHOCABA con la
         // notificacion de primer plano de MusicFlashService — al detectar un sonido con
@@ -317,6 +336,11 @@ class SoundAlertService : Service() {
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val mgr = context.getSystemService(NotificationManager::class.java)
+                mgr.createNotificationChannel(NotificationChannel(
+                    SoundAlertNotifications.LISTENING_CHANNEL,
+                    context.getString(R.string.sa_title),
+                    NotificationManager.IMPORTANCE_LOW
+                ))
                 if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
                     mgr.createNotificationChannel(
                         NotificationChannel(

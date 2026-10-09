@@ -328,4 +328,8 @@
     <string name="ads_privacy_options_subtitle">Revisa o cambia tu consentimiento</string>
     <string name="sa_screen_alert_blocked">Android bloquea los avisos de pantalla. Permite las notificaciones a pantalla completa de LumiAI en los ajustes del sistema.</string>
     <string name="changelog_beacon_alert">El apagado automático de Baliza reacciona a los cambios, y la Alerta sonora avisa si no puede alertarte en vez de fallar en silencio.</string>
+    <string name="sa_analysis_starting">Iniciando análisis de audio…</string>
+    <string name="sa_analysis_result">Resultado #%1$d · micrófono %2$d dBFS · %3$s</string>
+    <string name="sa_analysis_empty">Sin resultados de clasificación</string>
+    <string name="sa_analysis_timeout">Sin resultados de audio durante 15 segundos. Para y vuelve a iniciar la escucha. Revisa el acceso al micrófono en los ajustes de Android.</string>
 </resources>
