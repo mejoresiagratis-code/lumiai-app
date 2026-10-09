@@ -25,6 +25,13 @@ internal class ClassificationLoop(private val onError: (RuntimeException) -> Uni
         }, 0, intervalMs, TimeUnit.MILLISECONDS)
     }
 
+    /** Call after stopping AudioRecord to unblock capture; never from the capture thread. */
+    fun awaitStopped() {
+        while (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+            // Do not transfer microphone ownership while the old reader is still using it.
+        }
+    }
+
     fun stop() {
         running.set(false)
         executor.shutdownNow()

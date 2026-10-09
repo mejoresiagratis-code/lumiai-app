@@ -1,5 +1,8 @@
 package com.mejoresiagratis.lumiai.data.sound
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioFormat
@@ -88,7 +91,7 @@ class MediaPipeSoundClassifier(
             SAMPLING_RATE_IN_HZ
         )
         audioData.load(rec)
-        classifier?.classifyAsync(audioData, SystemClock.uptimeMillis())
+        if (!stopped) classifier?.classifyAsync(audioData, SystemClock.uptimeMillis())
     }
 
     private fun onStreamResult(result: AudioClassifierResult) {
@@ -108,18 +111,22 @@ class MediaPipeSoundClassifier(
         Log.e(TAG, "MediaPipe stream error", e)
     }
 
-    fun stop() {
+    suspend fun stop() = withContext(NonCancellable + Dispatchers.IO) {
         stopped = true
         captureLoop?.stop()
+        // Unblock the reader before joining it. Closing MediaPipe while classifyAsync is
+        // still in flight races native teardown; releasing AudioRecord early races load().
+        runCatching { recorder?.stop() }
+        captureLoop?.awaitStopped()
         captureLoop = null
-        runCatching { classifier?.close() }
-        classifier = null
-        runCatching {
-            recorder?.stop()
+        try {
+            classifier?.close()
+        } finally {
+            classifier = null
+            recorder?.release()
+            recorder = null
+            engine.reset()
         }
-        runCatching { recorder?.release() }
-        recorder = null
-        engine.reset()
     }
 
     companion object {

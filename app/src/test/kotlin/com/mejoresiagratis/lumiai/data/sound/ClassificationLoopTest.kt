@@ -25,6 +25,39 @@ class ClassificationLoopTest {
         } finally { loop.stop() }
     }
 
+    @Test fun shutdownWaitsForCaptureCleanupBeforeReturning() {
+        val entered = CountDownLatch(1)
+        val interrupted = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val joined = CountDownLatch(1)
+        val failures = AtomicInteger()
+        val loop = ClassificationLoop { failures.incrementAndGet() }
+        val joiner = Thread { loop.awaitStopped(); joined.countDown() }
+        try {
+            loop.start(1) {
+                entered.countDown()
+                try {
+                    CountDownLatch(1).await()
+                } catch (_: InterruptedException) {
+                    interrupted.countDown()
+                    release.await(3, TimeUnit.SECONDS)
+                }
+            }
+            assertTrue(entered.await(3, TimeUnit.SECONDS))
+            loop.stop()
+            assertTrue(interrupted.await(3, TimeUnit.SECONDS))
+            joiner.start()
+            assertFalse("Must wait for the recorder cleanup", joined.await(100, TimeUnit.MILLISECONDS))
+            release.countDown()
+            assertTrue(joined.await(3, TimeUnit.SECONDS))
+            assertEquals(0, failures.get())
+        } finally {
+            release.countDown()
+            loop.stop()
+            joiner.join(3_000)
+        }
+    }
+
     @Test fun stoppingDuringReadDoesNotReportAnError() {
         val entered = CountDownLatch(1)
         val exited = CountDownLatch(1)

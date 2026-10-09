@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.mejoresiagratis.lumiai.data.session.HardwareSessionCoordinator
+import com.mejoresiagratis.lumiai.domain.repository.FlashStateRepository
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
@@ -27,7 +29,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -48,22 +54,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SoundAlertService : Service() {
 
-    @Inject lateinit var torch: TorchController
+    @Inject lateinit var sessions: HardwareSessionCoordinator
+    @Inject lateinit var flashState: FlashStateRepository
     @Inject lateinit var configRepo: SoundAlertConfigRepository
     @Inject lateinit var listeningState: SoundAlertStateRepository
     @Inject lateinit var proAccess: ProAccessMonitor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var classifier: MediaPipeSoundClassifier? = null
-    @Volatile private var currentConfig: SoundAlertConfig = SoundAlertConfig()
-    private var flashJob: Job? = null
-
-    /**
-     * Apagado en curso. El clasificador puede emitir un error MIENTRAS se cierra —el stream de
-     * audio se corta bajo sus pies— y eso no es un fallo que mostrar al usuario, es el ruido
-     * normal de una parada. Sin esta marca, pulsar "Parar" dejaba un mensaje rojo (QA 22-ago).
-     */
-    @Volatile private var stopping = false
+    private var ready = false
 
     override fun onCreate() {
         super.onCreate()
@@ -86,86 +84,79 @@ class SoundAlertService : Service() {
             stopSelf()
             return
         }
-        // Escucha REALMENTE arrancada: limpiar cualquier motivo de fallo anterior y
-        // reflejarlo (QA 13-ago). Si algo la mata despues, el motivo quedara registrado
-        // y la pantalla lo mostrara — diagnostico en el propio movil, no a ciegas.
-        listeningState.setStopReason(null)
-
-        // Apagado EXTERNO de la linterna (boton "Desactivar" del sistema): corta SOLO el
-        // destello en curso, NO la escucha entera — apagar la luz no es querer dejar de
-        // escuchar (correccion de diseno, QA 14-ago: el stopSelf() anterior era un
-        // candidato a matar el servicio entero por un evento que no lo justificaba).
-        scope.launch { torch.externalOffEvents.collect { flashJob?.cancel() } }
-        // REVOCACION EN EL SERVICIO (22-ago): si caduca la hora de Pro, se cierra sesion o se
-        // borra la cuenta con la escucha en marcha, el servicio se para SOLO. Antes el control
-        // vivia unicamente en la interfaz y esto seguia usando microfono indefinidamente.
-
-        scope.launch {
-            // Cinturon de seguridad (QA 13-ago): SIN esto, cualquier fallo aqui dentro
-            // (config corrupta, MediaPipe, lo que sea) tumbaba TODA LA APP — un
-            // SupervisorJob sin manejador de excepciones no absorbe fallos de sus hijos,
-            // solo evita que se cancelen entre si. Ahora degrada CON DIAGNOSTICO: el
-            // motivo exacto (clase + mensaje de la excepcion) queda visible en pantalla.
-            runCatching {
-                // CONFIG EN VIVO (QA 14-ago, captura de Pablo: con Telefono desactivado
-                // seguia oyendo "Telephone" — la config se congelaba en un .first() al
-                // arrancar y los interruptores tocados DURANTE la escucha no llegaban al
-                // clasificador; activar Golpes en marcha no metia "Knock" en la allowlist).
-                // Cada cambio de config reconstruye clasificador+motor con la foto nueva.
-                proAccess.hasAiAccess.whileAiAccess(
-                    onDenied = {
-                        listeningState.setStopReason(getString(R.string.sa_stopped_no_pro))
-                        stopSelf()
-                    }
-                ) {
-                    listeningState.setListening(true)
-                    configRepo.config.collectLatest { config ->
-                        currentConfig = config
-                        this@SoundAlertService.classifier?.stop()
-                        val engine = SoundDetectionEngine(config)
-                        val classifier = MediaPipeSoundClassifier(
-                            context = applicationContext,
-                            engine = engine,
-                            allowedLabels = config.activeLabels().toList(),
-                            onDetected = { category -> onDetected(category) },
-                            onError = { motivo ->
-                                // ANTES SE IGNORABA (22-ago): si el clasificador fallaba EN MARCHA,
-                                // la pantalla seguia diciendo "Escuchando" y el usuario creia estar
-                                // protegido sin estarlo. Una promesa falsa de aviso es peor que no
-                                // ofrecerlo. Ahora se para y se dice por que — salvo si ya estamos
-                                // apagando, donde el error es consecuencia del propio apagado.
-                                if (!stopping) {
-                                    listeningState.setStopReason(motivo)
-                                    stopSelf()
-                                }
-                            },
-                            onWindow = { scores ->
-                                // Top-3 de la ventana, legible en pantalla: decide en una prueba
-                                // si el clasificador oye (scores fluyen) o los umbrales bloquean.
-                                val top = scores.entries.sortedByDescending { it.value }.take(3)
-                                    .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
-                                listeningState.setLastWindow(top.ifEmpty { null })
-                            }
-                        )
-                        this@SoundAlertService.classifier = classifier
-                        classifier.start()
-                    }
-                }
-            }.onFailure { e ->
-                // Parar la escucha CANCELA este scope, y `runCatching` traga tambien la
-                // cancelacion — por eso al pulsar "Parar" salia siempre "JobCancellationException:
-                // Job was cancelled" como si algo hubiera reventado (QA 22-ago). Una parada
-                // pedida por el usuario no es un error y no debe dejar rastro rojo en pantalla.
-                if (e is CancellationException) return@onFailure
-                listeningState.setStopReason("clasificador: ${describeThrowable(e)}")
-                stopSelf()
-            }
-        }
+        ready = true
     }
 
-    // NOT_STICKY: la escucha se (re)activa solo por accion del usuario. Un servicio de
-    // microfono resucitado por el sistema sin contexto es el ingrediente del crash-loop.
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!ready) return START_NOT_STICKY
+        scope.launch {
+            try {
+                sessions.runSession(
+                    onStarted = {
+                        flashState.setOn(false)
+                        listeningState.setStopReason(null)
+                    },
+                    onFinished = {
+                        listeningState.setListening(false)
+                        listeningState.setLastWindow(null)
+                    }
+                ) { torch ->
+                    proAccess.hasAiAccess.whileAiAccess(
+                        onDenied = { listeningState.setStopReason(getString(R.string.sa_stopped_no_pro)) }
+                    ) {
+                        listeningState.setListening(true)
+                        configRepo.config.collectLatest { config ->
+                            listen(config, torch, startId)
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                listeningState.setStopReason("clasificador: ${describeThrowable(e)}")
+            } finally {
+                stopSelf(startId)
+            }
+        }
+        return START_NOT_STICKY
+    }
+
+    private suspend fun listen(config: SoundAlertConfig, torch: TorchController, startId: Int) = coroutineScope {
+        // All callbacks hand off to session children. null cancels only the current flash.
+        val events = Channel<SoundCategory?>(Channel.CONFLATED)
+        launch {
+            events.receiveAsFlow().collectLatest { category ->
+                if (category != null) onDetected(category, config, torch)
+            }
+        }
+        launch { torch.externalOffEvents.collect { events.trySend(null) } }
+        val classifier = MediaPipeSoundClassifier(
+            context = applicationContext,
+            engine = SoundDetectionEngine(config),
+            allowedLabels = config.activeLabels().toList(),
+            onDetected = { category -> if (isActive) events.trySend(category) },
+            onError = { reason ->
+                if (isActive) {
+                    listeningState.setStopReason(reason)
+                    stopSelf(startId)
+                }
+            },
+            onWindow = { scores ->
+                if (isActive) {
+                    val top = scores.entries.sortedByDescending { it.value }.take(3)
+                        .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
+                    listeningState.setLastWindow(top.ifEmpty { null })
+                }
+            }
+        )
+        try {
+            classifier.start()
+            awaitCancellation()
+        } finally {
+            events.close()
+            classifier.stop()
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -187,36 +178,26 @@ class SoundAlertService : Service() {
     }
 
     override fun onDestroy() {
-        stopping = true
-        listeningState.setListening(false)
-        listeningState.setLastWindow(null)
-        flashJob?.cancel()
-        classifier?.stop()
-        classifier = null
-        runCatching { torch.turnOff() }
         scope.cancel()
         super.onDestroy()
     }
 
-    private fun onDetected(category: SoundCategory) {
+    private suspend fun onDetected(category: SoundCategory, config: SoundAlertConfig, torch: TorchController) {
         listeningState.setLastDetection(getString(category.labelRes()))
         notifyDetection(category)
-        val channel = currentConfig.channel(category)
-        val flashed = channel.usesFlash && torch.hasFlash
-        if (flashed) flash(category)
-        // Pantalla si el usuario lo pidio, o como caida cuando se pidio flash pero no hay LED.
-        val wantsScreen = channel.usesScreen || (channel.usesFlash && !flashed)
+        val channel = config.channel(category)
+        var useFlash = channel.usesFlash && torch.hasFlash
+        val wantsScreen = channel.usesScreen || (channel.usesFlash && !useFlash)
         if (wantsScreen) {
             if (canUseFullScreenAlerts()) {
                 screenFlash(category)
-            } else if (!flashed && torch.hasFlash) {
-                // Android 14+ puede denegar el aviso a pantalla completa. Antes de dejar al
-                // usuario SIN aviso, se cae al flash: peor que lo pedido, mucho mejor que nada.
-                flash(category)
+            } else if (!useFlash && torch.hasFlash) {
+                useFlash = true
             } else {
                 listeningState.setStopReason(getString(R.string.sa_screen_alert_blocked))
             }
         }
+        if (useFlash) flash(category, torch)
     }
 
     /**
@@ -269,30 +250,19 @@ class SoundAlertService : Service() {
         getSystemService(NotificationManager::class.java).notify(SCREEN_NOTIF_ID, notif)
     }
 
-    private fun flash(category: SoundCategory) {
-        if (!torch.hasFlash) return
-        flashJob?.cancel()
-        flashJob = scope.launch {
-            val pattern = SoundAlertFlash.patternFor(category)
-            // Alerta = brillo maximo. turnOn espera un PORCENTAJE (1..100), igual que FlashEngine;
-            // pasar maxIntensityLevel (nivel bruto del HW) daba el nivel minimo en algunos moviles.
-            val level = FlashSettings.MAX_INTENSITY
-            try {
-                var i = 0
-                while (i < pattern.size) {
-                    torch.turnOn(level)
-                    delay(pattern[i])
-                    // Hueco DENTRO del patron. pulseOff() es hoy un apagado REAL: el
-                    // experimento de atenuar en vez de apagar se revirtio el 14-ago porque
-                    // difuminaba el contraste del patron. Se conserva como gancho semantico
-                    // "hueco intra-patron", por si algun dia se afina por dispositivo.
-                    torch.pulseOff()
-                    if (i + 1 < pattern.size) delay(pattern[i + 1])
-                    i += 2
-                }
-            } finally {
-                torch.turnOff()
+    private suspend fun flash(category: SoundCategory, torch: TorchController) {
+        val pattern = SoundAlertFlash.patternFor(category)
+        try {
+            var i = 0
+            while (i < pattern.size) {
+                torch.turnOn(FlashSettings.MAX_INTENSITY)
+                delay(pattern[i])
+                torch.pulseOff()
+                if (i + 1 < pattern.size) delay(pattern[i + 1])
+                i += 2
             }
+        } finally {
+            torch.turnOff()
         }
     }
 

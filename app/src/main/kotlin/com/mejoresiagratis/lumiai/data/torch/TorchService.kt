@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.mejoresiagratis.lumiai.data.session.HardwareSessionCoordinator
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.ManufacturerInfo
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
@@ -32,36 +33,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class TorchService : Service() {
 
-    @Inject lateinit var engine: FlashEngine
+    @Inject lateinit var sessions: HardwareSessionCoordinator
     @Inject lateinit var repo: FlashStateRepository
-    @Inject lateinit var torch: TorchController
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
         startForeground(NOTIF_ID, buildNotification())
-        scope.launch {
-            // Solo on/off y cambio de modo relanzan la rutina; los ajustes los escucha el engine.
-            combine(repo.isOn, repo.mode) { on, mode -> on to mode }
-                .distinctUntilChanged()
-                .collectLatest { (on, mode) ->
-                    if (!on) {
-                        stopSelf()
-                    } else {
-                        engine.play(mode, repo.settings)
-                    }
-                }
-        }
-        // Apagado EXTERNO (boton "Desactivar" de Samsung, u otra app): la misma
-        // palanca que usa nuestro propio boton "Apagar" — repo.setOn(false) — hace el
-        // resto solo (el colector de arriba para el motor y llama stopSelf()). Sin
-        // esto, el motor seguia reencendiendo la luz en cada pulso de SOS/Estrobo y la
-        // notificacion de Samsung "revivia" en cada ciclo (QA 13-ago).
-        scope.launch {
-            torch.externalOffEvents.collect { if (repo.isOn.value) repo.setOn(false) }
-        }
-        scope.launch { beaconAutoOff() }
     }
 
     /**
@@ -99,13 +78,32 @@ class TorchService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Boton "Apagar" de la notificacion: apagar el estado hace el resto (el colector
-        // de onCreate detiene el engine y llama stopSelf). Un solo camino de apagado.
         if (intent?.action == ACTION_STOP) {
             repo.setOn(false)
+            stopSelf(startId)
             return START_NOT_STICKY
         }
-        return START_STICKY
+        scope.launch {
+            try {
+                sessions.runSession(
+                    onStarted = { repo.setOn(true) },
+                    onFinished = { repo.setOn(false) }
+                ) { torch ->
+                    launch { torch.externalOffEvents.collect { repo.setOn(false) } }
+                    launch { beaconAutoOff() }
+                    val engine = FlashEngine(torch)
+                    combine(repo.isOn, repo.mode) { on, mode -> on to mode }
+                        .distinctUntilChanged()
+                        .collectLatest { (on, mode) ->
+                            if (on) engine.play(mode, repo.settings) else stopSelf(startId)
+                        }
+                }
+            } finally {
+                // An older start must not stop a newer request on this same Service instance.
+                stopSelf(startId)
+            }
+        }
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

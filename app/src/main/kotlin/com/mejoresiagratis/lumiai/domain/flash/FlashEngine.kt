@@ -37,11 +37,7 @@ class FlashEngine @Inject constructor(
         }
     }
 
-    // Los huecos DENTRO de un patron activo usan pulseOff() (experimental, QA 13-ago):
-    // en dispositivos compatibles no apaga de verdad, evita el parpadeo del indicador
-    // del sistema en cada pulso. El apagado REAL solo ocurre al terminar la sesion
-    // entera (el `finally` de play(), y los casos defensivos de mensaje vacio/SCREEN/
-    // MUSIC mas abajo) — nunca a mitad de un patron en marcha.
+    // pulseOff performs a real LED off between pulses; finally releases the session light.
 
     private suspend fun beacon(s: FlashSettings) {
         val onMs = s.beaconFlashMs.coerceAtLeast(1L)
