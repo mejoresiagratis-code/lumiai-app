@@ -58,11 +58,12 @@ Limitaciones todavía abiertas:
 - [ ] Limpieza manual de artefactos antiguos si se desea liberar espacio inmediato; no consta completada.
 - [ ] Para futuras publicaciones, conservar el candidato distribuido y su mapping R8 más allá de la caducidad del artefacto de Actions.
 
-## Preparado, pendiente de terminar QA — PR #7
+### PR #7 — preferencias por cuenta y consentimiento
 
-[PR #7](https://github.com/mejoresiagratis-code/lumiai-app/pull/7) **abierta, sin integrar**.
-Última APK: **#267**, versión `0.9.54-settings-consent.2`.
-Commit probado: `31243349e396312d1653a8746af7d5dcd01aecd8`.
+[PR #7](https://github.com/mejoresiagratis-code/lumiai-app/pull/7) **integrada en main**, commit `1027e1f3d0195a5dd9fd1dc84eaaf352d6941c40`.
+APK validada: **#269**, versión `0.9.54-settings-consent.3`.
+Commit probado: `a904de84861059ab3e9fc34d292df8ee6fdc1079`.
+QA general Samsung aceptado por el propietario el 10 de octubre: «Pr7 funcionando ok». No implica certificación exhaustiva de cada escenario de Play/UMP.
 
 - [x] ~~Perfil personal, progreso de anuncios y desbloqueo temporal vinculados al UID.~~
 - [x] ~~Bloqueo de instantáneas usuario/perfil incoherentes y escrituras tardías de otra cuenta.~~
@@ -71,13 +72,13 @@ Commit probado: `31243349e396312d1653a8746af7d5dcd01aecd8`.
 - [x] ~~Errores de limpieza visibles, cancelación propagada y cierre de sesión detenido ante fallo local.~~
 - [x] ~~Pruebas de reapertura de DataStore y conservación de preferencias del dispositivo.~~
 - [x] ~~QA parcial del propietario sobre #266: persistencia funciona y cambio de cuenta funciona excepto el acento naranja heredado.~~
-- [x] ~~Corregido en #267: cerrar sesión/cambiar identidad vuelve a azul y vívido, incluido naranja; no reinicia modo claro/oscuro.~~
+- [x] ~~Corregido en #267: cerrar sesión/cambiar identidad vuelve a azul y vívido, incluido naranja; tema separado en la revisión #269.~~
 - [x] ~~Control de colores bloqueados fuera de Ajustes y permisos del selector coherentes con God.~~
 - [x] ~~[Actions #267](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37998244865): 220 pruebas, cero fallos/errores/omitidas; Lint y APK correctos.~~
-- [ ] QA de #267: naranja + cálido → cerrar sesión → entrar con otra cuenta → azul vívido.
-- [ ] QA de roles: misma cuenta conserva al reabrir; caducidad de Pro retira multicolor; colores aún permitidos se conservan; God invitado/cuenta/Pro.
-- [ ] Confirmar opciones de privacidad y dos anuncios → una hora; esta prueba no está confirmada aún.
-- [ ] Integrar PR #7 únicamente tras completar la validación.
+- [x] ~~Tema Claro/Oscuro/Sistema persistido por cuenta en el dispositivo; salir restablece Sistema para invitado, volver recupera su elección.~~
+- [x] ~~[Actions #269](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38001415528): 228 pruebas, cero fallos/errores/omitidas; Lint y APK correctos.~~
+- [x] ~~QA general del propietario e integración de PR #7.~~
+- [ ] Ampliar pruebas de producción de UMP/AdMob y matriz de roles/compras reales en pista interna.
 
 Matriz de acentos:
 | Rol efectivo | Azul/naranja | Otros sólidos | Multicolor |
@@ -91,7 +92,7 @@ Matriz de acentos:
 
 Cerrar sesión/cambiar cuenta restablece azul/vívido independientemente del color permitido. Cambiar solo permisos dentro de la misma cuenta restablece únicamente el color que pierde acceso. La suscripción Play y la identidad Firebase son estados distintos.
 
-Migración: nombre/país y contador antiguos sin propietario no se asignan por suposición; pueden requerir reentrada de datos y contador a cero. Acentos antiguos sin propietario parten de azul/vívido. Tema claro/oscuro, accesibilidad y ajustes de luz/sonidos permanecen como preferencias del dispositivo.
+Migración: nombre/país y contador antiguos sin propietario no se asignan por suposición; pueden requerir reentrada de datos y contador a cero. Acentos antiguos sin propietario parten de azul/vívido. El tema antiguo global sin propietario vuelve a Sistema; las nuevas elecciones se guardan por UID localmente, sin sincronización entre dispositivos. Accesibilidad y ajustes de luz/sonidos permanecen como preferencias del dispositivo.
 
 ## Aparcado por decisión del propietario — PR #5 / STAB-03
 
@@ -105,13 +106,12 @@ Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**.
 
 ## Siguiente orden de trabajo
 
-1. **Cerrar PR #7:** completar QA de colores/roles, privacidad y anuncios; integrar después de confirmación.
-2. **Compras y recompensas — STAB-05/06 (P1):** cuentas de prueba y pista interna Play; compra, restauración, reconocimiento, caducidad, revocación y pérdida de conexión. Definir vinculación Play/Firebase y política offline.
-3. **Protección de main — STAB-02 (P1):** administrador configura PR y checks obligatorios; el YAML por sí solo no protege la rama. No consta aplicado.
-4. **Pendientes de sonido:** sensibilidad de marcha atrás, llanto general y golpes de puerta; conjunto reproducible de muestras y control de falsos positivos.
-5. **P2 restantes:** reloj/caducidad ante cambios de hora, recuperación de almacenamiento dañado, LED, dependencias, reglas y permisos de CI/cadena de suministro. Desglosar por riesgo antes de implementar.
-6. **Candidato release:** QA físico MediaPipe/R8, compatibilidad 16 KB, batería, segundo plano, bloqueo y otros fabricantes; firma y archivo de mapping/candidato.
-7. **Publicación:** pista interna de Play y comprobaciones finales; publicación requiere autorización explícita.
+1. **Compras y recompensas — STAB-05/06 (P1):** cuentas de prueba y pista interna Play; compra, restauración, reconocimiento, caducidad, revocación y pérdida de conexión. Definir vinculación Play/Firebase y política offline.
+2. **Protección de main — STAB-02 (P1):** administrador configura PR y checks obligatorios; el YAML por sí solo no protege la rama. No consta aplicado.
+3. **Pendientes de sonido:** sensibilidad de marcha atrás, llanto general y golpes de puerta; conjunto reproducible de muestras y control de falsos positivos.
+4. **P2 restantes:** reloj/caducidad ante cambios de hora, recuperación de almacenamiento dañado, LED, dependencias, reglas y permisos de CI/cadena de suministro. Desglosar por riesgo antes de implementar.
+5. **Candidato release:** QA físico MediaPipe/R8, compatibilidad 16 KB, batería, segundo plano, bloqueo y otros fabricantes; firma y archivo de mapping/candidato.
+6. **Publicación:** pista interna de Play y comprobaciones finales; publicación requiere autorización explícita.
 
 Verificación de compras en servidor/RTDN queda aplazada mientras no haya una solución de backend elegida. No declarar cerrado un P1 por haber integrado solo su parte cliente.
 
