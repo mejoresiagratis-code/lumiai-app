@@ -36,6 +36,13 @@ class MainActivity : ComponentActivity() {
 
     private val startViewModel: StartViewModel by viewModels()
 
+    @Inject lateinit var subscriptionRepository: com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
+
+    override fun onResume() {
+        super.onResume()
+        subscriptionRepository.refresh()
+    }
+
     @Inject lateinit var adsConsentManager: AdsConsentManager
     @Inject lateinit var rewardedAdController: RewardedAdController
 

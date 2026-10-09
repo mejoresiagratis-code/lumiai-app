@@ -130,4 +130,12 @@ class SoundDetectionEngineTest {
         assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 100L).isEmpty())
         assertEquals(listOf(SoundCategory.DESPERTADOR), e.onWindow(mapOf("Alarm clock" to 0.9f), 200L))
     }
+    @Test
+    fun emptyWindowBreaksSustainedDetectionStreak() {
+        val e = engine(debounce = 2)
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 0L).isEmpty())
+        assertTrue(e.onWindow(emptyMap(), 500L).isEmpty())
+        assertTrue(e.onWindow(mapOf("Alarm clock" to 0.9f), 1000L).isEmpty())
+        assertEquals(listOf(SoundCategory.DESPERTADOR), e.onWindow(mapOf("Alarm clock" to 0.9f), 1500L))
+    }
 }

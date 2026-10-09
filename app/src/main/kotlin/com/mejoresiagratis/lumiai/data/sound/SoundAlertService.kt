@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.data.system.NotificationIds
 import com.mejoresiagratis.lumiai.data.torch.TorchController
+import com.mejoresiagratis.lumiai.domain.entitlement.whileAiAccess
 import com.mejoresiagratis.lumiai.domain.entitlement.ProAccessMonitor
 import com.mejoresiagratis.lumiai.domain.model.FlashSettings
 import com.mejoresiagratis.lumiai.domain.repository.SoundAlertConfigRepository
@@ -89,7 +90,7 @@ class SoundAlertService : Service() {
         // reflejarlo (QA 13-ago). Si algo la mata despues, el motivo quedara registrado
         // y la pantalla lo mostrara — diagnostico en el propio movil, no a ciegas.
         listeningState.setStopReason(null)
-        listeningState.setListening(true)
+
         // Apagado EXTERNO de la linterna (boton "Desactivar" del sistema): corta SOLO el
         // destello en curso, NO la escucha entera — apagar la luz no es querer dejar de
         // escuchar (correccion de diseno, QA 14-ago: el stopSelf() anterior era un
@@ -98,7 +99,7 @@ class SoundAlertService : Service() {
         // REVOCACION EN EL SERVICIO (22-ago): si caduca la hora de Pro, se cierra sesion o se
         // borra la cuenta con la escucha en marcha, el servicio se para SOLO. Antes el control
         // vivia unicamente en la interfaz y esto seguia usando microfono indefinidamente.
-        scope.launch { stopWhenAccessLost() }
+
         scope.launch {
             // Cinturon de seguridad (QA 13-ago): SIN esto, cualquier fallo aqui dentro
             // (config corrupta, MediaPipe, lo que sea) tumbaba TODA LA APP — un
@@ -111,36 +112,44 @@ class SoundAlertService : Service() {
                 // arrancar y los interruptores tocados DURANTE la escucha no llegaban al
                 // clasificador; activar Golpes en marcha no metia "Knock" en la allowlist).
                 // Cada cambio de config reconstruye clasificador+motor con la foto nueva.
-                configRepo.config.collectLatest { config ->
-                    currentConfig = config
-                    this@SoundAlertService.classifier?.stop()
-                    val engine = SoundDetectionEngine(config)
-                    val classifier = MediaPipeSoundClassifier(
-                        context = applicationContext,
-                        engine = engine,
-                        allowedLabels = config.activeLabels().toList(),
-                        onDetected = { category -> onDetected(category) },
-                        onError = { motivo ->
-                            // ANTES SE IGNORABA (22-ago): si el clasificador fallaba EN MARCHA,
-                            // la pantalla seguia diciendo "Escuchando" y el usuario creia estar
-                            // protegido sin estarlo. Una promesa falsa de aviso es peor que no
-                            // ofrecerlo. Ahora se para y se dice por que — salvo si ya estamos
-                            // apagando, donde el error es consecuencia del propio apagado.
-                            if (!stopping) {
-                                listeningState.setStopReason(motivo)
-                                stopSelf()
+                proAccess.hasAiAccess.whileAiAccess(
+                    onDenied = {
+                        listeningState.setStopReason(getString(R.string.sa_stopped_no_pro))
+                        stopSelf()
+                    }
+                ) {
+                    listeningState.setListening(true)
+                    configRepo.config.collectLatest { config ->
+                        currentConfig = config
+                        this@SoundAlertService.classifier?.stop()
+                        val engine = SoundDetectionEngine(config)
+                        val classifier = MediaPipeSoundClassifier(
+                            context = applicationContext,
+                            engine = engine,
+                            allowedLabels = config.activeLabels().toList(),
+                            onDetected = { category -> onDetected(category) },
+                            onError = { motivo ->
+                                // ANTES SE IGNORABA (22-ago): si el clasificador fallaba EN MARCHA,
+                                // la pantalla seguia diciendo "Escuchando" y el usuario creia estar
+                                // protegido sin estarlo. Una promesa falsa de aviso es peor que no
+                                // ofrecerlo. Ahora se para y se dice por que — salvo si ya estamos
+                                // apagando, donde el error es consecuencia del propio apagado.
+                                if (!stopping) {
+                                    listeningState.setStopReason(motivo)
+                                    stopSelf()
+                                }
+                            },
+                            onWindow = { scores ->
+                                // Top-3 de la ventana, legible en pantalla: decide en una prueba
+                                // si el clasificador oye (scores fluyen) o los umbrales bloquean.
+                                val top = scores.entries.sortedByDescending { it.value }.take(3)
+                                    .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
+                                listeningState.setLastWindow(top.ifEmpty { null })
                             }
-                        },
-                        onWindow = { scores ->
-                            // Top-3 de la ventana, legible en pantalla: decide en una prueba
-                            // si el clasificador oye (scores fluyen) o los umbrales bloquean.
-                            val top = scores.entries.sortedByDescending { it.value }.take(3)
-                                .joinToString(" · ") { "%s %.2f".format(it.key, it.value) }
-                            listeningState.setLastWindow(top.ifEmpty { null })
-                        }
-                    )
-                    this@SoundAlertService.classifier = classifier
-                    classifier.start()
+                        )
+                        this@SoundAlertService.classifier = classifier
+                        classifier.start()
+                    }
                 }
             }.onFailure { e ->
                 // Parar la escucha CANCELA este scope, y `runCatching` traga tambien la
@@ -175,26 +184,6 @@ class SoundAlertService : Service() {
             depth++
         }
         return parts.joinToString(" <- ")
-    }
-
-    /**
-     * Para el servicio cuando el acceso Pro se PIERDE, no cuando simplemente falta.
-     *
-     * El matiz es importante: la primera emision puede llegar en `false` mientras los permisos
-     * aun se estan cargando (Firebase Auth tarda un instante en resolver la sesion). Reaccionar
-     * a eso mataria el servicio nada mas arrancar. Por eso solo se actua en la TRANSICION de
-     * "tenia acceso" a "ya no": si nunca lo tuvo, la interfaz no deberia haberlo dejado empezar.
-     */
-    private suspend fun stopWhenAccessLost() {
-        var hadAccess = false
-        proAccess.hasAiAccess.collect { has ->
-            if (has) {
-                hadAccess = true
-            } else if (hadAccess) {
-                listeningState.setStopReason(getString(R.string.sa_stopped_no_pro))
-                stopSelf()
-            }
-        }
     }
 
     override fun onDestroy() {
