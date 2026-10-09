@@ -19,7 +19,7 @@ class SessionDataCleaner @Inject constructor(
     suspend fun clearAll() {
         var failure: Exception? = null
         for (clear in listOf<suspend () -> Unit>(
-            { billingProfile.clear() }, { rewardProgress.set(0) }, { temporaryUnlock.clear() }, { theme.resetAccent() }
+            { billingProfile.clear() }, { rewardProgress.set(0) }, { temporaryUnlock.clear() }, { theme.resetAccent() }, { theme.resetGuestTheme() }
         )) {
             try { clear() }
             catch (e: kotlinx.coroutines.CancellationException) { throw e }

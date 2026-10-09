@@ -33,14 +33,27 @@ class DataStoreThemePreferencesRepository @Inject constructor(
     private val hapticsKey = booleanPreferencesKey("a11y_haptics")
     private val autoLockScreenKey = booleanPreferencesKey("a11y_auto_lock_screen")
 
-    // Default de la app (13-ago): sigue el tema del sistema — antes forzaba oscuro.
-    override val themeMode: Flow<ThemeMode> = dataStore.data.map { p ->
-        runCatching { ThemeMode.valueOf(p[themeKey] ?: ThemeMode.SYSTEM.name) }
+    // Never assign the legacy device-wide value to an arbitrary account.
+    private fun themeKeyFor(user: AuthUser?) = stringPreferencesKey("theme_mode_v2:${owner(user)}")
+
+    override val themeMode: Flow<ThemeMode> = combine(auth.currentUser, dataStore.data) { user, p ->
+        runCatching { ThemeMode.valueOf(p[themeKeyFor(user)] ?: ThemeMode.SYSTEM.name) }
             .getOrDefault(ThemeMode.SYSTEM)
     }
 
     override suspend fun setThemeMode(mode: ThemeMode) {
-        dataStore.edit { it[themeKey] = mode.name }
+        val user = auth.currentUser.first()
+        val expectedUid = user?.uid
+        if (auth.currentUid() != expectedUid) return
+        dataStore.edit { p ->
+            if (auth.currentUid() != expectedUid || owner(auth.currentUser.first()) != owner(user)) return@edit
+            p[themeKeyFor(user)] = mode.name
+            p.remove(themeKey)
+        }
+    }
+
+    override suspend fun resetGuestTheme() {
+        dataStore.edit { it.remove(themeKeyFor(null)) }
     }
 
     private fun owner(user: AuthUser?): String =

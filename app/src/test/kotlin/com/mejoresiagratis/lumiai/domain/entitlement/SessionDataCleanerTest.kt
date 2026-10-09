@@ -19,7 +19,7 @@ class SessionDataCleanerTest {
         var failed = false
         try { cleaner.clearAll() } catch (_: java.io.IOException) { failed = true }
         assertTrue(failed)
-        coVerify { progress.set(0); unlock.clear(); theme.resetAccent() }
+        coVerify { progress.set(0); unlock.clear(); theme.resetAccent(); theme.resetGuestTheme() }
     }
 
     @Test fun `cancellation is propagated without starting new cleanup`() = runTest {

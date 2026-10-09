@@ -26,7 +26,7 @@ class ThemeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> =
-        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DARK)
+        repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
 
     val accentColor: StateFlow<AccentColor> =
         combine(repo.accentColor, proAccess.access) { selected, access ->

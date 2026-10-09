@@ -20,8 +20,8 @@ import org.junit.rules.TemporaryFolder
 
 class DevicePreferencesPersistenceTest {
     private val auth = io.mockk.mockk<com.mejoresiagratis.lumiai.domain.repository.AuthRepository> {
-        io.mockk.every { currentUser } returns kotlinx.coroutines.flow.flowOf(null)
-        io.mockk.every { currentUid() } returns null
+        io.mockk.every { currentUser } returns kotlinx.coroutines.flow.flowOf(com.mejoresiagratis.lumiai.domain.model.AuthUser("A", null, false))
+        io.mockk.every { currentUid() } returns "A"
     }
     @get:Rule val folder = TemporaryFolder()
 
