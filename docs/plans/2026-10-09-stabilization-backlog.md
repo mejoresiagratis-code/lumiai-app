@@ -203,7 +203,7 @@ Versión debug `0.9.54-sound-catalog.1`. Compilación y pruebas exclusivamente e
 - [x] ~~Cinco sonidos nuevos: maullido, bocina, alarma de coche, marcha atrás y cristal roto. Desactivados por defecto, en pruebas.~~
 - [x] ~~Separar llanto general y alarma general de bebé/despertador; etiquetas concretas de sirenas.~~
 - [x] ~~Conservar nombres persistidos y ajustes antiguos; añadir patrones y recursos ES/EN.~~
-- [ ] CI, instalación y QA física de esta ampliación antes de integrar.
+- [x] ~~CI #257 (188 pruebas y Lint), QA Samsung S26 Ultra e integración de PR #4. Llanto general queda En pruebas; marcha atrás necesitó sensibilidad Alta.~~
 - [ ] Calibración acústica con clips positivos y negativos por categoría. No se afirma precisión medida de las nuevas categorías.
 - [ ] Evaluar golpes de puerta vs disparos/petardos; no remapear automáticamente las etiquetas de armas a puerta.
 - [ ] Modo exploración en español, historial local sin audio y perfiles en entregas posteriores.
@@ -214,3 +214,15 @@ QA propuesta:
 3. Probar cada nuevo sonido por separado y después con ruido de fondo, varios volúmenes y distancias. Anotar aciertos, omisiones y falsas alarmas, sin atribuir porcentaje de precisión a una prueba aislada.
 4. Llanto general no debe anunciar bebé; alarma general no debe anunciar despertador. Con la específica activa y puntuación suficiente no debe duplicarse el aviso general.
 5. Repetir timbre, puerta, teléfono, perro, bebé, despertador y alarma; comprobar que Parar libera el micrófono y que los tres canales mantienen el comportamiento validado.
+
+
+## STAB-03 · borrado Firebase recuperable
+
+- [x] ~~Preparar proceso servidor: marcador persistente, eliminación recursiva antes de Auth, reintentos e idempotencia.~~
+- [x] ~~Preparar bloqueo de sincronización por UID en cliente y reglas para todos los clientes.~~
+- [x] ~~Preparar confirmación mediante recibo tras pérdida de sesión y limpieza local solo tras confirmación.~~
+- [ ] CI Android y emuladores Firebase de esta entrega.
+- [ ] Desplegar reglas, índice, funciones y planificador en proyecto Firebase de pruebas; verificar App Check y permisos.
+- [ ] QA física con cuenta desechable y después despliegue productivo. No dar STAB-03 por cerrado antes de estas validaciones.
+
+Procedimiento: `docs/backend/account-deletion.md`. La variante `0.9.54-account-deletion.1` necesita ese backend desplegado.

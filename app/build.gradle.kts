@@ -63,7 +63,7 @@ android {
 
     buildTypes {
         debug {
-            versionNameSuffix = "-sound-catalog.1"
+            versionNameSuffix = "-account-deletion.1"
             isMinifyEnabled = false
             // IDs de PRUEBA de Google en debug: nunca generan impresiones reales.
             manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
@@ -176,6 +176,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.functions)
     implementation(libs.firebase.crashlytics)
     // Solo debug: detector de fugas de memoria. Con servicios foreground de linterna y
     // microfono, una Activity retenida es plausible y barata de cazar ahora.

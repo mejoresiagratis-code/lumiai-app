@@ -115,7 +115,7 @@
     <string name="account_verification_sent">Correo de verificación enviado.</string>
     <string name="account_delete">Borrar cuenta</string>
     <string name="account_delete_confirm_title">¿Borrar tu cuenta?</string>
-    <string name="account_delete_confirm_body">Esta acción es permanente y elimina tu cuenta y tus datos asociados. No se puede deshacer.</string>
+    <string name="account_delete_confirm_body">Se eliminarán tu cuenta y tu perfil asociado de forma permanente. Una vez aceptado, el borrado continúa aunque cierres la app. Las suscripciones de Google Play se cancelan por separado.</string>
     <string name="account_delete_cancel">Cancelar</string>
     <string name="account_reauth_title">Confirma tu identidad</string>
     <string name="account_reauth_body">Por seguridad, vuelve a introducir tu contraseña para borrar la cuenta.</string>
@@ -356,4 +356,5 @@
     <string name="sound_cat_glass">Cristal roto</string>
     <string name="sound_cat_crying">Llanto · general</string>
     <string name="sound_cat_general_alarm">Alarma · general</string>
+    <string name="account_delete_pending">El borrado está pendiente de confirmar. Vuelve a esta pantalla con conexión para reintentarlo. Una vez aceptado por el servidor, continúa aunque cierres la app.</string>
 </resources>

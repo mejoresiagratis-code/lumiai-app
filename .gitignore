@@ -25,3 +25,8 @@ google-services.json
 lumiai-release.keystore
 *.jks
 *.b64
+
+# Firebase backend dependencies and emulator output
+functions/node_modules/
+*-debug.log
+.firebase/

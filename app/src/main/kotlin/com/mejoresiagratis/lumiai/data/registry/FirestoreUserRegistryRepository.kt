@@ -8,6 +8,8 @@ import com.google.firebase.firestore.firestore
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistryRepository
 import com.mejoresiagratis.lumiai.domain.repository.UserRegistrySnapshot
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.first
+import com.mejoresiagratis.lumiai.domain.repository.AccountDeletionRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,11 +26,12 @@ import javax.inject.Singleton
  * registro de otro usuario ni auto-concederse `isSubscribed=true` para desbloquear nada.
  */
 @Singleton
-class FirestoreUserRegistryRepository @Inject constructor() : UserRegistryRepository {
+class FirestoreUserRegistryRepository @Inject constructor(private val deletion: AccountDeletionRepository) : UserRegistryRepository {
 
     private val firestore: FirebaseFirestore = Firebase.firestore
 
     override suspend fun sync(snapshot: UserRegistrySnapshot) {
+        if (deletion.pending.first()?.uid == snapshot.uid) return
         val ref = firestore.collection(USERS_COLLECTION).document(snapshot.uid)
 
         // createdAt solo se fija la primera vez (lectura previa barata; no hay Cloud Functions
@@ -46,7 +49,12 @@ class FirestoreUserRegistryRepository @Inject constructor() : UserRegistryReposi
             if (!exists) put("createdAt", FieldValue.serverTimestamp())
         }
 
-        ref.set(data, SetOptions.merge()).await()
+        // The transaction and rules both read the tombstone. Concurrent deletion causes
+        // retry/denial instead of recreating the user, including queued writes from old clients.
+        firestore.runTransaction { tx ->
+            val deleting = tx.get(firestore.collection("accountDeletions").document(snapshot.uid)).exists()
+            if (!deleting) tx.set(ref, data, SetOptions.merge())
+        }.await()
     }
 
     /**

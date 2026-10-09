@@ -25,11 +25,7 @@ data class AccountUiState(
     val verificationSent: Boolean = false,
     val needsReauth: Boolean = false,
     val error: AuthError? = null,
-    /**
-     * Aviso cuando el borrado se completó pero el registro administrativo NO pudo eliminarse
-     * (22-ago). El usuario merece saberlo en vez de que se le diga "todo borrado" a medias.
-     */
-    val deleteWarning: String? = null
+    val deletionPending: Boolean = false
 )
 
 @HiltViewModel
@@ -57,7 +53,14 @@ class AccountViewModel @Inject constructor(
 
     /** Refresca isEmailVerified al volver a la pantalla. */
     fun refresh() {
-        viewModelScope.launch { auth.reloadUser() }
+        viewModelScope.launch {
+            if (_ui.value.working) return@launch
+            _ui.value = _ui.value.copy(working = true)
+            try {
+                deleteAccountUseCase.resumePending()?.let { applyDeleteResult(it) }
+                auth.reloadUser()
+            } finally { _ui.value = _ui.value.copy(working = false) }
+        }
     }
 
     fun signOut() {
@@ -84,6 +87,7 @@ class AccountViewModel @Inject constructor(
     }
 
     fun deleteAccount() {
+        if (_ui.value.working) return
         viewModelScope.launch {
             _ui.value = _ui.value.copy(working = true, error = null)
             applyDeleteResult(deleteAccountUseCase())
@@ -126,8 +130,7 @@ class AccountViewModel @Inject constructor(
                     working = false,
                     needsReauth = false,
                     error = null,
-                    // Si el espejo no se pudo borrar, se dice — no se finge un borrado total.
-                    deleteWarning = report?.registryFailure?.takeIf { report.registryDeleted.not() }
+                    deletionPending = report?.pending == true
                 )
             }
             err == AuthError.RecentLoginRequired -> _ui.value.copy(working = false, needsReauth = true)
