@@ -1,19 +1,62 @@
-# LumiAI — backlog de estabilización
+# LumiAI — roadmap de estabilización
 
 Base de auditoría: `3afc50dc8b41a62f5aa5deaee99a28fcdd710c42` (main).
 Objetivo: completar la etapa 1 y los ocho P1 antes de ampliar distribución.
 Validación: compilaciones y pruebas exclusivamente en GitHub Actions; QA de dispositivo por el propietario.
 
+## Estado actualizado · 9 de octubre de 2026
+
+Leyenda: `[x]` y tachado = implementado; `[ ]` = pendiente. Implementación, validación en Actions e integración se indican por separado. Un punto implementado no certifica las pruebas de hardware o de Play pendientes.
+
+### Implementado e integrado en main · PR #2
+
+- [x] ~~CI con suite completa, Android Lint en PR y release dependiente de ambos controles.~~
+- [x] ~~Compras: comprobar reconocimiento, reintentar y recuperar compras sin reconocer al refrescar.~~
+- [x] ~~Suscripciones: refrescar al volver a la app y permitir reconexión de Billing.~~
+- [x] ~~Acceso Pro: comprobar antes de usar hardware, detener sesiones al caducar y cerrar LED.~~
+- [x] ~~Captura: comunicar fallos y procesar ventanas vacías para reiniciar la detección.~~
+- [x] ~~Música: escuchar sin solicitar foco que pause el reproductor.~~
+- [x] ~~Pruebas de regresión, Actions y confirmación general del propietario para la primera entrega.~~
+- [x] ~~Integrar PR #2 en main; build de main #249 correcta, incluida release.~~
+
+### Implementado en PR #3 · pendiente de integración
+
+- [x] ~~Coordinador exclusivo de flash/micrófono y bloqueo de comandos de sesiones antiguas.~~
+- [x] ~~Esperar la limpieza del modo anterior antes de iniciar el siguiente.~~
+- [x] ~~Vincular captura y destellos a la sesión; evitar paradas tardías de servicios antiguos.~~
+- [x] ~~Música: acumular lecturas no bloqueantes, comprobar permiso al abrir y esperar al pulso anterior.~~
+- [x] ~~Sonido: cancelar patrones anteriores y esperar al lector antes de cerrar MediaPipe.~~
+- [x] ~~Añadir nueve pruebas de regresión.~~
+- [x] ~~Validar código 2395def en Actions #252: 156 pruebas, cero fallos, errores u omitidas; Lint correcto.~~
+- [x] ~~Entregar APK 0.9.54-stabilization.2, archivo lumiai-debug-252.zip.~~
+- [ ] Probar el APK en dispositivo: Música ↔ Sonido ↔ Linterna, cambios rápidos, permisos, caducidad y segundo plano.
+- [ ] Integrar PR #3 después de la confirmación del propietario.
+- [ ] Propagar y mostrar errores de Camera2; completar QA Pixel/Samsung para cerrar STAB-04.
+
+Evidencias: [PR #2](https://github.com/mejoresiagratis-code/lumiai-app/pull/2), [Actions main #249](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37947170674), [PR #3](https://github.com/mejoresiagratis-code/lumiai-app/pull/3) y [Actions #252](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37949146999). La validación #252 corresponde al código anterior a esta actualización exclusivamente documental.
+
+### Pendiente · orden de trabajo
+
+1. [ ] Cerrar la segunda entrega: QA del APK y posterior integración del PR #3.
+2. [ ] **STAB-02 / P1:** proteger main con PR y checks obligatorios. Requiere acceso administrativo; el workflow por sí solo no protege la rama.
+3. [ ] **STAB-03 / P1:** borrado seguro de cuenta y datos en Firebase, con estado persistente, reintentos y bloqueo de sincronizaciones que puedan recrearlos. Validar con emuladores y entorno de pruebas antes de desplegar.
+4. [ ] **STAB-05/06 / P1:** completar validación real de Billing con cuentas de prueba de Play; definir autoridad de suscripción, política offline y verificación backend/RTDN.
+5. [ ] **STAB-04 / P1:** completar errores de cámara observables y QA físico pendiente.
+6. [ ] **P2 restantes:** persistencia, consentimiento, reloj, LED, reglas, dependencias y cadena de suministro del informe. Desglosar cada cambio antes de implementarlo.
+7. [ ] **Mantenimiento CI:** adoptar comprobación de formato bloqueante; el ktlint opcional retirado no equivale a tener este control.
+8. [ ] **Candidato release:** pruebas físicas de MediaPipe con R8, compatibilidad 16 KB, permisos y batería; verificar artefacto y firma del candidato final. Compilar release no acredita estas pruebas.
+9. [ ] **Publicación:** validar pista interna de Play y autorizar la publicación después de cerrar los criterios anteriores.
+
 ## Entrega 1: integrada y validada
 
-- [x] CI: suite JVM completa, incluidas seis pruebas Compose antes excluidas; Android Lint bloqueante en PR; reportes conservados aunque fallen los checks; release depende de ambos jobs.
-- [x] H03: comprobar acknowledge, reintentar con espera acotada y comunicar éxito después de su confirmación. Las compras no reconocidas se recuperan al refrescar; no se implementa aquí un backend de compras.
-- [x] H04: refrescar Billing en `onResume` y permitir operaciones que activen la reconexión automática.
-- [x] H05: denegar acceso inicial a servicios sin Pro, revocar sesiones y cerrar el display LED al caducar.
-- [x] H06: notificar los fallos síncronos de captura periódica y suprimir errores por parada voluntaria.
-- [x] H07/H08 asociados: no tomar foco de reproducción para escuchar música; procesar ventanas vacías para reiniciar rachas.
-- [x] Pruebas de regresión para reconocimiento, autorización/revocación, executor y ventanas vacías.
-- [x] Actions [37939256628](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37939256628) correcto y QA confirmado por el propietario («Todo ok probado»). PR #2 integrado en `7e5bbcfcb2321567a097fc026531ab0d0a5d556c`.
+- [x] ~~CI: suite JVM completa, incluidas seis pruebas Compose antes excluidas; Android Lint bloqueante en PR; reportes conservados aunque fallen los checks; release depende de ambos jobs.~~
+- [x] ~~H03: comprobar acknowledge, reintentar con espera acotada y comunicar éxito después de su confirmación. Las compras no reconocidas se recuperan al refrescar; no se implementa aquí un backend de compras.~~
+- [x] ~~H04: refrescar Billing en `onResume` y permitir operaciones que activen la reconexión automática.~~
+- [x] ~~H05: denegar acceso inicial a servicios sin Pro, revocar sesiones y cerrar el display LED al caducar.~~
+- [x] ~~H06: notificar los fallos síncronos de captura periódica y suprimir errores por parada voluntaria.~~
+- [x] ~~H07/H08 asociados: no tomar foco de reproducción para escuchar música; procesar ventanas vacías para reiniciar rachas.~~
+- [x] ~~Pruebas de regresión para reconocimiento, autorización/revocación, executor y ventanas vacías.~~
+- [x] ~~Actions [37939256628](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37939256628) correcto y QA confirmado por el propietario («Todo ok probado»). PR #2 integrado en `7e5bbcfcb2321567a097fc026531ab0d0a5d556c`.~~
 
 La entrega 2 queda en PR para validar el APK en dispositivo. No despliega Firebase ni modifica reglas/protección de GitHub.
 
@@ -51,7 +94,7 @@ La entrega 2 queda en PR para validar el APK en dispositivo. No despliega Fireba
 **Alcance:** coordinador de sesiones con propietario/token; prioridad explícita entre Torch, Música y Sonido; cancelar y esperar antes de ceder hardware. Impedir que un `finally` de una sesión vieja apague a la nueva.
 **Criterios de aceptación:** una sesión activa de captura como máximo según política; transiciones rápidas y paradas no interrumpen al nuevo propietario; UI sincronizada; errores de cámara observables.
 **Pruebas:** controlador falso con secuencia de propietarios, cancelación retardada y pruebas Pixel/Samsung.
-**Estado:** entrega 2 implementada, pendiente de Actions y QA de dispositivo. `HardwareSessionCoordinator` cancela y espera al propietario anterior (incluidos hijos y limpieza del capturador); cada sesión recibe un TorchController con identidad y los comandos de sesiones antiguas se ignoran. Política: la última sesión que adquiere el coordinador sustituye a la anterior, sin reanudación automática. Los servicios arrancan cada petición con su `startId` y ya no escriben hardware/estado desde `onDestroy`.
+**Estado:** entrega 2 implementada en PR #3 y validada en Actions #252 (156 pruebas correctas y Lint correcto); pendiente de QA de dispositivo e integración. `HardwareSessionCoordinator` cancela y espera al propietario anterior (incluidos hijos y limpieza del capturador); cada sesión recibe un TorchController con identidad y los comandos de sesiones antiguas se ignoran. Política: la última sesión que adquiere el coordinador sustituye a la anterior, sin reanudación automática. Los servicios arrancan cada petición con su `startId` y ya no escriben hardware/estado desde `onDestroy`.
 
 Música acumula lecturas no bloqueantes hasta completar un hop; cada pulso espera el cierre del anterior. Sonido procesa detecciones con `collectLatest` dentro de la sesión, espera la terminación del lector antes de cerrar MediaPipe y libera el recorder antes del traspaso. La espera del lector no tiene timeout que permita ceder un micrófono todavía ocupado; un driver que no responda bloqueará el traspaso y debe detectarse en QA físico.
 
@@ -91,12 +134,13 @@ Música acumula lecturas no bloqueantes hasta completar un hop; cada pulso esper
 
 ## Orden de integración
 
-1. Entrega 1: Actions verde → APK debug → QA del propietario → revisión del PR.
-2. Activar STAB-02 una vez publicados los checks correctos.
-3. Entrega 2: STAB-04, con pruebas de transición y hardware.
-4. Entrega 3: STAB-03 y autoridad backend de compras, con entorno Firebase/Play de pruebas.
-5. P2 restantes del informe: persistencia, consentimiento, reloj, LED, reglas, dependencias y suministros.
-6. Candidato release: verificar firma, R8/MediaPipe, 16 KB, permisos y batería. No publicar en Play sin esos resultados.
+- [x] ~~Entrega 1: Actions correcto, APK probado por el propietario e integración de PR #2.~~
+- [x] ~~Entrega 2: implementación, pruebas de transición y build de Actions #252.~~
+- [ ] Entrega 2: prueba física del propietario e integración de PR #3.
+- [ ] Activar STAB-02 con los checks ya publicados.
+- [ ] Entrega 3: STAB-03; preparar entorno Firebase y diseñar borrado recuperable antes del despliegue.
+- [ ] Completar autoridad backend de compras y validación Play; resolver pendientes P1 y después P2.
+- [ ] Candidato release y pista interna: cerrar el checklist físico y de distribución.
 
 ## QA de la primera entrega
 
