@@ -121,7 +121,7 @@ class SoundAlertService : Service() {
         return START_NOT_STICKY
     }
 
-    private suspend fun listen(config: SoundAlertConfig, torch: TorchController, startId: Int) = coroutineScope {
+    private suspend fun listen(config: SoundAlertConfig, torch: TorchController, startId: Int): Unit = coroutineScope {
         // All callbacks hand off to session children. null cancels only the current flash.
         val events = Channel<SoundCategory?>(Channel.CONFLATED)
         launch {
