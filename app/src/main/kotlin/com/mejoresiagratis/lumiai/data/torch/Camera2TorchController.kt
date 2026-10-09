@@ -57,18 +57,19 @@ class Camera2TorchController @Inject constructor(
         runCatching {
             cameraManager.registerTorchCallback(
                 object : CameraManager.TorchCallback() {
-                    override fun onTorchModeUnavailable(cameraId: String) {
-                        if (cameraId != cachedCameraId || !requestedOn) return
+                    override fun onTorchModeUnavailable(cameraId: String) = synchronized(this@Camera2TorchController) {
+                        if (cameraId != cachedCameraId || !requestedOn) return@synchronized
                         requestedOn = false
                         strengthCache = null
                         cachedCameraId = null
                         lastControlledId = null
                         _failure.value = TorchFailure.UNAVAILABLE
                         _externalOffEvents.tryEmit(Unit)
+                        Unit
                     }
 
-                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
-                        if (enabled || cameraId != cachedCameraId) return
+                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) = synchronized(this@Camera2TorchController) {
+                        if (enabled || cameraId != cachedCameraId) return@synchronized
                         val isOwn = SelfOffWindow.isOwnOff(lastSelfOffAtMs, SystemClock.elapsedRealtime())
                         if (!isOwn && requestedOn) {
                             requestedOn = false
@@ -93,6 +94,7 @@ class Camera2TorchController @Inject constructor(
             }.getOrDefault(1).coerceAtLeast(1)
         }
 
+    @Synchronized
     override fun turnOn(intensityLevel: Int) {
         try {
             val id = cameraId()
@@ -126,6 +128,7 @@ class Camera2TorchController @Inject constructor(
     }
 
     // Cleanup must not throw and mask the original error or prevent session handover.
+    @Synchronized
     override fun turnOff() {
         requestedOn = false
         val id = lastControlledId ?: return
