@@ -3,6 +3,16 @@ package com.mejoresiagratis.lumiai.ui.sound
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import android.widget.Toast
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.mejoresiagratis.lumiai.data.sound.ScreenAlertAccess
+import com.mejoresiagratis.lumiai.data.sound.ScreenFlashActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -116,6 +126,7 @@ fun SoundAlertScreen(
     // razon, el boton vuelve solo a "Iniciar" en vez de quedar pillado en "Parar" (QA 13-ago).
     val listening by viewModel.listening.collectAsStateWithLifecycle()
     val stopReason by viewModel.stopReason.collectAsStateWithLifecycle()
+    val deliveryWarning by viewModel.deliveryWarning.collectAsStateWithLifecycle()
     val lastWindow by viewModel.lastWindow.collectAsStateWithLifecycle()
     val lastDetection by viewModel.lastDetection.collectAsStateWithLifecycle()
 
@@ -140,6 +151,7 @@ fun SoundAlertScreen(
             ListenBar(
                 listening = listening,
                 stopReason = stopReason,
+                deliveryWarning = deliveryWarning,
                 lastWindow = lastWindow,
                 lastDetection = lastDetection,
                 micGranted = micGranted,
@@ -190,6 +202,19 @@ fun SoundAlertScreen(
                 micGranted = micGranted,
                 onRequest = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
             )
+
+            if (SoundCategory.entries.any { config.isEnabled(it) && config.channel(it).usesScreen }) {
+                ScreenAlertCard(onRequestNotifications = {
+                    if (Build.VERSION.SDK_INT >= 33 &&
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                        PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        openScreenSettings(context, ScreenAlertAccess.notificationSettings(context))
+                    }
+                })
+            }
 
             SectionHeader(stringResource(R.string.sa_section_sounds))
             Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
@@ -294,11 +319,67 @@ private fun MicCard(micGranted: Boolean, onRequest: () -> Unit) {
     }
 }
 
+@Composable
+private fun ScreenAlertCard(onRequestNotifications: () -> Unit) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var fullScreenAllowed by remember { mutableStateOf(ScreenAlertAccess.fullScreenAllowed(context)) }
+    var notificationsAllowed by remember { mutableStateOf(ScreenAlertAccess.notificationsAllowed(context)) }
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                fullScreenAllowed = ScreenAlertAccess.fullScreenAllowed(context)
+                notificationsAllowed = ScreenAlertAccess.notificationsAllowed(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(LumiSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+        ) {
+            Text(stringResource(R.string.sa_screen_options), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.sa_screen_explanation), style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = { context.startActivity(ScreenFlashActivity.createIntent(context)) }) {
+                Text(stringResource(R.string.sa_screen_test))
+            }
+            if (!notificationsAllowed) {
+                Text(stringResource(R.string.sa_screen_notifications_blocked), style = MaterialTheme.typography.bodySmall)
+                Button(onClick = onRequestNotifications) {
+                    Text(stringResource(R.string.sa_screen_enable_notifications))
+                }
+            }
+            if (!fullScreenAllowed) {
+                Text(stringResource(R.string.sa_screen_permission_help), style = MaterialTheme.typography.bodySmall)
+                Button(onClick = { openScreenSettings(context, ScreenAlertAccess.fullScreenSettings(context)) }) {
+                    Text(stringResource(R.string.sa_screen_enable_fullscreen))
+                }
+            }
+        }
+    }
+}
+
+private fun openScreenSettings(context: android.content.Context, intent: Intent) {
+    try {
+        context.startActivity(intent)
+    } catch (_: RuntimeException) {
+        try {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:${context.packageName}")))
+        } catch (_: RuntimeException) {
+            Toast.makeText(context, R.string.sa_screen_settings_unavailable, Toast.LENGTH_LONG).show()
+        }
+    }
+}
+
 /** Barra inferior con la accion principal, siempre visible sin importar el scroll. */
 @Composable
 private fun ListenBar(
     listening: Boolean,
     stopReason: String?,
+    deliveryWarning: String?,
     lastWindow: String?,
     lastDetection: String?,
     micGranted: Boolean,
@@ -332,6 +413,14 @@ private fun ListenBar(
                         .fillMaxWidth()
                         .padding(top = LumiSpacing.xs),
                 )
+                if (deliveryWarning != null) {
+                    Text(
+                        deliveryWarning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = LumiSpacing.xs)
+                    )
+                }
                 if (lastDetection != null) {
                     Text(
                         text = stringResource(R.string.sa_last_detection, lastDetection),
@@ -529,20 +618,19 @@ private fun ChannelSelector(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (hasFlash) {
-            SegmentedRow(
-                options = AlertChannel.entries,
-                selected = channel,
-                optionLabel = { stringResource(it.labelRes()) },
-                onSelect = onChannel
-            )
-        } else {
+        if (!hasFlash) {
             Text(
                 stringResource(R.string.sa_no_flash),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        SegmentedRow(
+            options = if (hasFlash) AlertChannel.entries else listOf(AlertChannel.PANTALLA),
+            selected = channel,
+            optionLabel = { stringResource(it.labelRes()) },
+            onSelect = onChannel
+        )
     }
 }
 

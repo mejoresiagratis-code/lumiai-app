@@ -206,7 +206,7 @@
     <string name="sa_stop">Stop</string>
     <string name="sa_sensitivity">Sensitivity</string>
     <string name="sa_how">How it alerts</string>
-    <string name="sa_no_flash">No flash: alerts with the screen.</string>
+    <string name="sa_no_flash">Flash unavailable. Select Screen to receive light alerts.</string>
     <string name="sa_sens_low">Low</string>
     <string name="sa_sens_med">Medium</string>
     <string name="sa_sens_high">High</string>
@@ -326,6 +326,19 @@
     <string name="changelog_pro_revoke">Music and Sound Alert now stop on their own when your Pro access ends, instead of running on.</string>
     <string name="ads_privacy_options">Ad privacy options</string>
     <string name="ads_privacy_options_subtitle">Review or change your consent</string>
-    <string name="sa_screen_alert_blocked">Screen alerts are blocked by Android. Allow full-screen notifications for LumiAI in system settings.</string>
+    <string name="sa_screen_alert_blocked">Tap the notification for screen flashes. To allow automatic opening while locked, enable full-screen alerts. The flashlight is not used as a replacement.</string>
     <string name="changelog_beacon_alert">Beacon\'s auto-off now reacts to changes, and Sound Alert warns you if it can\'t alert instead of failing quietly.</string>
+    <string name="sa_analysis_starting">Starting audio analysis…</string>
+    <string name="sa_analysis_result">Result #%1$d · microphone %2$d dBFS · %3$s</string>
+    <string name="sa_analysis_empty">No classification scores</string>
+    <string name="sa_analysis_timeout">No audio analysis results for 15 seconds. Stop and restart listening. Check microphone access in Android settings.</string>
+    <string name="sa_screen_tap">%1$s · Tap for screen flashes</string>
+    <string name="sa_screen_options">Screen light alerts</string>
+    <string name="sa_screen_explanation">The screen flashes white and black. With LumiAI open it appears directly. In the background or when locked, delivery depends on notification access; tap the alert if Android does not open it automatically. Screen mode never uses the flashlight.</string>
+    <string name="sa_screen_test">Test screen</string>
+    <string name="sa_screen_notifications_blocked">Screen alerts need notifications in the background. Enable LumiAI sound alert notifications.</string>
+    <string name="sa_screen_enable_notifications">Enable notifications</string>
+    <string name="sa_screen_permission_help">To allow automatic screen alerts while locked, enable full-screen notifications. This is not needed while LumiAI is visible.</string>
+    <string name="sa_screen_enable_fullscreen">Allow full-screen alerts</string>
+    <string name="sa_screen_settings_unavailable">Open Android settings and review notification access for LumiAI.</string>
 </resources>

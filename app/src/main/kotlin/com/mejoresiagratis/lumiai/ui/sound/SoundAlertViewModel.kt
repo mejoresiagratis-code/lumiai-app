@@ -38,6 +38,7 @@ class SoundAlertViewModel @Inject constructor(
 
     /** Motivo de la ultima parada inesperada, para mostrarlo en pantalla (QA 14-ago). */
     val stopReason: StateFlow<String?> = stateRepo.stopReason
+    val deliveryWarning: StateFlow<String?> = stateRepo.deliveryWarning
 
     /** Borra el motivo de parada al detener a mano: no es un fallo (QA 22-ago). */
     fun clearStopReason() = stateRepo.setStopReason(null)

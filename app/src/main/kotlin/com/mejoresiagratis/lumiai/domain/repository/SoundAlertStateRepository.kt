@@ -28,6 +28,10 @@ interface SoundAlertStateRepository {
      * tiene dos causas posibles indistinguibles a ciegas — el clasificador no oye, o los
      * umbrales no dejan pasar. Con los scores en vivo en pantalla, una prueba lo decide.
      */
+    /** Delivery problems do not mean capture stopped; shown while listening too. */
+    val deliveryWarning: StateFlow<String?>
+    fun setDeliveryWarning(value: String?)
+
     val lastWindow: StateFlow<String?>
     fun setLastWindow(value: String?)
     val lastDetection: StateFlow<String?>

@@ -14,7 +14,7 @@ enum class Sensitivity(val scoreThreshold: Float) {
 /**
  * Cómo avisa una categoría cuando se detecta. El LED es monocolor (honestidad): las categorías se
  * distinguen por ritmo, no por color. [usesFlash] requiere que el dispositivo tenga flash; en su
- * ausencia el actuador cae a pantalla para no dejar al usuario sin aviso (no se finge flash).
+ * ausencia se informa al usuario. No se sustituye un canal por otro sin elegirlo.
  */
 enum class AlertChannel(val usesFlash: Boolean, val usesScreen: Boolean) {
     FLASH(usesFlash = true, usesScreen = false),

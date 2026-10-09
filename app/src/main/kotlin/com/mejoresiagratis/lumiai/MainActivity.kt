@@ -1,6 +1,9 @@
 package com.mejoresiagratis.lumiai
 
 import android.os.Bundle
+import android.content.Intent
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,6 +37,21 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private var soundAlertRequest by mutableStateOf(0)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == ACTION_OPEN_SOUND_ALERT) {
+            soundAlertRequest++
+            intent.action = null
+        }
+    }
+
+    companion object {
+        const val ACTION_OPEN_SOUND_ALERT = "com.mejoresiagratis.lumiai.action.OPEN_SOUND_ALERT"
+    }
+
     private val startViewModel: StartViewModel by viewModels()
 
     @Inject lateinit var subscriptionRepository: com.mejoresiagratis.lumiai.domain.billing.SubscriptionRepository
@@ -51,7 +69,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         splash.setKeepOnScreenCondition { startViewModel.onboardingCompleted.value == null }
         enableEdgeToEdge()
-        setContent { LumiAiApp() }
+        if (intent.action == ACTION_OPEN_SOUND_ALERT) {
+            soundAlertRequest++
+            intent.action = null
+        }
+        setContent { LumiAiApp(soundAlertRequest = soundAlertRequest) }
 
         // Consentimiento (UMP) antes de cualquier anuncio; AdMob solo se inicializa si se permite.
         adsConsentManager.gatherConsent(this) { canRequestAds ->
@@ -62,6 +84,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun LumiAiApp(
+    soundAlertRequest: Int = 0,
     themeViewModel: ThemeViewModel = hiltViewModel(),
     startViewModel: StartViewModel = hiltViewModel()
 ) {
@@ -99,6 +122,7 @@ private fun LumiAiApp(
             if (start != null) {
                 LumiAiNavHost(
                     startDestination = start,
+                    soundAlertRequest = soundAlertRequest,
                     themeMode = themeMode,
                     onSelectTheme = themeViewModel::setMode,
                     accentColor = accent,

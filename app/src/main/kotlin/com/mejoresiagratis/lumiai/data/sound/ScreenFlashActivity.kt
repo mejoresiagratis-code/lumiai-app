@@ -1,6 +1,9 @@
 package com.mejoresiagratis.lumiai.data.sound
 
 import android.graphics.Color
+import android.content.Context
+import android.content.Intent
+import kotlinx.coroutines.Job
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -20,6 +23,14 @@ import kotlinx.coroutines.launch
  * permiso a la app; en ese caso el aviso sigue llegando como heads-up (no se finge nada).
  */
 class ScreenFlashActivity : ComponentActivity() {
+    private lateinit var surface: View
+    private var patternJob: Job? = null
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        playPattern()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,32 +47,40 @@ class ScreenFlashActivity : ComponentActivity() {
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val surface = View(this).apply { setBackgroundColor(Color.BLACK) }
+        surface = View(this).apply { setBackgroundColor(Color.BLACK) }
         setContentView(surface)
 
+        playPattern()
+    }
+
+    private fun playPattern() {
+        patternJob?.cancel()
         val pattern = intent.getLongArrayExtra(EXTRA_PATTERN)?.takeIf { it.isNotEmpty() }
             ?: DEFAULT_PATTERN
 
-        lifecycleScope.launch {
-            try {
-                repeat(CYCLES) {
-                    var i = 0
-                    while (i < pattern.size) {
-                        surface.setBackgroundColor(Color.WHITE)
-                        delay(pattern[i])
-                        surface.setBackgroundColor(Color.BLACK)
-                        if (i + 1 < pattern.size) delay(pattern[i + 1])
-                        i += 2
-                    }
-                    delay(GAP_MS)
+        patternJob = lifecycleScope.launch {
+            repeat(CYCLES) {
+                var i = 0
+                while (i < pattern.size) {
+                    surface.setBackgroundColor(Color.WHITE)
+                    delay(pattern[i])
+                    surface.setBackgroundColor(Color.BLACK)
+                    if (i + 1 < pattern.size) delay(pattern[i + 1])
+                    i += 2
                 }
-            } finally {
-                finish()
+                delay(GAP_MS)
             }
+            finish()
         }
     }
 
     companion object {
+        fun createIntent(context: Context, pattern: LongArray? = null) =
+            Intent(context, ScreenFlashActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                if (pattern != null) putExtra(EXTRA_PATTERN, pattern)
+            }
+
         const val EXTRA_PATTERN = "extra_pattern"
         private const val CYCLES = 2
         private const val GAP_MS = 250L
