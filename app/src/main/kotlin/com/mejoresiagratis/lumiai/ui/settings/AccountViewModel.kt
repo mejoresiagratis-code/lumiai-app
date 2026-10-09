@@ -29,7 +29,8 @@ data class AccountUiState(
      * Aviso cuando el borrado se completó pero el registro administrativo NO pudo eliminarse
      * (22-ago). El usuario merece saberlo en vez de que se le diga "todo borrado" a medias.
      */
-    val deleteWarning: String? = null
+    val deleteWarning: String? = null,
+    val localDataError: Boolean = false
 )
 
 @HiltViewModel
@@ -44,8 +45,11 @@ class AccountViewModel @Inject constructor(
         auth.currentUser.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Nombre + país de facturación (metadato propio; el cobro real lo procesa Google Play). */
-    val billingProfile: StateFlow<BillingProfile> = billingProfileRepo.profile
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BillingProfile())
+    val billingProfile: StateFlow<BillingProfile> = kotlinx.coroutines.flow.combine(
+        auth.currentUser, billingProfileRepo.profile
+    ) { current, profile ->
+        if (current != null && !current.isAnonymous && profile.ownerUid == current.uid) profile else BillingProfile()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BillingProfile())
 
     fun setFullName(value: String) = viewModelScope.launch { billingProfileRepo.setFullName(value) }
     fun setBillingCountry(value: String) = viewModelScope.launch { billingProfileRepo.setBillingCountry(value) }
@@ -61,13 +65,20 @@ class AccountViewModel @Inject constructor(
     }
 
     fun signOut() {
+        if (_ui.value.working) return
+        _ui.value = _ui.value.copy(working = true, error = null, localDataError = false)
         viewModelScope.launch {
-            // Se limpia TODO el estado de la sesion, no solo el desbloqueo temporal (17-ago):
-            // el perfil de facturacion y el contador de anuncios tambien eran de esta cuenta y
-            // se heredaban a la siguiente persona que iniciara sesion en el mismo movil.
-            sessionData.clearAll()
-            auth.signOut()
-            auth.ensureAnonymous()
+            try {
+                sessionData.clearAll()
+                auth.signOut()
+                auth.ensureAnonymous()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _ui.value = _ui.value.copy(localDataError = true)
+            } finally {
+                _ui.value = _ui.value.copy(working = false)
+            }
         }
     }
 

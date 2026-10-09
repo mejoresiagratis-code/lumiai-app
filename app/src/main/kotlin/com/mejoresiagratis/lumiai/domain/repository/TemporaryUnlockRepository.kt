@@ -13,6 +13,7 @@ interface TemporaryUnlockRepository {
 
     /** Concede o extiende el desbloqueo en [durationMillis] (apila sobre el vigente). */
     suspend fun extend(durationMillis: Long)
+    suspend fun extendForAccount(durationMillis: Long, uid: String): Boolean { extend(durationMillis); return true }
 
     /** Elimina cualquier desbloqueo temporal. */
     suspend fun clear()

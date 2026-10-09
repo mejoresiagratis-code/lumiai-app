@@ -46,15 +46,14 @@ class RewardedUnlockViewModel @Inject constructor(
     private val adsConsentManager: AdsConsentManager
 ) : ViewModel() {
 
-    /**
-     * ¿Debe ofrecerse el acceso a revisar el consentimiento de anuncios? (22-ago)
-     * Depende de la region y no cambia dentro de una sesion, asi que se lee como propiedad.
-     * Vive aqui porque este ViewModel ya es el dueño de todo lo relativo a publicidad.
-     */
-    val privacyOptionsRequired: Boolean get() = adsConsentManager.isPrivacyOptionsRequired
+    val consentState = adsConsentManager.state
+    private val _privacyError = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val privacyError: StateFlow<Boolean> = _privacyError
 
-    /** Abre el formulario de opciones de privacidad de UMP. */
-    fun showPrivacyOptions(activity: Activity) = adsConsentManager.showPrivacyOptions(activity)
+    fun showPrivacyOptions(activity: Activity) {
+        _privacyError.value = false
+        adsConsentManager.showPrivacyOptions(activity) { _privacyError.value = true }
+    }
 
     private val entitlements = entitlementRepo.entitlements
 

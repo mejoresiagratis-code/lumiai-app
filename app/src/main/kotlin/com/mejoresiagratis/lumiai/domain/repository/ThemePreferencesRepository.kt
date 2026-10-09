@@ -9,11 +9,20 @@ interface ThemePreferencesRepository {
     val themeMode: Flow<ThemeMode>
     suspend fun setThemeMode(mode: ThemeMode)
 
+    /** Sign-out starts the guest with System; account choices remain available on this device. */
+    suspend fun resetGuestTheme()
+
     val accentColor: Flow<AccentColor>
     suspend fun setAccentColor(accent: AccentColor)
 
     val accentStyle: Flow<AccentStyle>
     suspend fun setAccentStyle(style: AccentStyle)
+
+    /** Reset both appearance choices, preserving theme mode and accessibility. */
+    suspend fun resetAccent()
+
+    /** Only reset the observed color if it is still selected; do not erase a newer choice. */
+    suspend fun resetAccentIfMatches(accent: AccentColor)
 
     val reduceMotion: Flow<Boolean>
     suspend fun setReduceMotion(value: Boolean)

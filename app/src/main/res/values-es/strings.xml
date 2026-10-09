@@ -361,4 +361,6 @@
     <string name="torch_error_disabled">Android ha bloqueado el acceso a la cámara. Revisa la privacidad o las restricciones del dispositivo y vuelve a intentarlo.</string>
     <string name="torch_error_unavailable">El flash no está disponible temporalmente. Cierra la cámara y vuelve a intentarlo.</string>
     <string name="torch_error_off">No se pudo confirmar el apagado del flash. Comprueba el control de linterna de Android.</string>
+    <string name="account_local_data_error">No se pudieron limpiar los datos locales de la cuenta. Vuelve a intentar cerrar sesión.</string>
+    <string name="ads_privacy_error">No se pudieron abrir las opciones de privacidad. Revisa la conexión y vuelve a intentarlo.</string>
 </resources>

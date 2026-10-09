@@ -154,9 +154,8 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val webClientId = accountViewModel.webClientId
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    // El requisito de opciones de privacidad depende de la region y no cambia dentro de una
-    // sesion: se consulta una vez al entrar en Ajustes en vez de en cada recomposicion.
-    val privacyOptionsRequired = remember { rewardedUnlockViewModel.privacyOptionsRequired }
+    val consentState by rewardedUnlockViewModel.consentState.collectAsStateWithLifecycle()
+    val privacyError by rewardedUnlockViewModel.privacyError.collectAsStateWithLifecycle()
     var accentLockDialog by remember { mutableStateOf<AccentLock?>(null) }
     var showSubscribeGate by remember { mutableStateOf(false) }
     var showSoundAlertLocked by remember { mutableStateOf(false) }
@@ -170,16 +169,6 @@ fun SettingsScreen(
     var billingOpen by rememberSaveable { mutableStateOf(false) }
     val subscriptionUi by subscriptionViewModel.ui.collectAsStateWithLifecycle()
 
-    // Si el acento persistido quedó bloqueado (p. ej. caducó el Pro con Multicolor,
-    // o se cerró sesión con un sólido de cuenta), se vuelve al azul de marca.
-    // Usa el acceso Pro EFECTIVO (17-ago), igual que los swatches: con multicolor
-    // desbloqueable por anuncios, al agotarse la hora el acento debe revertir solo.
-    // La clave del efecto incluye proUnlocked para que ese momento se detecte.
-    LaunchedEffect(accentColor, isGuest, proUi.proUnlocked) {
-        if (!accentColor.isUnlocked(hasAccount = !isGuest, hasPro = proUi.proUnlocked)) {
-            onSelectAccent(AccentColor.BLUE)
-        }
-    }
     var reauthPassword by remember { mutableStateOf("") }
     val launchGoogleReauth: () -> Unit = {
         val id = webClientId
@@ -358,7 +347,11 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                    if (accountUi.localDataError) {
+                        Text(stringResource(R.string.account_local_data_error), color = MaterialTheme.colorScheme.error)
+                    }
                     OutlinedButton(
+                        enabled = !accountUi.working,
                         onClick = { accountViewModel.signOut() },
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) { Text(stringResource(R.string.account_sign_out)) }
@@ -579,7 +572,7 @@ fun SettingsScreen(
                 )
                 AccentSwatches(
                     selected = accentColor,
-                    hasAccount = !isGuest,
+                    hasAccount = proUi.hasAccount,
                     // Acceso Pro EFECTIVO (17-ago): incluye el desbloqueo temporal por
                     // anuncios, no solo la suscripción — multicolor se comporta ya como
                     // el resto de herramientas Pro.
@@ -675,7 +668,7 @@ fun SettingsScreen(
                 // Opciones de privacidad de anuncios (22-ago). Solo se muestra donde la
                 // normativa de Google lo exige: en el resto de regiones el formulario no
                 // existe y abrirlo dejaria al usuario ante una pantalla en blanco.
-                if (privacyOptionsRequired) {
+                if (consentState.privacyOptionsRequired) {
                     SettingsRow(
                         titleRes = R.string.ads_privacy_options,
                         subtitle = stringResource(R.string.ads_privacy_options_subtitle),
@@ -684,6 +677,9 @@ fun SettingsScreen(
                             if (act != null) rewardedUnlockViewModel.showPrivacyOptions(act)
                         }
                     )
+                }
+                if (privacyError) {
+                    Text(stringResource(R.string.ads_privacy_error), color = MaterialTheme.colorScheme.error)
                 }
                 SettingsRow(
                     titleRes = R.string.about_version,

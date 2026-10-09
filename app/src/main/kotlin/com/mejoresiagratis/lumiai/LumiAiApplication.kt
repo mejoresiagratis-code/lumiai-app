@@ -17,6 +17,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -58,32 +59,10 @@ class LumiAiApplication : Application() {
         // La implementacion vive en el source set de cada variante: Play Integrity en release,
         // proveedor de depuracion en debug.
         AppCheckInstaller.install()
-        purgeOrphanProfileOnAnonymous()
         purgeGodOverrideOnRelease()
         resetProProgressOnUpdate()
         seedBillingProfileOnSignIn()
         syncUserRegistryOnChange()
-    }
-
-    /**
-     * Datos personales HUÉRFANOS (17-ago): instalaciones anteriores al arreglo pueden arrastrar
-     * nombre y país de una cuenta cerrada, porque el logout no los borraba. Si al arrancar el
-     * usuario es anónimo (o no hay ninguno) pero quedan datos de perfil, no son de nadie: se
-     * limpian. Sin esto, el defecto seguiría vivo en los móviles ya instalados aunque el código
-     * nuevo lo impida hacia delante.
-     */
-    private fun purgeOrphanProfileOnAnonymous() {
-        appScope.launch {
-            runCatching {
-                val user = auth.currentUser.first()
-                if (user == null || user.isAnonymous) {
-                    val profile = billingProfileRepo.profile.first()
-                    if (profile.fullName.isNotBlank() || profile.billingCountry.isNotBlank()) {
-                        sessionData.clearAll()
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -118,14 +97,18 @@ class LumiAiApplication : Application() {
         appScope.launch {
             auth.currentUser
                 .distinctUntilChanged()
-                .collect { user ->
-                    if (user == null || user.isAnonymous) return@collect
+                .collectLatest { user ->
+                    if (user == null || user.isAnonymous || auth.currentUid() != user.uid) return@collectLatest
                     user.displayName?.let { name ->
-                        runCatching { billingProfileRepo.prefillFullNameIfEmpty(name) }
+                        try { billingProfileRepo.prefillFullNameIfEmpty(name) }
+                        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                        catch (_: Exception) { /* Preserve existing data on I/O failure. */ }
                     }
                     val country = Locale.getDefault().displayCountry
                     if (country.isNotBlank()) {
-                        runCatching { billingProfileRepo.prefillCountryIfEmpty(country) }
+                        try { billingProfileRepo.prefillCountryIfEmpty(country) }
+                        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                        catch (_: Exception) { /* Retry on a later session update. */ }
                     }
                 }
         }
@@ -144,7 +127,7 @@ class LumiAiApplication : Application() {
                 billingProfileRepo.profile,
                 subscriptionRepo.isSubscribed
             ) { user, profile, subscribed ->
-                if (user == null || user.isAnonymous) null
+                if (user == null || user.isAnonymous || profile.ownerUid != user.uid) null
                 else UserRegistrySnapshot(
                     uid = user.uid,
                     email = user.email,
@@ -159,7 +142,13 @@ class LumiAiApplication : Application() {
                 )
             }
                 .distinctUntilChanged()
-                .collect { snapshot -> snapshot?.let { runCatching { userRegistry.sync(it) } } }
+                .collectLatest { snapshot ->
+                    if (snapshot != null && auth.currentUid() == snapshot.uid) {
+                        try { userRegistry.sync(snapshot) }
+                        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                        catch (_: Exception) { /* Network retry on the next snapshot. */ }
+                    }
+                }
         }
     }
 }
