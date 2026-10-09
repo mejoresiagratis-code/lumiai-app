@@ -7,7 +7,9 @@ package com.mejoresiagratis.lumiai.domain.model
  */
 data class BillingProfile(
     val fullName: String = "",
-    val billingCountry: String = ""
+    val billingCountry: String = "",
+    /** Local ownership only; never sent as a profile field. */
+    val ownerUid: String? = null
 ) {
     fun coerced() = copy(
         fullName = fullName.take(MAX_NAME_LEN),

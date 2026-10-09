@@ -1,6 +1,8 @@
 package com.mejoresiagratis.lumiai.ads
 
 import android.app.Activity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.content.Context
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
@@ -14,6 +16,13 @@ import javax.inject.Singleton
  * válido (relevante en el EEE) no se solicitan anuncios: la app comprueba [canRequestAds]
  * antes de inicializar AdMob.
  */
+data class AdsConsentState(
+    val revision: Long = 0,
+    val allowed: Boolean = false,
+    val updating: Boolean = false,
+    val privacyOptionsRequired: Boolean = false
+)
+
 @Singleton
 class AdsConsentManager @Inject constructor(
     @ApplicationContext context: Context
@@ -21,9 +30,23 @@ class AdsConsentManager @Inject constructor(
     private val consentInformation: ConsentInformation =
         UserMessagingPlatform.getConsentInformation(context)
 
+    private val _state = MutableStateFlow(AdsConsentState())
+    val state = _state.asStateFlow()
+
+    private fun begin() {
+        _state.value = _state.value.copy(revision = _state.value.revision + 1, allowed = false, updating = true)
+    }
+    private fun finish() {
+        _state.value = AdsConsentState(
+            revision = _state.value.revision + 1,
+            allowed = consentInformation.canRequestAds(),
+            privacyOptionsRequired = isPrivacyOptionsRequired
+        )
+    }
+
     /** ¿UMP permite solicitar anuncios con el estado de consentimiento actual? */
     val canRequestAds: Boolean
-        get() = consentInformation.canRequestAds()
+        get() = !_state.value.updating && _state.value.allowed && consentInformation.canRequestAds()
 
     /**
      * ¿Hay que ofrecer al usuario un acceso VISIBLE para revisar su consentimiento? (22-ago)
@@ -44,7 +67,10 @@ class AdsConsentManager @Inject constructor(
      * [onError] recibe un mensaje solo si el formulario no pudo mostrarse.
      */
     fun showPrivacyOptions(activity: Activity, onError: (String) -> Unit = {}) {
+        if (_state.value.updating) return
+        begin()
         UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
+            finish()
             formError?.let { onError(it.message) }
         }
     }
@@ -54,17 +80,21 @@ class AdsConsentManager @Inject constructor(
      * Invoca [onResult] con el valor de [canRequestAds] al terminar (éxito o error de red).
      */
     fun gatherConsent(activity: Activity, onResult: (canRequestAds: Boolean) -> Unit) {
+        if (_state.value.updating) return
+        begin()
         val params = ConsentRequestParameters.Builder().build()
         consentInformation.requestConsentInfoUpdate(
             activity,
             params,
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
-                    onResult(consentInformation.canRequestAds())
+                    finish()
+                    onResult(canRequestAds)
                 }
             },
             {
-                onResult(consentInformation.canRequestAds())
+                finish()
+                onResult(canRequestAds)
             }
         )
     }

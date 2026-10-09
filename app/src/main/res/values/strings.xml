@@ -361,4 +361,6 @@
     <string name="torch_error_disabled">Android has disabled camera access. Check privacy or device restrictions, then try again.</string>
     <string name="torch_error_unavailable">The flash is temporarily unavailable. Close the camera and try again.</string>
     <string name="torch_error_off">Could not confirm that the flash is off. Check the Android flashlight control.</string>
+    <string name="account_local_data_error">Could not clear local account data. Please try signing out again.</string>
+    <string name="ads_privacy_error">Could not open privacy options. Check your connection and try again.</string>
 </resources>

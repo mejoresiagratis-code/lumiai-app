@@ -13,7 +13,7 @@ class RecordRewardUseCase @Inject constructor(
     private val progress: RewardProgressRepository,
     private val unlock: TemporaryUnlockRepository
 ) {
-    suspend operator fun invoke(now: Long = System.currentTimeMillis()): RewardProgress.Outcome {
+    suspend operator fun invoke(now: Long = System.currentTimeMillis(), expectedUid: String? = null): RewardProgress.Outcome {
         val current = progress.count.first()
         // Regla de producto (QA 13-ago): con el Pro temporal ACTIVO los anuncios no cuentan
         // ni extienden — el maximo canjeable es 1 hora. Sin esto, el usuario podia ver
@@ -22,8 +22,13 @@ class RecordRewardUseCase @Inject constructor(
             return RewardProgress.Outcome(newCount = current, grantsUnlock = false)
         }
         val outcome = RewardProgress.afterReward(current)
-        progress.set(outcome.newCount)
-        if (outcome.grantsUnlock) unlock.extend(TemporaryUnlock.HOUR_MS)
+        if (expectedUid == null) {
+            progress.set(outcome.newCount)
+            if (outcome.grantsUnlock) unlock.extend(TemporaryUnlock.HOUR_MS)
+        } else {
+            check(progress.setForAccount(outcome.newCount, expectedUid)) { "Account changed" }
+            if (outcome.grantsUnlock) check(unlock.extendForAccount(TemporaryUnlock.HOUR_MS, expectedUid)) { "Account changed" }
+        }
         return outcome
     }
 }

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface RewardProgressRepository {
     val count: Flow<Int>
     suspend fun set(value: Int)
+    suspend fun setForAccount(value: Int, uid: String): Boolean { set(value); return true }
 
     /**
      * Al detectar un versionCode distinto del guardado (actualización de la app), reinicia

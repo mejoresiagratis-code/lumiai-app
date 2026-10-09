@@ -61,8 +61,10 @@ class DeleteAccountUseCase @Inject constructor(
             }
         }
 
-        // Paso 2 — estado local. Nunca falla de forma bloqueante.
-        sessionData.clearAll()
+        // Do not continue deleting Auth if local cleanup failed.
+        try { sessionData.clearAll() }
+        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { return Result.failure(e) }
 
         // Paso 3 — punto de no retorno. Con tiempo límite: si la red no responde, el usuario
         // debe ver un error accionable, no una pantalla que no reacciona.

@@ -35,31 +35,60 @@ import javax.inject.Singleton
 @Singleton
 class RewardedAdController @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val recordReward: RecordRewardUseCase
+    private val recordReward: RecordRewardUseCase,
+    private val consent: AdsConsentManager,
+    private val auth: com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var rewardedAd: RewardedAd? = null
     private var loading = false
     private var initialized = false
+    private var initializing = false
+    private var showing = false
+    private var generation = 0L
+    private var loadedRevision = -1L
 
     private val _isReady = MutableStateFlow(false)
+
+    init {
+        scope.launch {
+            consent.state.collect {
+                generation++
+                rewardedAd = null
+                loading = false
+                _isReady.value = false
+                if (it.allowed && !it.updating) initializeAndPreload()
+            }
+        }
+    }
+
 
     /** Emite si hay un anuncio cargado y listo para mostrar. */
     val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     /** Inicializa AdMob una sola vez y precarga un anuncio. Llamar tras obtener consentimiento. */
     fun initializeAndPreload() {
+        if (!consent.canRequestAds) return
         if (initialized) {
             preload()
             return
         }
-        initialized = true
-        MobileAds.initialize(context) { preload() }
+        if (initializing) return
+        initializing = true
+        MobileAds.initialize(context) {
+            scope.launch {
+                initialized = true
+                initializing = false
+                preload()
+            }
+        }
     }
 
     /** Precarga un anuncio si AdMob ya está inicializado y no hay uno cargado ni una carga en curso. */
     fun preload() {
-        if (!initialized || loading || rewardedAd != null) return
+        if (!consent.canRequestAds || !initialized || showing || loading || rewardedAd != null) return
+        val requestGeneration = generation
+        val revision = consent.state.value.revision
         loading = true
         RewardedAd.load(
             context,
@@ -67,12 +96,15 @@ class RewardedAdController @Inject constructor(
             AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
+                    if (requestGeneration != generation || revision != consent.state.value.revision || !consent.canRequestAds) return
+                    loadedRevision = revision
                     rewardedAd = ad
                     loading = false
                     _isReady.value = true
                 }
 
                 override fun onAdFailedToLoad(error: LoadAdError) {
+                    if (requestGeneration != generation) return
                     rewardedAd = null
                     loading = false
                     _isReady.value = false
@@ -91,28 +123,45 @@ class RewardedAdController @Inject constructor(
         onReward: (RewardProgress.Outcome) -> Unit,
         onUnavailable: () -> Unit
     ) {
+        val uid = auth.currentUid()
         val ad = rewardedAd
-        if (ad == null) {
+        if (!consent.canRequestAds || showing || uid == null) {
+            onUnavailable()
+            return
+        }
+        if (ad == null || loadedRevision != consent.state.value.revision) {
+            rewardedAd = null
+            _isReady.value = false
             onUnavailable()
             preload()
             return
         }
+        rewardedAd = null // Consume before show: a second tap cannot show the same ad.
+        showing = true
+        val showRevision = consent.state.value.revision
+        var credited = false
         _isReady.value = false
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
-                rewardedAd = null
+                showing = false
                 preload()
             }
 
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                rewardedAd = null
+                showing = false
                 preload()
             }
         }
         ad.show(activity) { _ ->
-            scope.launch {
-                val outcome = recordReward()
-                onReward(outcome)
+            if (!credited && auth.currentUid() == uid && consent.canRequestAds && consent.state.value.revision == showRevision) {
+                credited = true
+                scope.launch {
+                    try {
+                        val outcome = recordReward(expectedUid = uid)
+                        if (auth.currentUid() == uid) onReward(outcome)
+                    } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                    catch (_: Exception) { onUnavailable() }
+                }
             }
         }
     }
