@@ -16,6 +16,13 @@ object SoundAlertFlash {
         SoundCategory.BEBE -> longArrayOf(650, 350)
         SoundCategory.DESPERTADOR -> longArrayOf(110, 110, 110, 110, 110, 450)
         SoundCategory.SIRENA -> longArrayOf(90, 90, 90, 90, 90, 90, 90, 350)
+        SoundCategory.GATO -> longArrayOf(300, 180, 120, 500)
+        SoundCategory.BOCINA -> longArrayOf(350, 200, 350, 500)
+        SoundCategory.ALARMA_COCHE -> longArrayOf(200, 200, 200, 200, 400, 500)
+        SoundCategory.MARCHA_ATRAS -> longArrayOf(250, 350, 250, 600)
+        SoundCategory.CRISTAL_ROTO -> longArrayOf(150, 180, 400, 500)
+        SoundCategory.LLANTO_GENERAL -> longArrayOf(500, 250, 250, 500)
+        SoundCategory.ALARMA_GENERAL -> longArrayOf(180, 180, 180, 450)
         SoundCategory.ALARMA_HUMO -> longArrayOf(70, 70, 70, 70, 70, 70, 70, 300)
     }
 }

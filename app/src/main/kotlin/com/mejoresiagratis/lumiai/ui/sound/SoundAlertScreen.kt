@@ -85,6 +85,8 @@ import com.mejoresiagratis.lumiai.data.sound.SoundAlertService
 import com.mejoresiagratis.lumiai.data.sound.labelRes
 import com.mejoresiagratis.lumiai.domain.sound.AlertChannel
 import com.mejoresiagratis.lumiai.domain.sound.Sensitivity
+import com.mejoresiagratis.lumiai.domain.sound.SoundAlertConfig
+import com.mejoresiagratis.lumiai.domain.sound.SoundGroup
 import com.mejoresiagratis.lumiai.domain.sound.SoundCategory
 import com.mejoresiagratis.lumiai.domain.sound.SoundReliability
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
@@ -130,8 +132,6 @@ fun SoundAlertScreen(
     val lastWindow by viewModel.lastWindow.collectAsStateWithLifecycle()
     val lastDetection by viewModel.lastDetection.collectAsStateWithLifecycle()
 
-    // Acordeon: nombre de la categoria expandida (sobrevive a rotacion).
-    var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -217,29 +217,14 @@ fun SoundAlertScreen(
             }
 
             SectionHeader(stringResource(R.string.sa_section_sounds))
-            Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
-                SoundCategory.entries.forEach { category ->
-                    CategoryCard(
-                        category = category,
-                        enabled = config.isEnabled(category),
-                        expanded = expandedName == category.name,
-                        sensitivity = config.sensitivity(category),
-                        channel = config.channel(category),
-                        hasFlash = hasFlash,
-                        onToggle = { on ->
-                            viewModel.setEnabled(category, on)
-                            // Activar despliega para configurar; desactivar pliega.
-                            expandedName = if (on) category.name
-                            else expandedName.takeIf { it != category.name }
-                        },
-                        onExpandToggle = {
-                            expandedName = if (expandedName == category.name) null else category.name
-                        },
-                        onSensitivity = { viewModel.setSensitivity(category, it) },
-                        onChannel = { viewModel.setChannel(category, it) }
-                    )
-                }
-            }
+            Text(stringResource(R.string.sa_catalog_help), style = MaterialTheme.typography.bodySmall)
+            SoundCatalog(
+                config = config,
+                hasFlash = hasFlash,
+                onEnabled = { category, enabled -> viewModel.setEnabled(category, enabled) },
+                onSensitivity = { category, sensitivity -> viewModel.setSensitivity(category, sensitivity) },
+                onChannel = { category, channel -> viewModel.setChannel(category, channel) }
+            )
 
             OutlinedButton(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.sa_reset))
@@ -247,6 +232,78 @@ fun SoundAlertScreen(
             Spacer(Modifier.height(LumiSpacing.sm))
         }
     }
+}
+
+/** Cada grupo se despliega sin modificar los ajustes individuales persistidos. */
+@Composable
+internal fun SoundCatalog(
+    config: SoundAlertConfig,
+    hasFlash: Boolean,
+    onEnabled: (SoundCategory, Boolean) -> Unit,
+    onSensitivity: (SoundCategory, Sensitivity) -> Unit,
+    onChannel: (SoundCategory, AlertChannel) -> Unit
+) {
+    var expandedGroup by rememberSaveable { mutableStateOf<String?>(SoundGroup.PUERTA_LLAMADAS.name) }
+    var expandedName by rememberSaveable { mutableStateOf<String?>(null) }
+    val expandedLabel = stringResource(R.string.sa_card_expanded_cd)
+    val collapsedLabel = stringResource(R.string.sa_card_collapsed_cd)
+    Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+        SoundGroup.entries.forEach { group ->
+            val categories = SoundCategory.entries.filter { it.group == group }
+            val expanded = expandedGroup == group.name
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable(role = Role.Button) {
+                            expandedGroup = if (expanded) null else group.name
+                        }
+                        .semantics { stateDescription = if (expanded) expandedLabel else collapsedLabel }
+                        .padding(LumiSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(group.labelRes()), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.sa_group_count, categories.count { config.isEnabled(it) }, categories.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Chevron(expanded)
+                }
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
+                    categories.forEach { category ->
+                        CategoryCard(
+                            category = category,
+                            enabled = config.isEnabled(category),
+                            expanded = expandedName == category.name,
+                            sensitivity = config.sensitivity(category),
+                            channel = config.channel(category),
+                            hasFlash = hasFlash,
+                            onToggle = { on ->
+                                onEnabled(category, on)
+                                expandedName = if (on) category.name else expandedName.takeIf { it != category.name }
+                            },
+                            onExpandToggle = { expandedName = if (expandedName == category.name) null else category.name },
+                            onSensitivity = { onSensitivity(category, it) },
+                            onChannel = { onChannel(category, it) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@StringRes
+private fun SoundGroup.labelRes(): Int = when (this) {
+    SoundGroup.PUERTA_LLAMADAS -> R.string.sa_group_door
+    SoundGroup.ALARMAS_AVISOS -> R.string.sa_group_alarms
+    SoundGroup.PERSONAS_MASCOTAS -> R.string.sa_group_people
+    SoundGroup.GOLPES_ROTURAS -> R.string.sa_group_impacts
 }
 
 @Composable
@@ -514,6 +571,9 @@ private fun CategoryCard(
                     verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
                 ) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    if (category.moreSpecific.isNotEmpty()) {
+                        Text(stringResource(R.string.sa_general_help), style = MaterialTheme.typography.bodySmall)
+                    }
                     LabeledSegmented(
                         label = stringResource(R.string.sa_sensitivity),
                         options = Sensitivity.entries,
@@ -683,12 +743,19 @@ private fun SoundCategory.iconRes(): Int = when (this) {
     SoundCategory.DESPERTADOR -> R.drawable.ic_sound_alarm
     SoundCategory.SIRENA -> R.drawable.ic_sound_siren
     SoundCategory.ALARMA_HUMO -> R.drawable.ic_sound_smoke
+    SoundCategory.GATO -> R.drawable.ic_sound_cat
+    SoundCategory.BOCINA -> R.drawable.ic_sound_horn
+    SoundCategory.ALARMA_COCHE, SoundCategory.MARCHA_ATRAS -> R.drawable.ic_sound_car
+    SoundCategory.CRISTAL_ROTO -> R.drawable.ic_sound_glass
+    SoundCategory.LLANTO_GENERAL -> R.drawable.ic_sound_baby
+    SoundCategory.ALARMA_GENERAL -> R.drawable.ic_sound_alarm
 }
 
 @StringRes
 private fun SoundReliability.labelRes(): Int = when (this) {
     SoundReliability.ALTA -> R.string.sa_reliab_high
     SoundReliability.MEDIA -> R.string.sa_reliab_med
+    SoundReliability.EN_PRUEBAS -> R.string.sa_reliab_testing
 }
 
 @StringRes

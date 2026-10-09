@@ -15,4 +15,11 @@ fun SoundCategory.labelRes(): Int = when (this) {
     SoundCategory.DESPERTADOR -> R.string.sound_cat_alarm_clock
     SoundCategory.SIRENA -> R.string.sound_cat_siren
     SoundCategory.ALARMA_HUMO -> R.string.sound_cat_smoke
+    SoundCategory.GATO -> R.string.sound_cat_cat
+    SoundCategory.BOCINA -> R.string.sound_cat_horn
+    SoundCategory.ALARMA_COCHE -> R.string.sound_cat_car_alarm
+    SoundCategory.MARCHA_ATRAS -> R.string.sound_cat_reversing
+    SoundCategory.CRISTAL_ROTO -> R.string.sound_cat_glass
+    SoundCategory.LLANTO_GENERAL -> R.string.sound_cat_crying
+    SoundCategory.ALARMA_GENERAL -> R.string.sound_cat_general_alarm
 }

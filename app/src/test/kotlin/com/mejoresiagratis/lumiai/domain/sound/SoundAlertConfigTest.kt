@@ -8,14 +8,16 @@ import org.junit.Test
 class SoundAlertConfigTest {
 
     @Test
-    fun `v1 ofrece exactamente 8 categorias`() {
-        assertEquals(8, SoundCategory.entries.size)
+    fun `el catalogo ofrece 15 categorias`() {
+        assertEquals(15, SoundCategory.entries.size)
     }
 
     @Test
-    fun `por defecto las 8 categorias estan activadas`() {
+    fun `solo las ocho originales estan activadas por defecto`() {
         val cfg = SoundAlertConfig()
-        SoundCategory.entries.forEach { assertTrue("$it deberia venir activada", cfg.isEnabled(it)) }
+        assertEquals(8, SoundCategory.entries.count { cfg.isEnabled(it) })
+        SoundCategory.entries.filter { it.reliability == SoundReliability.EN_PRUEBAS }
+            .forEach { assertFalse("$it requiere activacion explicita", cfg.isEnabled(it)) }
         assertTrue(cfg.anyEnabled)
     }
 
