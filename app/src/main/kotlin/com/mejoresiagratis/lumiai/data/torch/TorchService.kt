@@ -98,6 +98,10 @@ class TorchService : Service() {
                             if (on) engine.play(mode, repo.settings) else stopSelf(startId)
                         }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: TorchOperationException) {
+                // Controller retains the actionable reason for the UI. Session cleanup resets isOn.
             } finally {
                 // An older start must not stop a newer request on this same Service instance.
                 stopSelf(startId)

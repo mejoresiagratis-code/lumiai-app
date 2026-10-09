@@ -63,7 +63,7 @@ android {
 
     buildTypes {
         debug {
-            versionNameSuffix = "-sound-catalog.1"
+            versionNameSuffix = "-hardware-recovery.1"
             isMinifyEnabled = false
             // IDs de PRUEBA de Google en debug: nunca generan impresiones reales.
             manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"

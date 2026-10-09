@@ -408,6 +408,13 @@ fun BeamHubScreen(
                             .clip(CircleShape)
                             .background(onSurface.copy(alpha = 0.45f))
                     )
+                    state.torchFailure?.let { failure ->
+                        Text(
+                            text = stringResource(failure.messageRes),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                     var advancedExpanded by remember(state.mode) { mutableStateOf(false) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),

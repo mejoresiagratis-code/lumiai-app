@@ -1,6 +1,10 @@
 package com.mejoresiagratis.lumiai.data.torch
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.hardware.camera2.CameraAccessException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Build
@@ -25,9 +29,20 @@ class Camera2TorchController @Inject constructor(
     private val cameraManager: CameraManager =
         context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
-    private val flashCameraId: String? by lazy { findFlashCamera() }
+    @Volatile private var cachedCameraId: String? = null
+    @Volatile private var strengthCache: Pair<String, Int>? = null
+    @Volatile private var lastControlledId: String? = null
+    @Volatile private var requestedOn = false
+    private val _failure = MutableStateFlow<TorchFailure?>(null)
+    override val failure = _failure.asStateFlow()
 
-    override val hasFlash: Boolean get() = flashCameraId != null
+    // A transient CameraManager failure must never become a permanent "no flash" capability.
+    override val hasFlash: Boolean
+        get() = context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
+
+    private fun cameraId(): String = cachedCameraId ?: findFlashCamera()?.also {
+        cachedCameraId = it
+    } ?: throw TorchOperationException(if (hasFlash) TorchFailure.UNAVAILABLE else TorchFailure.NO_FLASH)
 
     // Ultima vez que ESTE controlador apago la linterna por su cuenta (turnOff, o el
     // respaldo interno de pulseOff): ventana usada por el TorchCallback de mas abajo
@@ -42,10 +57,24 @@ class Camera2TorchController @Inject constructor(
         runCatching {
             cameraManager.registerTorchCallback(
                 object : CameraManager.TorchCallback() {
-                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
-                        if (enabled || cameraId != flashCameraId) return
+                    override fun onTorchModeUnavailable(cameraId: String) = synchronized(this@Camera2TorchController) {
+                        if (cameraId != cachedCameraId || !requestedOn) return@synchronized
+                        requestedOn = false
+                        strengthCache = null
+                        cachedCameraId = null
+                        lastControlledId = null
+                        _failure.value = TorchFailure.UNAVAILABLE
+                        _externalOffEvents.tryEmit(Unit)
+                        Unit
+                    }
+
+                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) = synchronized(this@Camera2TorchController) {
+                        if (enabled || cameraId != cachedCameraId) return@synchronized
                         val isOwn = SelfOffWindow.isOwnOff(lastSelfOffAtMs, SystemClock.elapsedRealtime())
-                        if (!isOwn) _externalOffEvents.tryEmit(Unit)
+                        if (!isOwn && requestedOn) {
+                            requestedOn = false
+                            _externalOffEvents.tryEmit(Unit)
+                        }
                     }
                 },
                 Handler(Looper.getMainLooper())
@@ -53,30 +82,63 @@ class Camera2TorchController @Inject constructor(
         }
     }
 
-    override val maxIntensityLevel: Int by lazy {
-        val id = flashCameraId ?: return@lazy 1
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@lazy 1
-        runCatching {
-            cameraManager.getCameraCharacteristics(id)
-                .get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) ?: 1
-        }.getOrDefault(1)
-    }
+    override val maxIntensityLevel: Int
+        get() {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return 1
+            return runCatching {
+                val id = cameraId()
+                strengthCache?.takeIf { it.first == id }?.second ?: (
+                    cameraManager.getCameraCharacteristics(id)
+                        .get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL) ?: 1
+                    ).coerceAtLeast(1).also { strengthCache = id to it }
+            }.getOrDefault(1).coerceAtLeast(1)
+        }
 
+    @Synchronized
     override fun turnOn(intensityLevel: Int) {
-        val id = flashCameraId ?: return
-        runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maxIntensityLevel > 1) {
-                cameraManager.turnOnTorchWithStrengthLevel(id, scaleToDevice(intensityLevel))
+        try {
+            val id = cameraId()
+            val maximum = maxIntensityLevel
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && maximum > 1) {
+                cameraManager.turnOnTorchWithStrengthLevel(id, scaleToDevice(intensityLevel, maximum))
             } else {
                 cameraManager.setTorchMode(id, true)
             }
+            lastControlledId = id
+            requestedOn = true
+            _failure.value = null
+        } catch (e: Exception) {
+            requestedOn = false
+            strengthCache = null
+            cachedCameraId = null // Rediscover on the next explicit start / sound alert.
+            val reason = when (e) {
+                is TorchOperationException -> e.failure
+                is SecurityException -> TorchFailure.PERMISSION
+                is CameraAccessException -> when (e.reason) {
+                    CameraAccessException.CAMERA_IN_USE,
+                    CameraAccessException.MAX_CAMERAS_IN_USE -> TorchFailure.BUSY
+                    CameraAccessException.CAMERA_DISABLED -> TorchFailure.DISABLED
+                    else -> TorchFailure.UNAVAILABLE
+                }
+                else -> TorchFailure.UNAVAILABLE
+            }
+            _failure.value = reason
+            throw TorchOperationException(reason, e)
         }
     }
 
+    // Cleanup must not throw and mask the original error or prevent session handover.
+    @Synchronized
     override fun turnOff() {
-        val id = flashCameraId ?: return
+        requestedOn = false
+        val id = lastControlledId ?: return
         lastSelfOffAtMs = SystemClock.elapsedRealtime()
-        runCatching { cameraManager.setTorchMode(id, false) }
+        try {
+            cameraManager.setTorchMode(id, false)
+            lastControlledId = null
+        } catch (_: Exception) {
+            if (_failure.value == null) _failure.value = TorchFailure.OFF_FAILED
+        }
     }
 
     override fun pulseOff() {
@@ -89,17 +151,20 @@ class Camera2TorchController @Inject constructor(
         // algun dia se afina por dispositivo. turnOff() marca la ventana de SelfOffWindow,
         // asi que la deteccion de apagados EXTERNOS sigue sin falsos positivos por pulso.
         turnOff()
+        if (_failure.value == TorchFailure.OFF_FAILED) {
+            throw TorchOperationException(TorchFailure.OFF_FAILED)
+        }
     }
 
-    private fun scaleToDevice(logical: Int): Int {
+    private fun scaleToDevice(logical: Int, maximum: Int): Int {
         val pct = logical.coerceIn(FlashSettings.MIN_INTENSITY, FlashSettings.MAX_INTENSITY) / 100f
-        return (pct * maxIntensityLevel).roundToInt().coerceIn(1, maxIntensityLevel)
+        return (pct * maximum).roundToInt().coerceIn(1, maximum)
     }
 
-    private fun findFlashCamera(): String? = runCatching {
+    private fun findFlashCamera(): String? =
         cameraManager.cameraIdList.firstOrNull { id ->
             cameraManager.getCameraCharacteristics(id)
                 .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
         }
-    }.getOrNull()
+
 }
