@@ -66,9 +66,9 @@ class DeleteAccountUseCaseTest {
     @Test fun differentAccountIsNeverClearedOrDeleted() = runTest {
         deletion.pending.value = PendingAccountDeletion("owner", "receipt", true)
         uid = "someone-else"
-        assertTrue(useCase().resumePending()!!.getOrThrow().pending)
+        assertFalse(useCase().resumePending()!!.getOrThrow().pending)
         assertTrue(events.isEmpty())
-        assertNotNull(deletion.pending.value)
+        assertNull(deletion.pending.value)
     }
 
     @Test fun coroutineCancellationPropagatesAndRetainsReceipt() = runTest {

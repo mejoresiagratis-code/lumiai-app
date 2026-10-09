@@ -48,6 +48,10 @@ class DeleteAccountUseCase @Inject constructor(
                 }
             }
             val current = auth.currentUid()
+            if (current != null && current != uid && operation.serverConfirmed) {
+                deletion.clearPending() // Completion of the old account must not touch the new session.
+                return@withLock Result.success(DeleteAccountReport(pending = false))
+            }
             if (current != uid && !(current == null && operation.serverConfirmed)) {
                 return@withLock Result.success(DeleteAccountReport(pending = true))
             }
@@ -67,7 +71,8 @@ class DeleteAccountUseCase @Inject constructor(
             }
             // Do not clear a different account if identity changed while the request was in flight.
             if (auth.currentUid() != null && auth.currentUid() != uid) {
-                return@withLock Result.success(DeleteAccountReport(pending = true))
+                deletion.clearPending()
+                return@withLock Result.success(DeleteAccountReport(pending = false))
             }
             sessionData.clearAllStrict()
             if (auth.currentUid() == uid) auth.signOut()
