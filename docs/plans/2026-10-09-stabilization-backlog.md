@@ -1,216 +1,131 @@
 # LumiAI — roadmap de estabilización
 
-Base de auditoría: `3afc50dc8b41a62f5aa5deaee99a28fcdd710c42` (main).
-Objetivo: completar la etapa 1 y los ocho P1 antes de ampliar distribución.
-Validación: compilaciones y pruebas exclusivamente en GitHub Actions; QA de dispositivo por el propietario.
+Actualizado: **10 de octubre de 2026, Europe/Madrid**.
+Base de auditoría: `3afc50dc8b41a62f5aa5deaee99a28fcdd710c42`.
+Reglas de trabajo: compilaciones y pruebas exclusivamente en GitHub Actions; QA físico por el propietario en Samsung S26 Ultra. Un CI correcto no sustituye pruebas de dispositivo o de Google Play.
 
-## Estado actualizado · 9 de octubre de 2026
+Leyenda: [x] y tachado = trabajo completado en el alcance indicado. [ ] = pendiente. Código preparado, integración y QA se distinguen expresamente.
 
-Leyenda: `[x]` y tachado = implementado; `[ ]` = pendiente. Implementación, validación en Actions e integración se indican por separado. Un punto implementado no certifica las pruebas de hardware o de Play pendientes.
+## Integrado en main
 
-### Implementado e integrado en main · PR #2
+### PR #2 — estabilización inicial
 
-- [x] ~~CI con suite completa, Android Lint en PR y release dependiente de ambos controles.~~
-- [x] ~~Compras: comprobar reconocimiento, reintentar y recuperar compras sin reconocer al refrescar.~~
-- [x] ~~Suscripciones: refrescar al volver a la app y permitir reconexión de Billing.~~
-- [x] ~~Acceso Pro: comprobar antes de usar hardware, detener sesiones al caducar y cerrar LED.~~
-- [x] ~~Captura: comunicar fallos y procesar ventanas vacías para reiniciar la detección.~~
-- [x] ~~Música: escuchar sin solicitar foco que pause el reproductor.~~
-- [x] ~~Pruebas de regresión, Actions y confirmación general del propietario para la primera entrega.~~
-- [x] ~~Integrar PR #2 en main; build de main #249 correcta, incluida release.~~
+- [x] ~~Suite completa de pruebas y Android Lint; release depende de ambos controles.~~
+- [x] ~~Reconocimiento de compras con comprobación de resultado, reintentos y recuperación al refrescar.~~
+- [x] ~~Refresco de suscripciones al volver a la app y reconexión de Billing.~~
+- [x] ~~Comprobación de acceso Pro antes de usar hardware y parada al caducar.~~
+- [x] ~~Errores de captura observables, ventanas vacías y música sin interrumpir el reproductor.~~
+- [x] ~~QA general del propietario e integración de [PR #2](https://github.com/mejoresiagratis-code/lumiai-app/pull/2).~~
 
-### Implementado en PR #3 · pendiente de integración
+### PR #3 — captura y canales de alerta
 
-- [x] ~~Coordinador exclusivo de flash/micrófono y bloqueo de comandos de sesiones antiguas.~~
-- [x] ~~Esperar la limpieza del modo anterior antes de iniciar el siguiente.~~
-- [x] ~~Vincular captura y destellos a la sesión; evitar paradas tardías de servicios antiguos.~~
-- [x] ~~Música: acumular lecturas no bloqueantes, comprobar permiso al abrir y esperar al pulso anterior.~~
-- [x] ~~Sonido: cancelar patrones anteriores y esperar al lector antes de cerrar MediaPipe.~~
-- [x] ~~Añadir nueve pruebas de regresión.~~
-- [x] ~~Validar código 2395def en Actions #252: 156 pruebas, cero fallos, errores u omitidas; Lint correcto.~~
-- [x] ~~Entregar APK 0.9.54-stabilization.2, archivo lumiai-debug-252.zip.~~
-- [ ] Probar el APK en dispositivo: Música ↔ Sonido ↔ Linterna, cambios rápidos, permisos, caducidad y segundo plano.
-- [ ] Integrar PR #3 después de la confirmación del propietario.
-- [ ] Propagar y mostrar errores de Camera2; completar QA Pixel/Samsung para cerrar STAB-04.
+- [x] ~~Coordinador exclusivo de flash/micrófono; espera de limpieza y rechazo de órdenes de sesiones antiguas.~~
+- [x] ~~Captura PCM16/MIC, ventanas completas y clasificación serializada.~~
+- [x] ~~Diagnóstico de audio, vigilancia de ausencia de resultados y notificación con apertura/Parar.~~
+- [x] ~~Flash, Pantalla y Ambas respetan la selección; controles de permisos y prueba de pantalla.~~
+- [x] ~~QA Samsung S26 Ultra confirmado e integración de [PR #3](https://github.com/mejoresiagratis-code/lumiai-app/pull/3).~~
+- [x] ~~[Actions #255](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37956991074): 177 pruebas y Lint correctos.~~
 
-Evidencias: [PR #2](https://github.com/mejoresiagratis-code/lumiai-app/pull/2), [Actions main #249](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37947170674), [PR #3](https://github.com/mejoresiagratis-code/lumiai-app/pull/3) y [Actions #252](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37949146999). La validación #252 corresponde al código anterior a esta actualización exclusivamente documental.
+### PR #4 — catálogo de sonidos
 
-### Incidencia de QA · Samsung S26 Ultra · entrega 2
+- [x] ~~Cuatro grupos desplegables y nuevas categorías: gato, bocina, alarma de coche, marcha atrás y cristal roto.~~
+- [x] ~~Llanto general y alarma general separados de bebé/despertador; prioridad de coincidencias específicas.~~
+- [x] ~~Persistencia compatible, nombres ES/EN y patrones propios; categorías nuevas inicialmente desactivadas y experimentales.~~
+- [x] ~~[Actions #257](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37970309696): 188 pruebas, Lint y APK correctos.~~
+- [x] ~~Integración de [PR #4](https://github.com/mejoresiagratis-code/lumiai-app/pull/4), aceptando las limitaciones acústicas documentadas.~~
+- [x] ~~QA del propietario: gato, bocina, alarma de coche y cristal roto funcionan; bebé y distinción alarma/sirena también.~~
 
-El propietario confirma que Música recibe audio y que Sonido se detiene correctamente, pero Alerta Sonora no reconoce timbre/golpes y su notificación no abre al tocarla. El fallo se reproduce tanto con acceso de depuración como con Pro temporal. **PR #3 sigue pendiente de integración.**
+Limitaciones todavía abiertas:
+- [ ] Marcha atrás: el propietario obtiene aviso aumentando sensibilidad; evaluar ajuste de configuración por defecto.
+- [ ] Llanto general: el clip de mujer funciona; los ejemplos de hombre probados no. Evaluar muestras positivas y negativas antes de cambiar umbrales o etiquetas.
+- [ ] Puerta aporreada: el modelo puede devolver disparos/explosiones. No remapear esas etiquetas automáticamente a puerta.
+- [ ] Medir precisión con varios volúmenes, distancias, ruido y dispositivos. Las pruebas puntuales no certifican una tasa de acierto.
+- [ ] Futuro opcional, no comprometido: exploración en español, historial local sin audio y perfiles.
 
-- [x] ~~Corregir el ensamblado de audio: PCM16/MIC, ventanas completas de 975 ms con 50 % de solapamiento y clasificación síncrona serializada.~~
-- [x] ~~Mostrar nivel de micrófono, contador de resultados y clases sin ocultarlas por umbral/allowlist.~~
-- [x] ~~Añadir aviso si pasan 15 segundos sin resultados; notificación con apertura de Alerta Sonora y acción Parar.~~
-- [x] ~~Añadir pruebas de lecturas parciales/solapamiento, entrada de MediaPipe, etiquetas del modelo empaquetado y acciones de notificación.~~
-- [ ] Validar esta corrección en Actions y entregar APK `0.9.54-stabilization.2.1`.
-- [ ] Repetir QA en Samsung S26 Ultra: comprobar que el contador avanza, el nivel varía y timbre/golpes producen clasificación y aviso. El reconocimiento físico aún no está confirmado; no se han bajado umbrales a ciegas.
+### PR #6 — recuperación de cámara/flash
 
-### QA posterior · selección de Flash / Pantalla / Ambas
+- [x] ~~Errores de cámara tipados y mensajes ES/EN; fin de los fallos de encendido ocultos.~~
+- [x] ~~Reintento al volver a encender sin reiniciar LumiAI; pérdida de disponibilidad atendida y comandos/callbacks serializados.~~
+- [x] ~~Las alertas sonoras mantienen escucha y pantalla cuando falla el LED; siguiente detección puede recuperar flash.~~
+- [x] ~~[Actions #264](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37994067218): 198 pruebas, Lint y APK correctos.~~
+- [x] ~~QA Samsung aprobado por el propietario: «Pruebas ok todo funciona». [PR #6](https://github.com/mejoresiagratis-code/lumiai-app/pull/6) integrada.~~
+- [ ] Ampliar QA a Pixel/otros fabricantes; no generalizar la validación de Samsung.
 
-El propietario confirma que `stabilization.2.1` ya clasifica audio y dispara el flash en Samsung S26 Ultra. El clip de puerta aporreada se confunde con disparos/explosiones: queda como limitación de clasificación, sin remapear esas clases a puerta. Actions #254: 165 pruebas correctas y Lint correcto.
+### Conservación de artefactos
 
-El propietario detecta que las tres opciones usan flash. La causa es el fallback del servicio al faltar permiso de pantalla completa, que además bloqueaba la apertura con la app visible.
+- [x] ~~El propietario cambia la conservación a 7 días; verificado en main `5a2315f1e621c7b64e9297d2f6f1dbbce93034ee`.~~
+- [x] ~~APK debug, pruebas, Lint, AAB/APK release y mapping R8 configurados con `retention-days: 7`.~~
+- [ ] Limpieza manual de artefactos antiguos si se desea liberar espacio inmediato; no consta completada.
+- [ ] Para futuras publicaciones, conservar el candidato distribuido y su mapping R8 más allá de la caducidad del artefacto de Actions.
 
-- [x] ~~Respetar estrictamente las salidas seleccionadas; Pantalla nunca recurre al LED.~~
-- [x] ~~Abrir la pantalla desde una Activity visible, independientemente del permiso de notificación a pantalla completa.~~
-- [x] ~~En segundo plano usar notificación: su toque abre los destellos; apertura automática sujeta al permiso y al sistema.~~
-- [x] ~~Añadir Probar pantalla, acceso a ajustes de permisos y avisos visibles sin detener la escucha.~~
-- [ ] Validar `stabilization.2.2` en Actions y entregar APK.
-- [ ] En S26 Ultra: Flash → solo LED; Pantalla → blanco/negro sin LED; Ambas → ambos. Repetir con app visible, en segundo plano y bloqueada.
-- [ ] Mantener PR #3 sin integrar hasta confirmar esta matriz. Evaluar por separado el reconocimiento de golpes de puerta.
+## Preparado, pendiente de terminar QA — PR #7
 
-### Pendiente · orden de trabajo
+[PR #7](https://github.com/mejoresiagratis-code/lumiai-app/pull/7) **abierta, sin integrar**.
+Última APK: **#267**, versión `0.9.54-settings-consent.2`.
+Commit probado: `31243349e396312d1653a8746af7d5dcd01aecd8`.
 
-1. [ ] Cerrar la segunda entrega: QA del APK y posterior integración del PR #3.
-2. [ ] **STAB-02 / P1:** proteger main con PR y checks obligatorios. Requiere acceso administrativo; el workflow por sí solo no protege la rama.
-3. [ ] **STAB-03 / P1:** borrado seguro de cuenta y datos en Firebase, con estado persistente, reintentos y bloqueo de sincronizaciones que puedan recrearlos. Validar con emuladores y entorno de pruebas antes de desplegar.
-4. [ ] **STAB-05/06 / P1:** completar validación real de Billing con cuentas de prueba de Play; definir autoridad de suscripción, política offline y verificación backend/RTDN.
-5. [ ] **STAB-04 / P1:** completar errores de cámara observables y QA físico pendiente.
-6. [ ] **P2 restantes:** persistencia, consentimiento, reloj, LED, reglas, dependencias y cadena de suministro del informe. Desglosar cada cambio antes de implementarlo.
-7. [ ] **Mantenimiento CI:** adoptar comprobación de formato bloqueante; el ktlint opcional retirado no equivale a tener este control.
-8. [ ] **Candidato release:** pruebas físicas de MediaPipe con R8, compatibilidad 16 KB, permisos y batería; verificar artefacto y firma del candidato final. Compilar release no acredita estas pruebas.
-9. [ ] **Publicación:** validar pista interna de Play y autorizar la publicación después de cerrar los criterios anteriores.
+- [x] ~~Perfil personal, progreso de anuncios y desbloqueo temporal vinculados al UID.~~
+- [x] ~~Bloqueo de instantáneas usuario/perfil incoherentes y escrituras tardías de otra cuenta.~~
+- [x] ~~Consentimiento observable; invalidación de anuncios/callbacks antiguos, comprobación antes de cargar/mostrar y errores de formulario visibles.~~
+- [x] ~~Consumo del anuncio antes de presentarlo y recompensa única para su cuenta original.~~
+- [x] ~~Errores de limpieza visibles, cancelación propagada y cierre de sesión detenido ante fallo local.~~
+- [x] ~~Pruebas de reapertura de DataStore y conservación de preferencias del dispositivo.~~
+- [x] ~~QA parcial del propietario sobre #266: persistencia funciona y cambio de cuenta funciona excepto el acento naranja heredado.~~
+- [x] ~~Corregido en #267: cerrar sesión/cambiar identidad vuelve a azul y vívido, incluido naranja; no reinicia modo claro/oscuro.~~
+- [x] ~~Control de colores bloqueados fuera de Ajustes y permisos del selector coherentes con God.~~
+- [x] ~~[Actions #267](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37998244865): 220 pruebas, cero fallos/errores/omitidas; Lint y APK correctos.~~
+- [ ] QA de #267: naranja + cálido → cerrar sesión → entrar con otra cuenta → azul vívido.
+- [ ] QA de roles: misma cuenta conserva al reabrir; caducidad de Pro retira multicolor; colores aún permitidos se conservan; God invitado/cuenta/Pro.
+- [ ] Confirmar opciones de privacidad y dos anuncios → una hora; esta prueba no está confirmada aún.
+- [ ] Integrar PR #7 únicamente tras completar la validación.
 
-## Entrega 1: integrada y validada
+Matriz de acentos:
+| Rol efectivo | Azul/naranja | Otros sólidos | Multicolor |
+| --- | --- | --- | --- |
+| Invitado sin Pro | Sí | No | No |
+| Cuenta sin verificar | Sí | Sí | No |
+| Cuenta verificada sin Pro | Sí | Sí | No |
+| Pro temporal activo | Sí | Sí | Sí |
+| Suscripción Play activa | Sí | Sí | Sí |
+| God (debug) | Según permisos simulados | Según permisos simulados | Según permisos simulados |
 
-- [x] ~~CI: suite JVM completa, incluidas seis pruebas Compose antes excluidas; Android Lint bloqueante en PR; reportes conservados aunque fallen los checks; release depende de ambos jobs.~~
-- [x] ~~H03: comprobar acknowledge, reintentar con espera acotada y comunicar éxito después de su confirmación. Las compras no reconocidas se recuperan al refrescar; no se implementa aquí un backend de compras.~~
-- [x] ~~H04: refrescar Billing en `onResume` y permitir operaciones que activen la reconexión automática.~~
-- [x] ~~H05: denegar acceso inicial a servicios sin Pro, revocar sesiones y cerrar el display LED al caducar.~~
-- [x] ~~H06: notificar los fallos síncronos de captura periódica y suprimir errores por parada voluntaria.~~
-- [x] ~~H07/H08 asociados: no tomar foco de reproducción para escuchar música; procesar ventanas vacías para reiniciar rachas.~~
-- [x] ~~Pruebas de regresión para reconocimiento, autorización/revocación, executor y ventanas vacías.~~
-- [x] ~~Actions [37939256628](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37939256628) correcto y QA confirmado por el propietario («Todo ok probado»). PR #2 integrado en `7e5bbcfcb2321567a097fc026531ab0d0a5d556c`.~~
+Cerrar sesión/cambiar cuenta restablece azul/vívido independientemente del color permitido. Cambiar solo permisos dentro de la misma cuenta restablece únicamente el color que pierde acceso. La suscripción Play y la identidad Firebase son estados distintos.
 
-La entrega 2 queda en PR para validar el APK en dispositivo. No despliega Firebase ni modifica reglas/protección de GitHub.
+Migración: nombre/país y contador antiguos sin propietario no se asignan por suposición; pueden requerir reentrada de datos y contador a cero. Acentos antiguos sin propietario parten de azul/vívido. Tema claro/oscuro, accesibilidad y ajustes de luz/sonidos permanecen como preferencias del dispositivo.
 
-## Tareas ejecutables
+## Aparcado por decisión del propietario — PR #5 / STAB-03
 
-### STAB-01 · P1 · Controles obligatorios de CI (H15)
+Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**. El propietario decide mantener Spark.
 
-**Responsable:** Android/DevOps. **Dependencias:** ninguna. **Estimación:** 1–2 días.
+- [x] ~~Código de borrado recuperable preparado en [PR #5](https://github.com/mejoresiagratis-code/lumiai-app/pull/5): recibo persistente, backend idempotente, reintentos y barrera de sincronización.~~
+- [x] ~~[Actions #260](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/37980066426): 196 pruebas Android, 9 pruebas Firebase/reglas, Lint y APK correctos.~~
+- [ ] **Aparcado:** despliegue de Functions/Scheduler que requiere facturación habilitada, App Check real y QA.
+- [ ] **No integrado ni desplegado.** No usar su APK como actualización de la rama mantenida en Spark.
+- [ ] Retomar con backend autorizado o diseñar una alternativa compatible con Spark. El borrado remoto completo/recuperable sigue sin resolverse en main.
 
-**Alcance:** pruebas completas, lint en PR, artefactos y diagnósticos, dependencias de release.
-**Criterios de aceptación:** un test o error de lint marca rojo el check; release no corre si falla cualquiera; resultados JUnit/lint disponibles; APK debug se entrega solo después de superar las pruebas.
-**Estado:** integrado en PR #2 y validado en Actions. El control obligatorio de integración se completa con STAB-02. Se retira el ktlint opcional que siempre terminaba en verde; su adopción bloqueante requiere una tarea separada de formato, sin fingir que ya está aplicado.
+## Siguiente orden de trabajo
 
-### STAB-02 · P1 · Proteger main (H16)
+1. **Cerrar PR #7:** completar QA de colores/roles, privacidad y anuncios; integrar después de confirmación.
+2. **Compras y recompensas — STAB-05/06 (P1):** cuentas de prueba y pista interna Play; compra, restauración, reconocimiento, caducidad, revocación y pérdida de conexión. Definir vinculación Play/Firebase y política offline.
+3. **Protección de main — STAB-02 (P1):** administrador configura PR y checks obligatorios; el YAML por sí solo no protege la rama. No consta aplicado.
+4. **Pendientes de sonido:** sensibilidad de marcha atrás, llanto general y golpes de puerta; conjunto reproducible de muestras y control de falsos positivos.
+5. **P2 restantes:** reloj/caducidad ante cambios de hora, recuperación de almacenamiento dañado, LED, dependencias, reglas y permisos de CI/cadena de suministro. Desglosar por riesgo antes de implementar.
+6. **Candidato release:** QA físico MediaPipe/R8, compatibilidad 16 KB, batería, segundo plano, bloqueo y otros fabricantes; firma y archivo de mapping/candidato.
+7. **Publicación:** pista interna de Play y comprobaciones finales; publicación requiere autorización explícita.
 
-**Responsable:** administrador del repositorio. **Dependencias:** STAB-01 con primera ejecución correcta. **Estimación:** 30–60 minutos.
+Verificación de compras en servidor/RTDN queda aplazada mientras no haya una solución de backend elegida. No declarar cerrado un P1 por haber integrado solo su parte cliente.
 
-**Alcance:** ruleset para main, exigir PR y los checks `Tests and debug APK` y `Android Lint` tras comprobar sus nombres publicados. Evitar bypass ordinario y force push; documentar recuperación de emergencia.
-**Criterios de aceptación:** PR con check rojo no integrable; push directo no autorizado rechazado. Ajustar revisiones al equipo real para no bloquear al único mantenedor exigiéndose aprobación propia.
-**Estado:** pendiente. El conector disponible no ofrece escritura de branch protection/rulesets; no se afirma que el YAML proteja la rama.
+## Cobertura de los P1 originales
 
-### STAB-03 · P1 · Borrado idempotente y sincronización (H01)
+| ID | Estado |
+| --- | --- |
+| STAB-01 — CI | Integrado; pruebas y Lint bloquean el job release. |
+| STAB-02 — Protección de main | Pendiente de administración y prueba efectiva del bloqueo. |
+| STAB-03 — Borrado recuperable | PR #5 preparada; aparcada, sin despliegue ni integración. |
+| STAB-04 — Exclusividad de hardware | PR #3/#6 integradas y Samsung aprobado; QA de otros fabricantes pendiente. |
+| STAB-05 — Compras reconocidas | Cliente mejorado en PR #2; validación real Play y backend pendientes. |
+| STAB-06 — Suscripciones | Refresco/reconexión integrados; política offline y autoridad/vinculación pendientes. |
+| STAB-07 — Acceso al hardware | Integrado; ampliar pruebas con compras reales y caducidad en dispositivos. |
+| STAB-08 — Captura supervisada | Integrado; falta completar candidato release/MediaPipe y QA ampliado. |
 
-**Responsable:** Android + backend. **Dependencias:** STAB-01; acceso al entorno Firebase de pruebas. **Estimación:** 3–5 días.
-
-**Alcance:** estado persistente «eliminándose» por UID; detener nuevas sincronizaciones; operación autenticada en backend que elimine el registro y Auth con reintentos. Evitar recreación por escrituras ya en vuelo. Diseñar el orden, tombstone y reglas antes del despliegue.
-**Criterios de aceptación:** fallo o timeout Firestore no deja datos sin limpieza duradera; eliminación repetida es segura; se recupera tras matar la app; limpiar el perfil no recrea el registro; reautenticación fallida no destruye perfil local; el cliente puede consultar estado de la solicitud.
-**Pruebas:** emuladores Firebase, timeout, offline, fallo parcial y sync concurrente.
-**Estado:** pendiente; no se cambia de forma improvisada el comportamiento de borrado ni se promete supresión completa solo desde el cliente.
-
-### STAB-04 · P1 · Propietario único de flash/micrófono (H02)
-
-**Responsable:** Android. **Dependencias:** STAB-01 y STAB-07. **Estimación:** 2–3 días.
-
-**Alcance:** coordinador de sesiones con propietario/token; prioridad explícita entre Torch, Música y Sonido; cancelar y esperar antes de ceder hardware. Impedir que un `finally` de una sesión vieja apague a la nueva.
-**Criterios de aceptación:** una sesión activa de captura como máximo según política; transiciones rápidas y paradas no interrumpen al nuevo propietario; UI sincronizada; errores de cámara observables.
-**Pruebas:** controlador falso con secuencia de propietarios, cancelación retardada y pruebas Pixel/Samsung.
-**Estado:** entrega 2 implementada en PR #3 y validada en Actions #252 (156 pruebas correctas y Lint correcto); pendiente de QA de dispositivo e integración. `HardwareSessionCoordinator` cancela y espera al propietario anterior (incluidos hijos y limpieza del capturador); cada sesión recibe un TorchController con identidad y los comandos de sesiones antiguas se ignoran. Política: la última sesión que adquiere el coordinador sustituye a la anterior, sin reanudación automática. Los servicios arrancan cada petición con su `startId` y ya no escriben hardware/estado desde `onDestroy`.
-
-Música acumula lecturas no bloqueantes hasta completar un hop; cada pulso espera el cierre del anterior. Sonido procesa detecciones con `collectLatest` dentro de la sesión, espera la terminación del lector antes de cerrar MediaPipe y libera el recorder antes del traspaso. La espera del lector no tiene timeout que permita ceder un micrófono todavía ocupado; un driver que no responda bloqueará el traspaso y debe detectarse en QA físico.
-
-**Cobertura añadida:** ocho pruebas de exclusividad, limpieza retardada, token obsoleto, espera cancelada, veinte peticiones, estado UI, fallo y revocación; una prueba real de espera del executor. **Pendiente:** propagación de errores de Camera2 (el controlador existente aún los encapsula), pruebas Pixel/Samsung y cierre completo de los criterios de STAB-04.
-
-### STAB-05 · P1 · Compras reconocidas y recuperables (H03)
-
-**Responsable:** Android/backend. **Dependencias:** STAB-01. **Estimación:** 1–2 días cliente; backend aparte.
-
-**Alcance entrega 1:** resultado de acknowledge comprobado, tres intentos con espera, no éxito prematuro, cancelación propagada y recuperación al consultar compras.
-**Criterios de aceptación:** fallo de acknowledge no concede acceso nuevo; reintento exitoso concede una vez; compra ya reconocida no se reconoce de nuevo; cerrar proceso y volver recupera compra sin reconocer desde Play; UI sale del estado comprando incluso ante excepción.
-**Pendiente externo:** validar con cuentas de prueba de Play; verificación servidor/RTDN para operación duradera sin depender de reapertura de app. Los reintentos en memoria no son una cola backend.
-
-### STAB-06 · P1 · Sincronización de suscripciones (H04)
-
-**Responsable:** Android/backend. **Dependencias:** STAB-05. **Estimación:** 1–2 días.
-
-**Alcance entrega 1:** consulta al volver a foreground, refrescos concurrentes acotados y eliminación del retorno que impedía operaciones desconectadas.
-**Criterios de aceptación:** compra externa/revocación se refleja al regresar sin matar proceso; recuperar conectividad funciona; error temporal no fuerza una baja falsa solo por una respuesta de red fallida.
-**Pendiente:** política offline y estado de antigüedad/autoridad servidor; acordar si el entitlement pertenece a Play o Firebase antes de vincular cuentas.
-
-### STAB-07 · P1 · Autorizar antes de usar hardware (H05)
-
-**Responsable:** Android. **Dependencias:** STAB-01. **Estimación:** 1 día.
-
-**Alcance entrega 1:** sesión de acceso común para servicios y observación de acceso en LED.
-**Criterios de aceptación:** entrar en Sonido, dejar caducar Pro y pulsar escuchar no abre micrófono; revocación detiene servicio; LED deja de reproducir al vencer; una sesión sin primera emisión no inicia trabajo.
-**Pruebas:** acceso inicial false, true→false, true repetido; repetir en dispositivo con prueba temporal y suscripción.
-
-### STAB-08 · P1 · Captura supervisada (H06)
-
-**Responsable:** Android. **Dependencias:** STAB-01. **Estimación:** 1 día.
-
-**Alcance entrega 1:** dueño explícito de tarea periódica y propagación de RuntimeException de lectura/clasificación; stop voluntario silencia su error esperado; liberar recorder aunque falle stop.
-**Criterios de aceptación:** error en segunda ventana produce un único aviso; no continúa ficticiamente escuchando; parar no muestra error; ventana vacía rompe debounce.
-**Pruebas:** executor real con error inyectado y parada durante lectura; después smoke de MediaPipe en release con R8.
-
-## Orden de integración
-
-- [x] ~~Entrega 1: Actions correcto, APK probado por el propietario e integración de PR #2.~~
-- [x] ~~Entrega 2: implementación, pruebas de transición y build de Actions #252.~~
-- [x] ~~Entrega 2: prueba física del propietario en Samsung S26 Ultra e integración de PR #3 (9 de octubre). Captura y LED/pantalla/ambas confirmados.~~
-- [ ] Activar STAB-02 con los checks ya publicados.
-- [ ] Entrega 3: STAB-03; preparar entorno Firebase y diseñar borrado recuperable antes del despliegue.
-- [ ] Completar autoridad backend de compras y validación Play; resolver pendientes P1 y después P2.
-- [ ] Candidato release y pista interna: cerrar el checklist físico y de distribución.
-
-## QA de la primera entrega
-
-El artefacto de Actions se llama `lumiai-debug-<número de ejecución>` y contiene el APK. Usa IDs de anuncios de prueba y modo debug; no certifica compras reales ni App Check de release. Tiene el mismo applicationId: si Android rechaza la instalación por firma distinta a una versión release, no desinstalar con datos importantes; usar otro dispositivo/perfil de prueba. Para validar facturación real se necesita un artefacto por la pista interna de Play y cuentas de prueba.
-
-1. Comprobar arranque y versión terminada en `-stabilization.1`.
-2. Probar continuo, SOS y cambios de modo como regresión básica.
-3. Con acceso Pro, abrir Alerta Sonora, iniciar/parar varias veces y cambiar categorías. Parar no debe mostrar error.
-4. Dejar caducar una prueba temporal estando en Sonido sin escuchar y después pulsar Escuchar: debe denegar. Repetir con escucha activa: debe detenerse.
-5. Mantener LED reproduciendo al caducar: debe salir del display y permitir volver.
-6. Reproducir música en el mismo teléfono y activar Música: no debe pausar el reproductor por solicitar foco.
-7. Volver a la app tras cambiar estado de compra en entorno de prueba: comprobar actualización. Usar exclusivamente compras de prueba.
-8. Anotar dispositivo, Android, paso, resultado esperado/real y captura si falla. No interpretar un CI verde como validación de estos pasos físicos.
-
-
-## QA de la segunda entrega
-
-Versión debug: `0.9.54-stabilization.2`. Compilación y pruebas solo en GitHub Actions.
-
-1. Con acceso Pro, iniciar Música, abrir Alerta Sonora y pulsar Escuchar. Música debe apagarse y Sonido debe empezar a escuchar; nunca deben quedar dos capturas activas.
-2. Con Sonido escuchando, volver a Linterna y encender Continuo/SOS. Sonido debe dejar de escuchar y la linterna permanecer estable. Repetir Sonido → Música y Música → Sonido.
-3. Repetir iniciar/parar y cambiar de modo rápidamente diez veces. No debe haber un apagado tardío, notificación huérfana ni estado encendido sin sesión.
-4. En Sonido, cambiar categorías/sensibilidad durante una alerta. Debe detenerse el patrón anterior, reiniciarse el clasificador y seguir llegando la lectura «Oyendo».
-5. En Música, reproducir audio en el mismo teléfono: no debe pausar el reproductor; los golpes siguen disparando destellos y Parar libera el indicador de micrófono.
-6. Usar el apagado de linterna del sistema: Continuo/Música se paran; Sonido cancela el destello en curso y sigue escuchando.
-7. Dejar caducar Pro durante captura. Debe liberarse micrófono/flash y permitir encender inmediatamente un modo gratuito.
-8. Repetir con la app en segundo plano y la pantalla bloqueada. Registrar dispositivo, Android y el paso exacto si aparece bloqueo, cierre o interferencia.
-
-
-## Ampliación del catálogo sonoro · entrega para QA
-
-Versión debug `0.9.54-sound-catalog.1`. Compilación y pruebas exclusivamente en GitHub Actions.
-
-- [x] ~~Cuatro grupos desplegables: puerta/llamadas, alarmas/avisos, personas/mascotas y golpes/roturas.~~
-- [x] ~~Cinco sonidos nuevos: maullido, bocina, alarma de coche, marcha atrás y cristal roto. Desactivados por defecto, en pruebas.~~
-- [x] ~~Separar llanto general y alarma general de bebé/despertador; etiquetas concretas de sirenas.~~
-- [x] ~~Conservar nombres persistidos y ajustes antiguos; añadir patrones y recursos ES/EN.~~
-- [ ] CI, instalación y QA física de esta ampliación antes de integrar.
-- [ ] Calibración acústica con clips positivos y negativos por categoría. No se afirma precisión medida de las nuevas categorías.
-- [ ] Evaluar golpes de puerta vs disparos/petardos; no remapear automáticamente las etiquetas de armas a puerta.
-- [ ] Modo exploración en español, historial local sin audio y perfiles en entregas posteriores.
-
-QA propuesta:
-1. Actualizar sin borrar datos y comprobar que las ocho categorías previas conservan activación, sensibilidad y canal. Las siete nuevas (incluidas las dos generales) deben estar apagadas.
-2. Desplegar cada grupo; abrir/cerrar no cambia ajustes. Activar un sonido nuevo, configurar pantalla/LED/ambas y comprobar persistencia tras cerrar/abrir.
-3. Probar cada nuevo sonido por separado y después con ruido de fondo, varios volúmenes y distancias. Anotar aciertos, omisiones y falsas alarmas, sin atribuir porcentaje de precisión a una prueba aislada.
-4. Llanto general no debe anunciar bebé; alarma general no debe anunciar despertador. Con la específica activa y puntuación suficiente no debe duplicarse el aviso general.
-5. Repetir timbre, puerta, teléfono, perro, bebé, despertador y alarma; comprobar que Parar libera el micrófono y que los tres canales mantienen el comportamiento validado.
+Historial técnico de detalle: [cámara/flash](2026-10-09-hardware-recovery.md) y [preferencias/consentimiento](https://github.com/mejoresiagratis-code/lumiai-app/blob/codex/settings-consent-01/docs/plans/2026-10-09-settings-consent.md). Los detalles del backend aparcado permanecen en la rama de PR #5.
