@@ -341,4 +341,19 @@
     <string name="sa_screen_permission_help">Para permitir avisos automáticos con el móvil bloqueado, activa las notificaciones a pantalla completa. No hace falta mientras LumiAI está visible.</string>
     <string name="sa_screen_enable_fullscreen">Permitir pantalla completa</string>
     <string name="sa_screen_settings_unavailable">Abre los ajustes de Android y revisa los permisos de notificación de LumiAI.</string>
+    <string name="sa_reliab_testing">En pruebas</string>
+    <string name="sa_group_door">Puerta y llamadas</string>
+    <string name="sa_group_alarms">Alarmas y avisos</string>
+    <string name="sa_group_people">Personas y mascotas</string>
+    <string name="sa_group_impacts">Golpes y roturas</string>
+    <string name="sa_group_count">%1$d de %2$d activados</string>
+    <string name="sa_catalog_help">Los sonidos nuevos están desactivados y marcados como En pruebas. Activa y prueba cada sonido en tu entorno.</string>
+    <string name="sa_general_help">Las alertas generales cubren sonidos sin coincidencia específica activada. No identifican su origen exacto.</string>
+    <string name="sound_cat_cat">Maullido de gato</string>
+    <string name="sound_cat_horn">Bocina de vehículo</string>
+    <string name="sound_cat_car_alarm">Alarma de coche</string>
+    <string name="sound_cat_reversing">Pitidos de marcha atrás</string>
+    <string name="sound_cat_glass">Cristal roto</string>
+    <string name="sound_cat_crying">Llanto · general</string>
+    <string name="sound_cat_general_alarm">Alarma · general</string>
 </resources>

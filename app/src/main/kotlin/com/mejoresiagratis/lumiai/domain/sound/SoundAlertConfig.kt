@@ -31,7 +31,8 @@ data class CategorySetting(
 
 /**
  * Configuracion del modo Alerta Sonora. Modelo puro e inmutable, persistible en DataStore (F3).
- * En v1 las 8 categorias vienen activadas; las de seguridad arrancan con sensibilidad alta para
+ * Las ocho categorías originales vienen activadas; las nuevas requieren activación explícita.
+ * Las de seguridad arrancan con sensibilidad alta para
  * no perderlas.
  */
 data class SoundAlertConfig(
@@ -49,8 +50,8 @@ data class SoundAlertConfig(
     fun threshold(category: SoundCategory): Float = sensitivity(category).scoreThreshold
 
     /**
-     * Union de etiquetas AudioSet de las categorias activas. Es lo que alimentara la allowlist
-     * del clasificador: si esta vacia, no hay nada que vigilar y el modo no deberia escuchar.
+     * Union de etiquetas AudioSet de las categorias activas. Si está vacía, no hay nada que vigilar. El clasificador devuelve todas las etiquetas
+     * para diagnóstico; el motor filtra las activas.
      */
     fun activeLabels(): Set<String> =
         SoundCategory.entries.filter { isEnabled(it) }.flatMap { it.labels }.toSet()
@@ -79,7 +80,7 @@ data class SoundAlertConfig(
                 val sensitivity = if (category.safetyRelated) Sensitivity.ALTA else Sensitivity.MEDIA
                 // Las de seguridad avisan por flash y pantalla por defecto (más difícil de perder).
                 val channel = if (category.safetyRelated) AlertChannel.AMBAS else AlertChannel.FLASH
-                CategorySetting(enabled = true, sensitivity = sensitivity, channel = channel)
+                CategorySetting(enabled = category.enabledByDefault, sensitivity = sensitivity, channel = channel)
             }
     }
 }

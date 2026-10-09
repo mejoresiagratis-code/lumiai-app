@@ -21,7 +21,7 @@ class SoundDetectionEngine(
     private val lastFiredAtMs = mutableMapOf<SoundCategory, Long>()
 
     /**
-     * Procesa una ventana de clasificacion ([scores]: etiqueta -> probabilidad) y devuelve las
+     * Procesa una ventana de clasificacion ([scores]: etiqueta -> puntuación sin calibrar) y devuelve las
      * categorias que deben alertar en este instante. [nowMs] es el reloj monotono de la ventana.
      */
     fun onWindow(scores: Map<String, Float>, nowMs: Long): List<SoundCategory> {
@@ -34,9 +34,15 @@ class SoundDetectionEngine(
             if (previous == null || score > previous) best[category] = score
         }
 
+        fun qualifies(category: SoundCategory): Boolean {
+            val threshold = config.threshold(category) *
+                (if (category.transientSound) TRANSIENT_THRESHOLD_RELIEF else 1f)
+            return config.isEnabled(category) && (best[category] ?: 0f) >= threshold
+        }
+
         val fired = mutableListOf<SoundCategory>()
         for (category in SoundCategory.entries) {
-            if (!config.isEnabled(category)) {
+            if (!config.isEnabled(category) || category.moreSpecific.any { qualifies(it) }) {
                 streak[category] = 0
                 continue
             }

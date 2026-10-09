@@ -161,7 +161,7 @@ Música acumula lecturas no bloqueantes hasta completar un hop; cada pulso esper
 
 - [x] ~~Entrega 1: Actions correcto, APK probado por el propietario e integración de PR #2.~~
 - [x] ~~Entrega 2: implementación, pruebas de transición y build de Actions #252.~~
-- [ ] Entrega 2: prueba física del propietario e integración de PR #3.
+- [x] ~~Entrega 2: prueba física del propietario en Samsung S26 Ultra e integración de PR #3 (9 de octubre). Captura y LED/pantalla/ambas confirmados.~~
 - [ ] Activar STAB-02 con los checks ya publicados.
 - [ ] Entrega 3: STAB-03; preparar entorno Firebase y diseñar borrado recuperable antes del despliegue.
 - [ ] Completar autoridad backend de compras y validación Play; resolver pendientes P1 y después P2.
@@ -193,3 +193,24 @@ Versión debug: `0.9.54-stabilization.2`. Compilación y pruebas solo en GitHub 
 6. Usar el apagado de linterna del sistema: Continuo/Música se paran; Sonido cancela el destello en curso y sigue escuchando.
 7. Dejar caducar Pro durante captura. Debe liberarse micrófono/flash y permitir encender inmediatamente un modo gratuito.
 8. Repetir con la app en segundo plano y la pantalla bloqueada. Registrar dispositivo, Android y el paso exacto si aparece bloqueo, cierre o interferencia.
+
+
+## Ampliación del catálogo sonoro · entrega para QA
+
+Versión debug `0.9.54-sound-catalog.1`. Compilación y pruebas exclusivamente en GitHub Actions.
+
+- [x] ~~Cuatro grupos desplegables: puerta/llamadas, alarmas/avisos, personas/mascotas y golpes/roturas.~~
+- [x] ~~Cinco sonidos nuevos: maullido, bocina, alarma de coche, marcha atrás y cristal roto. Desactivados por defecto, en pruebas.~~
+- [x] ~~Separar llanto general y alarma general de bebé/despertador; etiquetas concretas de sirenas.~~
+- [x] ~~Conservar nombres persistidos y ajustes antiguos; añadir patrones y recursos ES/EN.~~
+- [ ] CI, instalación y QA física de esta ampliación antes de integrar.
+- [ ] Calibración acústica con clips positivos y negativos por categoría. No se afirma precisión medida de las nuevas categorías.
+- [ ] Evaluar golpes de puerta vs disparos/petardos; no remapear automáticamente las etiquetas de armas a puerta.
+- [ ] Modo exploración en español, historial local sin audio y perfiles en entregas posteriores.
+
+QA propuesta:
+1. Actualizar sin borrar datos y comprobar que las ocho categorías previas conservan activación, sensibilidad y canal. Las siete nuevas (incluidas las dos generales) deben estar apagadas.
+2. Desplegar cada grupo; abrir/cerrar no cambia ajustes. Activar un sonido nuevo, configurar pantalla/LED/ambas y comprobar persistencia tras cerrar/abrir.
+3. Probar cada nuevo sonido por separado y después con ruido de fondo, varios volúmenes y distancias. Anotar aciertos, omisiones y falsas alarmas, sin atribuir porcentaje de precisión a una prueba aislada.
+4. Llanto general no debe anunciar bebé; alarma general no debe anunciar despertador. Con la específica activa y puntuación suficiente no debe duplicarse el aviso general.
+5. Repetir timbre, puerta, teléfono, perro, bebé, despertador y alarma; comprobar que Parar libera el micrófono y que los tres canales mantienen el comportamiento validado.
