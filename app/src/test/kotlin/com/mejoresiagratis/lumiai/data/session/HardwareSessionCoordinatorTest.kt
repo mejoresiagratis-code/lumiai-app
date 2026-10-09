@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import org.junit.Assert.*
 import org.junit.Test
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HardwareSessionCoordinatorTest {
     @Test fun handoverWaitsForMicrophoneAndAllChildCleanup() = runTest {
         val sessions = HardwareSessionCoordinator(FakeTorchController())

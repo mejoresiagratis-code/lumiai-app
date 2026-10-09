@@ -119,6 +119,12 @@ class MusicFlashService : Service() {
             sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
         )
         check(minBuffer > 0) { "Unsupported microphone buffer" }
+        // Permission may change while this request waits for the previous session.
+        if (ContextCompat.checkSelfPermission(this@MusicFlashService, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            throw SecurityException("Microphone permission revoked")
+        }
         val record = AudioRecord(
             MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT, maxOf(minBuffer, detector.hopSize * 4)
