@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mejoresiagratis.lumiai.R
+import com.mejoresiagratis.lumiai.ui.components.AppLanguageButton
 import com.mejoresiagratis.lumiai.ui.theme.LumiMotion
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 
@@ -84,14 +85,15 @@ fun OnboardingScreen(
                 .padding(horizontal = LumiSpacing.lg)
                 .padding(bottom = LumiSpacing.lg)
         ) {
-            // Saltar (reservamos altura para que el layout no salte en la última página)
+            // Selector de idioma disponible antes de crear una cuenta; altura estable entre páginas.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                AppLanguageButton()
                 if (!isLast) {
                     TextButton(onClick = { finish() }) {
                         Text(stringResource(R.string.onboarding_skip))

@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 17298)
+Total output lines: 1501
+
 package com.mejoresiagratis.lumiai.ui.settings
 
 import android.app.Activity
@@ -7,6 +10,7 @@ import com.mejoresiagratis.lumiai.domain.entitlement.canStartSubscriptionPurchas
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.StringRes
@@ -562,189 +566,7 @@ fun SettingsScreen(
                 Text(
                     text = stringResource(R.string.theme_section),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                ThemeSegmented(selected = themeMode, onSelect = onSelectTheme)
-                Text(
-                    text = stringResource(R.string.accent_section),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                AccentSwatches(
-                    selected = accentColor,
-                    hasAccount = proUi.hasAccount,
-                    // Acceso Pro EFECTIVO (17-ago): incluye el desbloqueo temporal por
-                    // anuncios, no solo la suscripción — multicolor se comporta ya como
-                    // el resto de herramientas Pro.
-                    hasPro = proUi.proUnlocked,
-                    onSelect = onSelectAccent,
-                    onLockedAccount = { accentLockDialog = AccentLock.ACCOUNT },
-                    onLockedPro = { accentLockDialog = AccentLock.PRO }
-                )
-                Text(
-                    text = stringResource(R.string.accent_style_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                AccentStyleSegmented(selected = accentStyle, onSelect = onSelectAccentStyle)
-            }
-
-            // --- Accesibilidad (Capa B) ---
-            SettingsSection(R.string.a11y_section) {
-                // Plegable, plegada por defecto (rediseño 14-ago): 4 toggles compactos.
-                var a11yOpen by remember { mutableStateOf(false) }
-                val a11yChev by animateFloatAsState(
-                    targetValue = if (a11yOpen) 180f else 0f,
-                    animationSpec = LumiMotion.emphasized(),
-                    label = "a11yChevron"
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { a11yOpen = !a11yOpen }
-                        .padding(vertical = LumiSpacing.xs),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(LumiSpacing.sm)
-                ) {
-                    Text(
-                        text = stringResource(R.string.a11y_expand),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        painter = painterResource(R.drawable.ic_chevron_down),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .rotate(a11yChev)
-                    )
-                }
-                AnimatedVisibility(visible = a11yOpen) {
-                    Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
-                SettingsToggle(
-                    titleRes = R.string.a11y_reduce_motion_title,
-                    descRes = R.string.a11y_reduce_motion_desc,
-                    checked = reduceMotion,
-                    onCheckedChange = onSetReduceMotion
-                )
-                SettingsToggle(
-                    titleRes = R.string.a11y_high_contrast_title,
-                    descRes = R.string.a11y_high_contrast_desc,
-                    checked = highContrast,
-                    onCheckedChange = onSetHighContrast
-                )
-                SettingsToggle(
-                    titleRes = R.string.a11y_auto_lock_title,
-                    descRes = R.string.a11y_auto_lock_desc,
-                    checked = autoLockScreen,
-                    onCheckedChange = onSetAutoLockScreen
-                )
-                if (hasVibrator) {
-                    SettingsToggle(
-                        titleRes = R.string.a11y_haptics_title,
-                        descRes = R.string.a11y_haptics_desc,
-                        checked = haptics,
-                        onCheckedChange = onSetHaptics
-                    )
-                }
-                    }
-                }
-            }
-
-            // ── General (rediseño 14-ago): Idioma + Acerca de en filas uniformes. ──
-            SettingsSection(R.string.general_section) {
-                SettingsRow(
-                    titleRes = R.string.language_row_title,
-                    subtitle = stringResource(R.string.language_row_subtitle),
-                    onClick = {
-                        val i = Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                            data = Uri.parse("package:" + context.packageName)
-                        }
-                        runCatching { context.startActivity(i) }
-                    }
-                )
-                // Opciones de privacidad de anuncios (22-ago). Solo se muestra donde la
-                // normativa de Google lo exige: en el resto de regiones el formulario no
-                // existe y abrirlo dejaria al usuario ante una pantalla en blanco.
-                if (consentState.privacyOptionsRequired) {
-                    SettingsRow(
-                        titleRes = R.string.ads_privacy_options,
-                        subtitle = stringResource(R.string.ads_privacy_options_subtitle),
-                        onClick = {
-                            val act = context.findActivity()
-                            if (act != null) rewardedUnlockViewModel.showPrivacyOptions(act)
-                        }
-                    )
-                }
-                if (privacyError) {
-                    Text(stringResource(R.string.ads_privacy_error), color = MaterialTheme.colorScheme.error)
-                }
-                SettingsRow(
-                    titleRes = R.string.about_version,
-                    subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                    onClick = null
-                )
-                SettingsRow(
-                    titleRes = R.string.about_changelog,
-                    onClick = { showChangelog = true }
-                )
-                SettingsRow(
-                    titleRes = R.string.about_rate,
-                    onClick = {
-                        val uri = Uri.parse("market://details?id=" + context.packageName)
-                        val i = Intent(Intent.ACTION_VIEW, uri)
-                        val fallback = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://play.google.com/store/apps/details?id=" + context.packageName)
-                        )
-                        runCatching { context.startActivity(i) }
-                            .onFailure { runCatching { context.startActivity(fallback) } }
-                    }
-                )
-            }
-
-            SettingsSection(R.string.legal_section) {
-                SettingsRow(
-                    titleRes = R.string.legal_privacy,
-                    onClick = onOpenPrivacyPolicy
-                )
-                SettingsRow(
-                    titleRes = R.string.legal_terms,
-                    onClick = onOpenTerms
-                )
-                SettingsRow(
-                    titleRes = R.string.about_licenses,
-                    onClick = { showLicenses = true }
-                )
-            }
-
-            if (BuildConfig.DEBUG) {
-                // BuildConfig.DEBUG es constante en compilación: en release este bloque entero
-                // (incluido el ViewModel) se elimina, no solo se oculta.
-                val godViewModel: GodViewModel = hiltViewModel()
-                val godUi by godViewModel.ui.collectAsStateWithLifecycle()
-                val overrideActive = godUi.forceAccount != null || godUi.forceSubscription != null
-                Column(verticalArrangement = Arrangement.spacedBy(LumiSpacing.sm)) {
-                    Text(
-                        text = "Superusuario (debug)",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = LumiSpacing.md)
-                    )
-                    // Aviso VISIBLE cuando hay permisos forzados: sin esto es fácil confundir
-                    // un override activo con un bug de gating (pasó el 25 jul, ver memo).
-                    if (overrideActive) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer)
-                                .padding(LumiSpacing.md),
-                            verticalArrangement = Arrangement.spacedBy(LumiSpacing.xs)
-                        ) {
-                            Text(
+                    color = MaterialTheme.colorScheme.…2298 tokens truncated…                          Text(
                                 text = "Permisos forzados activos",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
