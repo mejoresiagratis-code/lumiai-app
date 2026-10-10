@@ -94,6 +94,15 @@ Cerrar sesión/cambiar cuenta restablece azul/vívido independientemente del col
 
 Migración: nombre/país y contador antiguos sin propietario no se asignan por suposición; pueden requerir reentrada de datos y contador a cero. Acentos antiguos sin propietario parten de azul/vívido. El tema antiguo global sin propietario vuelve a Sistema; las nuevas elecciones se guardan por UID localmente, sin sincronización entre dispositivos. Accesibilidad y ajustes de luz/sonidos permanecen como preferencias del dispositivo.
 
+### PR #8 — selector de idioma previo al acceso
+
+[PR #8](https://github.com/mejoresiagratis-code/lumiai-app/pull/8) **integrada en main**, squash commit `ebc61d3c59c311494c42a1c8b3fc35dd6b554cc5`.
+
+- [x] ~~Selector de idioma accesible desde la bienvenida y la pantalla de acceso, antes de iniciar sesión o crear una cuenta.~~
+- [x] ~~En Android 13+, enlace al selector de idioma por aplicación; en versiones anteriores, LumiAI sigue el idioma del sistema.~~
+- [x] ~~[Actions #272](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38020366567): pruebas unitarias, Android Lint y APK debug correctos.~~
+- [x] ~~QA físico confirmado por el propietario: «Probado y funcionando» (10 de octubre de 2026).~~
+
 ## Aparcado por decisión del propietario — PR #5 / STAB-03
 
 Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**. El propietario decide mantener Spark.
