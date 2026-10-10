@@ -63,6 +63,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.mejoresiagratis.lumiai.R
 import com.mejoresiagratis.lumiai.domain.model.AuthError
+import com.mejoresiagratis.lumiai.ui.components.AppLanguageButton
 import com.mejoresiagratis.lumiai.ui.theme.LumiSpacing
 import kotlinx.coroutines.launch
 
@@ -90,6 +91,7 @@ fun AuthScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.auth_title)) },
+                actions = { AppLanguageButton() },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

@@ -7,6 +7,7 @@ import com.mejoresiagratis.lumiai.domain.entitlement.canStartSubscriptionPurchas
 import com.mejoresiagratis.lumiai.domain.entitlement.RewardProgress
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.StringRes
@@ -655,16 +656,18 @@ fun SettingsScreen(
 
             // ── General (rediseño 14-ago): Idioma + Acerca de en filas uniformes. ──
             SettingsSection(R.string.general_section) {
-                SettingsRow(
-                    titleRes = R.string.language_row_title,
-                    subtitle = stringResource(R.string.language_row_subtitle),
-                    onClick = {
-                        val i = Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                            data = Uri.parse("package:" + context.packageName)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    SettingsRow(
+                        titleRes = R.string.language_row_title,
+                        subtitle = stringResource(R.string.language_row_subtitle),
+                        onClick = {
+                            val i = Intent(android.provider.Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+                                data = Uri.parse("package:" + context.packageName)
+                            }
+                            runCatching { context.startActivity(i) }
                         }
-                        runCatching { context.startActivity(i) }
-                    }
-                )
+                    )
+                }
                 // Opciones de privacidad de anuncios (22-ago). Solo se muestra donde la
                 // normativa de Google lo exige: en el resto de regiones el formulario no
                 // existe y abrirlo dejaria al usuario ante una pantalla en blanco.
