@@ -118,8 +118,10 @@ Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**.
 - [x] ~~Identificado: Haze 1.4.0 empaquetaba `MutableList.removeFirst()` en `dev.chrisbanes.haze.Pool`, señalada por Play como fallo en Android 14 y anteriores.~~
 - [x] ~~Actualizada la dependencia a Haze 1.5.0, cuya clase Pool usa `removeAt(0)` y elimina esas llamadas incompatibles.~~
 - [x] ~~Incrementado `versionCode` de 84 a 85; la versión 84 ya está creada/subida a Play y no se puede reutilizar para el AAB corregido.~~
-- [ ] GitHub Actions: verificar compilación, pruebas y Lint de la rama/PR.
-- [ ] Tras integrar, descargar AAB release firmado y volver a subirlo como versión 85; Play debe volver a analizar el paquete y retirar el problema.
+- [x] ~~[Actions #277](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38183361399): pruebas, Lint y compilación debug correctos en PR #10.~~
+- [x] ~~PR #10 integrada en main como `049c05ab97501fc94cc203c7ce2fc9f429bd9d87`.~~
+- [x] ~~[Actions #278](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38183568577): pruebas y Lint correctos; release firmado `0.9.54`/versionCode `85` generado. Artefacto `app-release-bundle` disponible hasta el 18 de octubre de 2026.~~
+- [ ] Subir el AAB de versión 85 a la versión de prueba cerrada; Play debe volver a analizar el paquete.
 - [ ] Verificar en la ficha de calidad técnica que ya no aparece el bloqueo de Haze. El resultado de CI no sustituye el nuevo análisis de Play.
 
 ## Siguiente orden de trabajo
