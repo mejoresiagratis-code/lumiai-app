@@ -113,6 +113,15 @@ Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**.
 - [ ] **No integrado ni desplegado.** No usar su APK como actualización de la rama mantenida en Spark.
 - [ ] Retomar con backend autorizado o diseñar una alternativa compatible con Spark. El borrado remoto completo/recuperable sigue sin resolverse en main.
 
+## Corrección urgente — incompatibilidad Kotlin/Android 15 (Play v84)
+
+- [x] ~~Identificado: Haze 1.4.0 empaquetaba `MutableList.removeFirst()` en `dev.chrisbanes.haze.Pool`, señalada por Play como fallo en Android 14 y anteriores.~~
+- [x] ~~Actualizada la dependencia a Haze 1.5.0, cuya clase Pool usa `removeAt(0)` y elimina esas llamadas incompatibles.~~
+- [x] ~~Incrementado `versionCode` de 84 a 85; la versión 84 ya está creada/subida a Play y no se puede reutilizar para el AAB corregido.~~
+- [ ] GitHub Actions: verificar compilación, pruebas y Lint de la rama/PR.
+- [ ] Tras integrar, descargar AAB release firmado y volver a subirlo como versión 85; Play debe volver a analizar el paquete y retirar el problema.
+- [ ] Verificar en la ficha de calidad técnica que ya no aparece el bloqueo de Haze. El resultado de CI no sustituye el nuevo análisis de Play.
+
 ## Siguiente orden de trabajo
 
 1. **Compras y recompensas — STAB-05/06 (P1):** cuentas de prueba y pista interna Play; compra, restauración, reconocimiento, caducidad, revocación y pérdida de conexión. Definir vinculación Play/Firebase y política offline.
