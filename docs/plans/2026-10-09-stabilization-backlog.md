@@ -126,13 +126,14 @@ Verificación de compras en servidor/RTDN queda aplazada mientras no haya una so
 
 ### STAB-05/06 — preparación de pruebas
 
-El análisis de `main` confirma que Play Billing ya consulta/restaura compras, reintenta el reconocimiento y refresca al volver a primer plano. La suite de unit tests cubre los reintentos de reconocimiento, pero no hay aún evidencia de compras/suscripciones reales en Play. La última Action del `main` revisado es #273, verde, de tipo Android Debug Build; esto no equivale a un candidato release para subir.
+El análisis de `main` confirma que Play Billing ya consulta/restaura compras, reintenta el reconocimiento y refresca al volver a primer plano. La suite de unit tests cubre los reintentos de reconocimiento, pero no hay aún evidencia de compras/suscripciones reales en Play. La última Action de release es [#275](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38178306777), verde: pruebas, Lint y release firmada. Generó AAB `0.9.54` / `versionCode 84`; esto habilita el primer envío, pero no sustituye la prueba real de facturación.
 
 - [x] ~~Matriz y criterios de aceptación BILL-01–14 documentados en [plan de pruebas](2026-10-11-stab-05-06-play-billing-test-plan.md).~~
 - [x] ~~Política recomendada: Play es autoridad de suscripción; Firebase conserva identidad de perfil; fallo temporal mantiene acceso solo durante el proceso que ya confirmó la compra; proceso nuevo empieza sin Pro hasta respuesta de Play; pendiente no concede.~~
 - [ ] Confirmar en Play Console IDs de producto/plan base y publicar producto/plan para pruebas.
 - [ ] Configurar canal interno y listas separadas/coincidentes de testers del canal y testers de licencia.
-- [ ] Crear el AAB candidato desde código revisado, subirlo al canal e instalarlo desde Play en Samsung S26 Ultra.
+- [x] ~~Generado AAB firmado `0.9.54` / `versionCode 84` en Actions #275 para el primer envío; conservar también su mapping R8.~~
+- [ ] Subir el AAB al canal interno e instalarlo desde Play en Samsung S26 Ultra.
 - [ ] Ejecutar BILL-01–14; registrar casos no reproducibles y validarlos con pruebas automatizadas cuando proceda.
 - [ ] Evaluar si la UI comunica correctamente compra Play/Firebase separadas y acceso durante una caída temporal.
 - [ ] Mantener abierta la verificación de servidor/RTDN hasta seleccionar backend.
