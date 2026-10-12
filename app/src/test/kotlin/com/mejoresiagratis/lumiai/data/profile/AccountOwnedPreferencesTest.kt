@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreRewardProgressRepository
 import com.mejoresiagratis.lumiai.data.entitlement.DataStoreTemporaryUnlockRepository
+import com.mejoresiagratis.lumiai.domain.entitlement.TemporaryUnlock
 import com.mejoresiagratis.lumiai.domain.model.AuthUser
 import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import io.mockk.every
@@ -32,7 +33,7 @@ class AccountOwnedPreferencesTest {
     }
     private val profile = DataStoreBillingProfileRepository(store, auth)
     private val rewards = DataStoreRewardProgressRepository(store, auth)
-    private val unlock = DataStoreTemporaryUnlockRepository(auth)
+    private val unlock = DataStoreTemporaryUnlockRepository(store, auth)
     private fun switch() { users.value = AuthUser("B", "b@example.test", false, true) }
 
     @Test fun `new account never receives previous profile or rewards`() = runTest {
@@ -48,6 +49,16 @@ class AccountOwnedPreferencesTest {
         profile.setBillingCountry("France")
         assertEquals("", profile.profile.first().fullName)
         assertEquals("France", profile.profile.first().billingCountry)
+    }
+
+    @Test fun `rewarded unlock survives repository recreation for the same account`() = runTest {
+        unlock.extend(TemporaryUnlock.HOUR_MS)
+        val savedExpiry = unlock.proUntilMillis.first()
+
+        val recreated = DataStoreTemporaryUnlockRepository(store, auth)
+
+        assertEquals(savedExpiry, recreated.proUntilMillis.first())
+        assertTrue(savedExpiry > System.currentTimeMillis())
     }
 
     @Test fun `legacy unowned personal data is not assigned to current account`() = runTest {

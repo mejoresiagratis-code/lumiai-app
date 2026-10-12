@@ -1,54 +1,68 @@
 package com.mejoresiagratis.lumiai.data.entitlement
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.mejoresiagratis.lumiai.domain.entitlement.TemporaryUnlock
+import com.mejoresiagratis.lumiai.domain.repository.AuthRepository
 import com.mejoresiagratis.lumiai.domain.repository.TemporaryUnlockRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Desbloqueo temporal de Pro — **estado de sesión puro, EN MEMORIA** (corregido 17-ago).
+ * Desbloqueo temporal de Pro persistido en DataStore y asociado a la cuenta que vio los anuncios.
  *
- * ## Por qué ya no se persiste
- * La regla de producto es que la hora de Pro **muere al cerrar la app**. La implementación
- * anterior sí persistía en DataStore y trataba de simular esa muerte con un flag
- * `isColdStart` que devolvía 0 en la primera emisión. **Era incorrecto:** `proUntilMillis`
- * tiene CUATRO colectores (FlashViewModel, RewardedUnlockViewModel, GodViewModel y
- * RecordRewardUseCase). El primero consumía el flag y recibía 0, pero los otros tres leían
- * el valor persistido real — la hora de Pro RESUCITABA tras cerrar la app, y `extend()`
- * además prolongaba esa fecha vieja.
- *
- * El arreglo correcto no es parchear el flag, es no persistir: si el dato debe morir con el
- * proceso, su sitio es la memoria. Al ser este un `@Singleton` de Hilt, la instancia nace una
- * vez por proceso, así que "proceso nuevo" equivale exactamente a "sin desbloqueo". Sin
- * carreras, sin lecturas obsoletas y sin simular nada.
+ * El instante de caducidad sobrevive al cierre del proceso. La concesión solo se expone mientras
+ * la cuenta autenticada coincide con la propietaria; una hora ganada nunca pasa a otra cuenta.
  */
 @Singleton
 class DataStoreTemporaryUnlockRepository @Inject constructor(
-    private val auth: com.mejoresiagratis.lumiai.domain.repository.AuthRepository
+    private val dataStore: DataStore<Preferences>,
+    private val auth: AuthRepository
 ) : TemporaryUnlockRepository {
-    private data class Grant(val uid: String? = null, val until: Long = 0L)
-    private val grant = MutableStateFlow(Grant())
-    override val proUntilMillis: Flow<Long> = combine(auth.currentUser, grant) { user, current ->
-        if (user?.uid == current.uid) current.until else 0L
+
+    private val untilKey = longPreferencesKey("temporary_pro_until_millis")
+    private val ownerKey = stringPreferencesKey("temporary_pro_owner_uid")
+
+    override val proUntilMillis: Flow<Long> = combine(auth.currentUser, dataStore.data) { user, prefs ->
+        val uid = user?.uid ?: return@combine 0L
+        if (prefs[ownerKey] == uid) prefs[untilKey] ?: 0L else 0L
     }
 
     override suspend fun extend(durationMillis: Long) {
+        if (durationMillis <= 0L) return
         val uid = auth.currentUid() ?: return
         extendForAccount(durationMillis, uid)
     }
 
     override suspend fun extendForAccount(durationMillis: Long, uid: String): Boolean {
-        if (auth.currentUid() != uid) return false
-        val old = grant.value
-        grant.value = Grant(uid, TemporaryUnlock.extended(
-            currentUntilMillis = if (old.uid == uid) old.until else 0L,
-            nowMillis = System.currentTimeMillis(), durationMillis = durationMillis
-        ))
-        return true
+        if (durationMillis <= 0L || auth.currentUid() != uid) return false
+        var applied = false
+        dataStore.edit { prefs ->
+            // Recheck the owner inside the transaction so a late ad callback cannot grant Pro
+            // after the user has switched accounts.
+            if (auth.currentUid() == uid) {
+                val previousUntil = if (prefs[ownerKey] == uid) prefs[untilKey] ?: 0L else 0L
+                prefs[ownerKey] = uid
+                prefs[untilKey] = TemporaryUnlock.extended(
+                    currentUntilMillis = previousUntil,
+                    nowMillis = System.currentTimeMillis(),
+                    durationMillis = durationMillis
+                )
+                applied = true
+            }
+        }
+        return applied
     }
 
-    override suspend fun clear() { grant.value = Grant() }
+    override suspend fun clear() {
+        dataStore.edit { prefs ->
+            prefs.remove(untilKey)
+            prefs.remove(ownerKey)
+        }
+    }
 }
