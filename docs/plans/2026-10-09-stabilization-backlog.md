@@ -1,6 +1,6 @@
 # LumiAI — roadmap de estabilización
 
-Actualizado: **10 de octubre de 2026, Europe/Madrid**.
+Actualizado: **11 de octubre de 2026, Europe/Madrid**.
 Base de auditoría: `3afc50dc8b41a62f5aa5deaee99a28fcdd710c42`.
 Reglas de trabajo: compilaciones y pruebas exclusivamente en GitHub Actions; QA físico por el propietario en Samsung S26 Ultra. Un CI correcto no sustituye pruebas de dispositivo o de Google Play.
 
@@ -126,7 +126,7 @@ Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**.
 
 ## Siguiente orden de trabajo
 
-1. **Compras y recompensas — STAB-05/06 (P1):** cuentas de prueba y pista interna Play; compra, restauración, reconocimiento, caducidad, revocación y pérdida de conexión. Definir vinculación Play/Firebase y política offline.
+1. **Compras y recompensas — STAB-05/06 (P1, en curso):** preparado el [plan de pruebas de facturación](2026-10-11-stab-05-06-play-billing-test-plan.md), con matriz BILL-01–14 y política propuesta de cuenta/offline. Falta configurar la pista interna y testers/licencias en Play Console, ejecutar las pruebas reales y resolver cualquier fallo.
 2. **Protección de main — STAB-02 (P1):** administrador configura PR y checks obligatorios; el YAML por sí solo no protege la rama. No consta aplicado.
 3. **Pendientes de sonido:** sensibilidad de marcha atrás, llanto general y golpes de puerta; conjunto reproducible de muestras y control de falsos positivos.
 4. **P2 restantes:** reloj/caducidad ante cambios de hora, recuperación de almacenamiento dañado, LED, dependencias, reglas y permisos de CI/cadena de suministro. Desglosar por riesgo antes de implementar.
@@ -134,6 +134,20 @@ Proyecto Firebase **`lumiai-37ab0`**, proyecto actual de la app, plan **Spark**.
 6. **Publicación:** pista interna de Play y comprobaciones finales; publicación requiere autorización explícita.
 
 Verificación de compras en servidor/RTDN queda aplazada mientras no haya una solución de backend elegida. No declarar cerrado un P1 por haber integrado solo su parte cliente.
+
+### STAB-05/06 — preparación de pruebas
+
+El análisis de `main` confirma que Play Billing ya consulta/restaura compras, reintenta el reconocimiento y refresca al volver a primer plano. La suite de unit tests cubre los reintentos de reconocimiento, pero no hay aún evidencia de compras/suscripciones reales en Play. La última Action de release es [#275](https://github.com/mejoresiagratis-code/lumiai-app/actions/runs/38178306777), verde: pruebas, Lint y release firmada. Generó AAB `0.9.54` / `versionCode 84`; esto habilita el primer envío, pero no sustituye la prueba real de facturación.
+
+- [x] ~~Matriz y criterios de aceptación BILL-01–14 documentados en [plan de pruebas](2026-10-11-stab-05-06-play-billing-test-plan.md).~~
+- [x] ~~Política recomendada: Play es autoridad de suscripción; Firebase conserva identidad de perfil; fallo temporal mantiene acceso solo durante el proceso que ya confirmó la compra; proceso nuevo empieza sin Pro hasta respuesta de Play; pendiente no concede.~~
+- [ ] Confirmar en Play Console IDs de producto/plan base y publicar producto/plan para pruebas.
+- [ ] Configurar canal interno y listas separadas/coincidentes de testers del canal y testers de licencia.
+- [x] ~~Generado AAB firmado `0.9.54` / `versionCode 84` en Actions #275 para el primer envío; conservar también su mapping R8.~~
+- [ ] Subir el AAB al canal interno e instalarlo desde Play en Samsung S26 Ultra.
+- [ ] Ejecutar BILL-01–14; registrar casos no reproducibles y validarlos con pruebas automatizadas cuando proceda.
+- [ ] Evaluar si la UI comunica correctamente compra Play/Firebase separadas y acceso durante una caída temporal.
+- [ ] Mantener abierta la verificación de servidor/RTDN hasta seleccionar backend.
 
 ## Cobertura de los P1 originales
 
@@ -143,8 +157,8 @@ Verificación de compras en servidor/RTDN queda aplazada mientras no haya una so
 | STAB-02 — Protección de main | Pendiente de administración y prueba efectiva del bloqueo. |
 | STAB-03 — Borrado recuperable | PR #5 preparada; aparcada, sin despliegue ni integración. |
 | STAB-04 — Exclusividad de hardware | PR #3/#6 integradas y Samsung aprobado; QA de otros fabricantes pendiente. |
-| STAB-05 — Compras reconocidas | Cliente mejorado en PR #2; validación real Play y backend pendientes. |
-| STAB-06 — Suscripciones | Refresco/reconexión integrados; política offline y autoridad/vinculación pendientes. |
+| STAB-05 — Compras reconocidas | Cliente mejorado en PR #2; plan BILL-01–14 preparado; validación real Play pendiente. |
+| STAB-06 — Suscripciones | Refresco/reconexión integrados; política Play/Firebase y offline propuesta en el plan; falta validarla en pista. Backend/RTDN aplazado. |
 | STAB-07 — Acceso al hardware | Integrado; ampliar pruebas con compras reales y caducidad en dispositivos. |
 | STAB-08 — Captura supervisada | Integrado; falta completar candidato release/MediaPipe y QA ampliado. |
 
