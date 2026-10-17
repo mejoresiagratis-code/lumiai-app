@@ -1,11 +1,22 @@
-name: Android Debug Build
+name: Android Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
+    inputs:
+      build_apks:
+        description: 'Also build debug and release APKs for direct device testing'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,7 +27,7 @@ concurrency:
 
 jobs:
   build:
-    name: Tests and debug APK
+    name: Tests, Lint and signed bundle
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -25,120 +36,98 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      # One runner shares compiled outputs; main saves release caches as well.
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-      - name: All unit tests (including Compose semantics)
-        run: ./gradlew testDebugUnitTest --stacktrace
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
-      - name: Upload tested debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: lumiai-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 7
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ github.run_number }}
-          path: |
-            app/build/reports/tests/
-            app/build/test-results/
-          if-no-files-found: warn
-          retention-days: 7
 
-  quality:
-    name: Android Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-      - name: Android Lint
-        run: ./gradlew :app:lintDebug --stacktrace
-      - name: Upload lint reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-report-${{ github.run_number }}
-          path: app/build/reports/lint-results-*.*
-          if-no-files-found: warn
-          retention-days: 7
+      - name: All unit tests and Android Lint
+        run: ./gradlew testDebugUnitTest :app:lintDebug --stacktrace
 
-  release:
-    needs: [build, quality]
-    # Solo en main: la build minificada tarda mas y los PRs ya validan con debug.
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: true
-
-      # Con secretos configurados firma con la clave real; sin ellos, con la de debug
-      # (instalable para smoke, imposible de publicar). El mapping de R8 se sube como
-      # artefacto SIEMPRE: es lo que des-ofusca los stacktraces de Crashlytics.
-      # En main la firma REAL es obligatoria: sin secretos, la build caeria a la clave de
-      # debug y el job seguiria en verde, dando la falsa impresion de tener un artefacto
-      # publicable. Play rechazaria esa firma al subirla (22-ago).
-      - name: Verificar secretos de firma
-        env:
-          LUMI_KEYSTORE_BASE64: ${{ secrets.LUMI_KEYSTORE_BASE64 }}
-        run: |
-          if [ -z "$LUMI_KEYSTORE_BASE64" ]; then
-            echo "::error::Faltan los secretos de firma (LUMI_*). El artefacto no seria publicable."
-            exit 1
-          fi
-
-      # AAB **y** APK: Play exige App Bundle para aplicaciones nuevas desde 2021, pero el APK
-      # sigue siendo util para instalar en el dispositivo y hacer smoke test (22-ago).
-      - name: Release AAB + APK (R8) + mapping
+      - name: Verify release signing
+        if: github.ref == 'refs/heads/main'
         env:
           LUMI_KEYSTORE_BASE64: ${{ secrets.LUMI_KEYSTORE_BASE64 }}
           LUMI_KEYSTORE_PASSWORD: ${{ secrets.LUMI_KEYSTORE_PASSWORD }}
           LUMI_KEY_ALIAS: ${{ secrets.LUMI_KEY_ALIAS }}
           LUMI_KEY_PASSWORD: ${{ secrets.LUMI_KEY_PASSWORD }}
-        run: ./gradlew bundleRelease assembleRelease
+        run: |
+          for key in LUMI_KEYSTORE_BASE64 LUMI_KEYSTORE_PASSWORD LUMI_KEY_ALIAS LUMI_KEY_PASSWORD; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing release signing configuration: $key"
+              exit 1
+            fi
+          done
 
-      # El artefacto QUE SE SUBE A PLAY. Retencion mayor que el APK: es el entregable.
+      - name: Signed release AAB and R8 mapping
+        if: github.ref == 'refs/heads/main'
+        env:
+          LUMI_KEYSTORE_BASE64: ${{ secrets.LUMI_KEYSTORE_BASE64 }}
+          LUMI_KEYSTORE_PASSWORD: ${{ secrets.LUMI_KEYSTORE_PASSWORD }}
+          LUMI_KEY_ALIAS: ${{ secrets.LUMI_KEY_ALIAS }}
+          LUMI_KEY_PASSWORD: ${{ secrets.LUMI_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: Optional debug APK
+        if: github.event_name == 'pull_request' || inputs.build_apks == true
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Optional release APK
+        if: github.ref == 'refs/heads/main' && inputs.build_apks == true
+        env:
+          LUMI_KEYSTORE_BASE64: ${{ secrets.LUMI_KEYSTORE_BASE64 }}
+          LUMI_KEYSTORE_PASSWORD: ${{ secrets.LUMI_KEYSTORE_PASSWORD }}
+          LUMI_KEY_ALIAS: ${{ secrets.LUMI_KEY_ALIAS }}
+          LUMI_KEY_PASSWORD: ${{ secrets.LUMI_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --stacktrace
+
       - name: Upload release AAB
+        if: success() && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
           path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: app/build/outputs/apk/release/*.apk
+          compression-level: 0
           retention-days: 7
 
       - name: Upload R8 mapping
+        if: success() && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: r8-mapping
           path: app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload debug APK
+        if: success() && (github.event_name == 'pull_request' || inputs.build_apks == true)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumiai-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload release APK
+        if: success() && github.ref == 'refs/heads/main' && inputs.build_apks == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload test and lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ github.run_number }}
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+            app/build/reports/lint-results-*.*
+          if-no-files-found: warn
           retention-days: 7
